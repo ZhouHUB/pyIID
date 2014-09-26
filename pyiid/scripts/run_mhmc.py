@@ -38,7 +38,7 @@ gr = gr*scale
 current_U = Debye_srreal_U(new_atoms, gr)
 print current_U
 u_list =[current_U]
-while i < 100:
+while i < 200:
     new_atoms, move_type, current_U = MHMC(new_atoms,  Debye_srreal_U,
                                      current_U, gr, 5, .01)
     traj += [new_atoms]

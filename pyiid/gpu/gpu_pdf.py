@@ -1,5 +1,43 @@
 __author__ = 'christopher'
 import numpy as np
+from numbapro import cuda, jit
+from numbapro.cudalib import curand
+
+@jit('void(double[:,:],double[:])', target='gpu')
+
+
+def pair_distance(w1, w2):
+    diff = w1-w2
+
+
+
+
+def gpu_get_pdf_sub_matrix(q_sub_coord):
+    """
+    Generate the PDF Matrix which contains all the atomic pair distances
+
+    Parameters
+    ----------
+    q: Nx3 ndarray
+        The positions of the atoms in 3D, N is the number of atoms
+
+    Returns
+    -------
+    ndarray:
+        NxNx3 dimensional array each NxN slice contains all the pairs in a
+        coordinate e.g. one slice = [[x0-0, x0-1, x0-2,...], [x1-0, x1-1,...]]
+        Note that the matrix is symmetric with respect to the diagonal and
+        all diagonal elements are 0
+    """
+    N = q.shape[0]
+    startX, startY, startZ = cuda.grid(3)
+    gridX = cuda.gridDim.x * cuda.blockDim.x;
+    gridY = cuda.gridDim.y * cuda.blockDim.y;
+
+    blksz = cuda.get_current_device().MAX_THREADS_PER_BLOCK
+    gridsz = int(math.ceil(float(n) / blksz))
+    stream = cuda.stream()
+    d_M = cuda.device_array(n, dtype=np.double, stream=stream)
 
 
 def get_pdf_matrix(q):

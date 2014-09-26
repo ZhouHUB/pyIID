@@ -1,14 +1,12 @@
 __author__ = 'christopher'
 
-import ase.io as io
-from ase.visualize import view
-from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-from matplotlib.pyplot import plot, show
-import numpy as np
-from pyiid.potential_core import rw
-from pyiid.grad import mc_grad
 import time
-from pyiid.utils import convert_atoms_to_stru, update_stru, load_gr_file
+
+import ase.io as io
+import numpy as np
+
+from pyiid.grad import mc_grad
+from pyiid.utils import load_gr_file
 from pyiid.potential_core import Debye_srreal_U
 
 

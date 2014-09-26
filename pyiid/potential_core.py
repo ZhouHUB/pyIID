@@ -6,9 +6,28 @@ import scipy.optimize as op
 
 
 def scale_to_rw_min(scale, calc, exp):
+    """
+    Scale the PDF data so it is close to the calculated results, this is for
+    the scalar minimization
+
+    Parameters:
+    -----------
+    scale: float
+        The scale factor
+    calc: ndarray
+        Calculated PDF
+    exp: ndarray
+        Experimental PDF
+    Returns:
+    --------
+    float:
+        The Rw value
+
+    """
     return rw(calc, scale*exp)
 
 def pdf_U(atoms, exp_data, bin_size=.01, rmax=40.):
+
     #get PDF from atoms
     hist = np.zeros((rmax/bin_size,))
     for i in range(len(atoms)):
@@ -20,6 +39,22 @@ def pdf_U(atoms, exp_data, bin_size=.01, rmax=40.):
 
 
 def Debye_srreal_U(atoms, exp_data):
+    """
+    Calculates the rw value using srreal for a set of atoms and experimental
+    data
+
+    Parameters:
+    -----------
+    atoms: ase.Atoms object
+        The atomic configuration
+    exp_data: ndarray
+        The experimental PDF
+
+    Returns:
+    --------
+    float:
+        The Rw value
+    """
     stru = convert_atoms_to_stru(atoms)
     dpc = DebyePDFCalculator()
     dpc.qmax = 25
@@ -32,7 +67,7 @@ def Debye_srreal_U(atoms, exp_data):
                              method='Bounded')
     scale = res.x
     # exp_data *= np.max(g0)/np.max(exp_data)
-    return rw(g0, exp_data*scale)
+    return res.fun
 
 
 def one_atom_PDF(atom_index, atoms):
@@ -98,6 +133,25 @@ def rw(pdf_calc, pdf_exp, weight=None):
 #     return pdf0
 
 def pdf_calc_U(atoms, exp_data, pdf_U_scale):
+    """
+    Calculate the total potential energy, combining PDF with a ab-initio
+    structure calculator
+
+    Parameters:
+    ----------
+    atoms: ase.Atoms object
+        Atomic configuration
+    exp_data: ndarray
+        PDF data
+    pdf_U_scale: float
+        Scale to multiply the PDF U by in order to make pdf based potential
+        comperable to the ab-initio potential
+
+    Returns:
+    -------
+    float:
+        The total energy
+    """
     pdfu = pdf_U(atoms, exp_data)
     pdf_nrg = pdfu*pdf_U_scale
     calc_nrg = atoms.get_potential_energy()

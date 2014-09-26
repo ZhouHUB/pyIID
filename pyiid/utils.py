@@ -7,6 +7,16 @@ from ase.atoms import Atoms as AAtoms
 
 
 def convert_atoms_to_stru(atoms):
+    """
+    Convert between ASE and Diffpy structural objects
+
+    Parameters:
+    -----------
+    atoms: ase.Atoms object
+
+    Return:
+    diffpy.Structure object:
+    """
     diffpy_atoms = []
     symbols = atoms.get_chemical_symbols()
     q = atoms.get_positions()
@@ -40,6 +50,9 @@ def update_stru(new_atoms, stru):
     return stru
 
 def load_gr_file(gr_file=None, skiplines=None):
+    """
+    Load gr files produced from PDFgetx3
+    """
     #TODO: also give back the filename
     if gr_file is None:
         print 'Open Gr'
