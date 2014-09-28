@@ -84,7 +84,7 @@ def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L, delta_qi):
     prop_U = U(prop_atoms, exp_data)
     prop_K = np.sum(p ** 2) / 2.
     # print(current_U-prop_U+current_K-prop_K)
-    if np.random.random((1,)) * T < np.exp((
+    if np.random.random((1,)) * 1/T < np.exp((
                                     current_U - prop_U + current_K - prop_K)):
         if prop_U + prop_K < current_U + current_K:
             return prop_atoms, True, prop_U, prop_K
@@ -126,7 +126,7 @@ def MHMC(current_atoms, U, current_U, exp_data, T, step_size):
     prop_U = U(prop_atoms, exp_data)
     if prop_U < current_U:
         return prop_atoms, True, prop_U
-    elif np.random.random((1,)) * T < np.exp((current_U - prop_U)):
+    elif np.random.random((1,)) * 1/T < np.exp((current_U - prop_U)):
         return prop_atoms, False, prop_U
     else:
         return current_atoms, (False, False), current_U

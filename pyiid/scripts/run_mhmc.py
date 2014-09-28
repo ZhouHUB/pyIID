@@ -38,9 +38,9 @@ gr = gr*scale
 current_U = Debye_srreal_U(new_atoms, gr)
 print current_U
 u_list =[current_U]
-while i < 200:
+while i < 3000:
     new_atoms, move_type, current_U = MHMC(new_atoms,  Debye_srreal_U,
-                                     current_U, gr, 5, .01)
+                                     current_U, gr, .5, .01)
     traj += [new_atoms]
     move_list.append(move_type)
     u_list.append(current_U)
@@ -67,7 +67,7 @@ x_line = np.arange(i+1)
 # print '\n\n\n'
 # print len(x_line), len(dist_from_crystal), len(u_list)
 plt.plot(x_line, dist_from_crystal, 'k', x_line, u_list, 'r'), plt.show()
-baseline = np.min(gr)*1.1
+baseline = np.min(gr)*1.7
 
 dpc = DebyePDFCalculator()
 dpc.qmax = 25
@@ -89,3 +89,4 @@ plt.legend()
 
 plt.show()
 view(traj)
+# io.write('mhmc_NiPd_25nm.traj', traj)
