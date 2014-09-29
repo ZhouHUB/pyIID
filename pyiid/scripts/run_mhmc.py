@@ -39,15 +39,20 @@ basename = 'results/mhmc_NiPd_25nm_variable_T'
 current_U = Debye_srreal_U(new_atoms, gr)
 print current_U
 u_list = [current_U]
-for i in range(3000):
+iterat = 3000
+for i in range(iterat):
     try:
+        T = 1 - i/iterat*.9
         new_atoms, move_type, current_U = MHMC(new_atoms, Debye_srreal_U,
-                                               current_U, gr, 1-i/3000*.8, .01)
+                                               current_U, gr,T, \
+                                          .01)
         traj += [new_atoms]
         move_list.append(move_type)
         u_list.append(current_U)
-        print i, current_U, move_type, 1.-i/3000.*.8
+        print i, current_U, move_type, T
         i += 1
+    # except:
+    #     raise
     except KeyboardInterrupt:
         io.write(basename+'.traj', traj)
         with open(basename+'.txt', 'wb') as f:
@@ -101,8 +106,8 @@ plt.legend()
 
 plt.show()
 view(traj)
-io.write('mhmc_NiPd_25nm.traj', traj)
-with open('mhmc_NiPd_25nm_ulist.txt', 'wb') as f:
+io.write(basename+'.traj', traj)
+with open(basename+'.txt', 'wb') as f:
     pickle.dump(u_list, f)
-with open('mhmc_NiPd_25nm_bool.txt', 'wb') as f:
+with open(basename+'_bool.txt', 'wb') as f:
     pickle.dump(move_list, f)
