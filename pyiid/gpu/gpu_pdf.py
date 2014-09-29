@@ -3,6 +3,23 @@ import numpy as np
 from numbapro import cuda, jit
 from numbapro.cudalib import curand
 
+"""
+The basic idea for this module is a place to store GPU accelerated code using
+NumbaPro and CUDA.
+"""
+
+
+
+
+
+
+
+
+
+
+
+
+
 @jit('void(double[:,:],double[:])', target='gpu')
 
 
