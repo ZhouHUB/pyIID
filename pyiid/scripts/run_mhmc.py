@@ -46,7 +46,7 @@ for i in range(3000):
         traj += [new_atoms]
         move_list.append(move_type)
         u_list.append(current_U)
-        print i, current_U, move_type, 1.-i/3000.*.2
+        print i, current_U, move_type, 1.-i/3000.*.8
         i += 1
     except KeyboardInterrupt:
         io.write(basename+'.traj', traj)
