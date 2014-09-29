@@ -35,14 +35,14 @@ scale = np.max(gcalc) / np.max(gr)
 print scale
 gr = gr * scale
 # plt.plot(r, gcalc, r, gr), plt.show()
-basename = 'mhmc_NiPd_25nm_variable_T'
+basename = 'results/mhmc_NiPd_25nm_variable_T'
 current_U = Debye_srreal_U(new_atoms, gr)
 print current_U
 u_list = [current_U]
 for i in range(3000):
     try:
         new_atoms, move_type, current_U = MHMC(new_atoms, Debye_srreal_U,
-                                               current_U, gr, 1-i/3000*.2, .01)
+                                               current_U, gr, 1-i/3000*.8, .01)
         traj += [new_atoms]
         move_list.append(move_type)
         u_list.append(current_U)
