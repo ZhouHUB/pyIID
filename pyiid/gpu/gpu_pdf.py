@@ -1,26 +1,21 @@
 __author__ = 'christopher'
-import numpy as np
-from numbapro import cuda, jit
-from numbapro.cudalib import curand
-
 """
 The basic idea for this module is a place to store GPU accelerated code using
 NumbaPro and CUDA.
 """
+import numpy as np
+import pycuda.autoinit
+import pycuda.driver as drv
 
+from pycuda.compiler import SourceModule
 
-
-
-
-
-
-
-
-
-
-
-
-@jit('void(double[:,:],double[:])', target='gpu')
+mod = SourceModule("""
+__global__ void multiply_them(float *dest, float *a, float *b)
+{
+  const int i = threadIdx.x;
+  dest[i] = a[i] * b[i];
+}
+""")
 
 
 def pair_distance(w1, w2):
