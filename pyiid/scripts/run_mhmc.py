@@ -14,9 +14,15 @@ import pickle
 
 r, gr = load_gr_file(
     '/home/christopher/7_7_7_FinalSum.gr')
-# atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
-atoms = io.read('/home/christopher/dev/IID_data/results'
-                '/mhmc_NiPd_25nm_variable_T.traj')
+atoms = io.read('/home/christopher/pdfgui_np_35_rattle1.xyz')
+# atoms = io.read('/home/christopher/dev/IID_data/results'
+#                 '/mhmc_NiPd_25nm_variable_T.traj')
+# plt.plot(r[:2501],gr[:2501])
+# plt.show()
+# print r[2501]
+# AAA
+gr = gr[:3501]
+r = r[:3501]
 
 i = 0
 t0 = time.clock()
@@ -27,10 +33,11 @@ current_atoms = atoms[:]
 new_atoms = current_atoms
 traj = [new_atoms]
 
+rmax =35.01
 dpc = DebyePDFCalculator()
 dpc.qmax = 25
 dpc.rmin = 0.00
-dpc.rmax = 40.01
+dpc.rmax = rmax
 
 gcalc = dpc(convert_atoms_to_stru(new_atoms), qmin=2.5)[1]
 scale = np.max(gcalc) / np.max(gr)
@@ -38,12 +45,12 @@ print scale
 gr = gr * scale
 # plt.plot(r, gcalc, r, gr), plt.show()
 basename = '/home/christopher/dev/IID_data/results' \
-           '/mhmc_NiPd_25nm_variable_T_test'
-current_U = Debye_srreal_U(new_atoms, gr)
+           '/mhmc_NiPd_35nm_expT'
+current_U = Debye_srreal_U(new_atoms, gr, rmax)
 print current_U
 u_list = [current_U]
 iterat = 3000
-start_T = .5
+start_T = .9
 alpha = 10**-2.5
 final_T = .1
 for i in range(iterat):
@@ -53,7 +60,7 @@ for i in range(iterat):
         T = start_T*np.exp(-i*alpha) + final_T
         new_atoms, move_type, current_U = MHMC(new_atoms, Debye_srreal_U,
                                                current_U, gr,T, \
-                                          .01)
+                                          .01, rmax)
         traj += [new_atoms]
         move_list.append(move_type)
         u_list.append(current_U)

@@ -95,7 +95,7 @@ def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L, delta_qi):
         return current_atoms, False, current_U, current_K
 
 
-def MHMC(current_atoms, U, current_U, exp_data, T, step_size):
+def MHMC(current_atoms, U, current_U, exp_data, T, step_size, rmax):
     """Metropolis Hastings monte carlo engine
 
     Parameters
@@ -123,7 +123,7 @@ def MHMC(current_atoms, U, current_U, exp_data, T, step_size):
     delta_q = np.random.normal(0, step_size, (len(current_atoms), 3))
     prop_atoms = dc(current_atoms)
     prop_atoms.translate(delta_q)
-    prop_U = U(prop_atoms, exp_data)
+    prop_U = U(prop_atoms, exp_data, rmax)
     if prop_U < current_U:
         return prop_atoms, True, prop_U
     elif np.random.random((1,)) * 1/T < np.exp((current_U - prop_U)):

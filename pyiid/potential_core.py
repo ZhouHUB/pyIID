@@ -38,7 +38,7 @@ def pdf_U(atoms, exp_data, bin_size=.01, rmax=40.):
     #return chi_squared or Rw for exp vs. predicted
 
 
-def Debye_srreal_U(atoms, exp_data):
+def Debye_srreal_U(atoms, exp_data, rmax):
     """
     Calculates the rw value using srreal for a set of atoms and experimental
     data
@@ -59,7 +59,7 @@ def Debye_srreal_U(atoms, exp_data):
     dpc = DebyePDFCalculator()
     dpc.qmax = 25
     dpc.rmin = 0.00
-    dpc.rmax = 40.01
+    dpc.rmax = rmax
     r0, g0 = dpc(stru, qmin=2.5)
     #scale data to minimize rw
     res = op.minimize_scalar(scale_to_rw_min, bounds = (0, 5), args = (g0,
