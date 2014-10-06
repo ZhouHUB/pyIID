@@ -71,6 +71,7 @@ def get_gr(gr, reduced_D, binsize, rmax):
 def get_Gr(Gr, reduced_D,scatter_matrix, ave_scatter):
     N = len(reduced_D)
     get_F(F, reduced_D, scatter_matrix, qmin, qmax)
+    #TODO: How to integrate CUDA builtins, like FFT?
     Gr = cuda.sinfft(F)
     Gr *= 1/pi #may be nessisary
 
@@ -121,8 +122,9 @@ def get_FQ_matrix(FQ, reduced_D, scatter_array, Q):
     //coordinate wise distances to a total distance via x**2+y**2+z**2 =
     //d**2.  The resulting array should have zero diagonals and be symmetric.
     int tx = threadIdx.x;
-    int ty = trheadIdx.y;
-    reduced_D[tx, ty] = sqrt(D[tx, ty, 0]**2+D[tx, ty, 1]**2+D[tx, ty, 2]**2);
+    int ty = threadIdx.y;
+    reduced_D[tx, ty] = sqrt(D[tx, ty, 0]*D[tx, ty, 0]+D[tx, ty, 1]*D[tx, ty, 1]
+    +D[tx, ty, 2]*D[tx, ty, 2]);
 }'''
 
 '''__global__ get_rw(double RW, double* Gr, double* exp_data){
@@ -142,19 +144,19 @@ def get_FQ_matrix(FQ, reduced_D, scatter_array, Q):
     the
     array
     one_to_zero_sum<>(double red_bot, double* bot);
-    RW = (red_top/red_bot)**.5;
+    RW = sqrt(red_top/red_bot);
 }'''
 '''
 __device__ rw_top(double top, double* Gr, double* exp_data){
     int tx = threadIdx.x;
     //Get the distance between the experimental and calculated curves
-    top[tx] = (exp_data[tx]- Gr[tx])**2;
+    top[tx] = (exp_data[tx]- Gr[tx])*(exp_data[tx]- Gr[tx]);
 }'''
 '''
 __device__ rw_bottom(double bot, double* Gr, double* exp_data){
     //Get the absolute distance of the experimental curve
     int tx = threadIdx.x
-    bot[tx] = (exp_data[tx])**2
+    bot[tx] = (exp_data[tx])*(exp_data[tx])
 }'''
 '''
 __device__ get_FQ_matrix(double* FQ, double* reduced_D, double*
@@ -205,4 +207,4 @@ double ave_scatter, double* Q, double qmin, double qstep){
     //Scattering prefactor
     prefactor = 1/len(reduced_D)/ave_scatter
     F *= prefactor
-}
+}'''

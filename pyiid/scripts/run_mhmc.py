@@ -14,7 +14,9 @@ import pickle
 
 r, gr = load_gr_file(
     '/home/christopher/7_7_7_FinalSum.gr')
-atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
+# atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
+atoms = io.read('/home/christopher/dev/IID_data/results'
+                '/mhmc_NiPd_25nm_variable_T.traj')
 
 i = 0
 t0 = time.clock()
@@ -35,14 +37,20 @@ scale = np.max(gcalc) / np.max(gr)
 print scale
 gr = gr * scale
 # plt.plot(r, gcalc, r, gr), plt.show()
-basename = 'results/mhmc_NiPd_25nm_variable_T'
+basename = '/home/christopher/dev/IID_data/results' \
+           '/mhmc_NiPd_25nm_variable_T_test'
 current_U = Debye_srreal_U(new_atoms, gr)
 print current_U
 u_list = [current_U]
 iterat = 3000
+start_T = .5
+alpha = 10**-2.5
+final_T = .1
 for i in range(iterat):
     try:
-        T = 1 - i/iterat*.9
+        # T = .5 - float(i)/iterat*.99999*.5
+        # T = .1
+        T = start_T*np.exp(-i*alpha) + final_T
         new_atoms, move_type, current_U = MHMC(new_atoms, Debye_srreal_U,
                                                current_U, gr,T, \
                                           .01)

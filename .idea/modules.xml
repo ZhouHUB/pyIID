@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/../IID_data/.idea/IID_data.iml" filepath="$PROJECT_DIR$/../IID_data/.idea/IID_data.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/pyIID.iml" filepath="$PROJECT_DIR$/.idea/pyIID.iml" />
     </modules>
   </component>
