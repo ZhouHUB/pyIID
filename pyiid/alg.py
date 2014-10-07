@@ -3,6 +3,7 @@ __author__ = 'christopher'
 import numpy as np
 from copy import deepcopy as dc
 from ase import Atoms
+from potential_core import Debye_srfit_U
 
 
 def PDF_only_grad(atoms, exp_data, delta_qi, current_U=None):
@@ -33,7 +34,8 @@ def PDF_only_grad(atoms, exp_data, delta_qi, current_U=None):
             new_q[i, j] += delta_qi
 
 
-def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L, delta_qi):
+def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L,
+        delta_qi, fixed=(None,)):
     """
     Hamiltonian monte carlo engine
 
@@ -65,7 +67,7 @@ def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L, delta_qi):
     q = current_atoms.get_positions()
     p = np.random.normal(0, .1, q.shape)
     current_p = p
-    p -= epsilon * grad_U(current_atoms, exp_data, U, delta_qi)\
+    p -= epsilon * grad_U(current_atoms, exp_data, U, delta_qi, fixed)\
          / 2
     # print p
     # print grad_U(current_atoms, exp_data, U, delta_qi)
@@ -95,7 +97,8 @@ def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L, delta_qi):
         return current_atoms, False, current_U, current_K
 
 
-def MHMC(current_atoms, U, current_U, exp_data, T, step_size, rmax):
+def MHMC(current_atoms, U, current_U, exp_data, T, step_size, rmax, rmin,
+         fixed=None):
     """Metropolis Hastings monte carlo engine
 
     Parameters
@@ -122,8 +125,13 @@ def MHMC(current_atoms, U, current_U, exp_data, T, step_size, rmax):
 
     delta_q = np.random.normal(0, step_size, (len(current_atoms), 3))
     prop_atoms = dc(current_atoms)
+    if fixed is not None:
+        for a in fixed:
+            delta_q[[atom.index for atom in prop_atoms if atom.tag == a]] = \
+                np.zeros((3,))
+
     prop_atoms.translate(delta_q)
-    prop_U = U(prop_atoms, exp_data, rmax)
+    prop_U = U(prop_atoms, exp_data, rmax, rmin)
     if prop_U < current_U:
         return prop_atoms, True, prop_U
     elif np.random.random((1,)) * 1/T < np.exp((current_U - prop_U)):
@@ -132,11 +140,15 @@ def MHMC(current_atoms, U, current_U, exp_data, T, step_size, rmax):
         return current_atoms, (False, False), current_U
 
 
-class MCAtoms(Atoms):
-    def __init__(self, Atoms):
-        self.atoms = Atoms
-
-    def run_mc(self, iterations):
-        i = 0
-        while i < iterations:
-            self.mc_step
+def srFit_mhmc(atom_len, current_U, fit, T, step_size, U = Debye_srfit_U):
+    delta_q = np.random.normal(0, step_size, (atom_len, 3))
+    old_q = fit._contributions['NiPd'].NiPd.phase.stru.xyz
+    fit._contributions['NiPd'].NiPd.phase.stru.xyz +=delta_q
+    prop_U = U(fit)
+    if prop_U < current_U:
+        return fit, True, prop_U
+    elif np.random.random((1,)) * 1/T < np.exp((current_U - prop_U)):
+        return fit, False, prop_U
+    else:
+        fit._contributions['NiPd'].NiPd.phase.stru.xyz = old_q
+        return fit, (False, False), current_U

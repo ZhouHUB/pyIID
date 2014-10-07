@@ -14,15 +14,16 @@ import pickle
 
 r, gr = load_gr_file(
     '/home/christopher/7_7_7_FinalSum.gr')
-atoms = io.read('/home/christopher/pdfgui_np_35_rattle1.xyz')
+# atoms = io.read('/home/christopher/pdfgui_np_35_rattle1.xyz')
 # atoms = io.read('/home/christopher/dev/IID_data/results'
 #                 '/mhmc_NiPd_25nm_variable_T.traj')
-# plt.plot(r[:2501],gr[:2501])
+atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
+# plt.plot(r[250:2501],gr[250:2501])
 # plt.show()
-# print r[2501]
+# print r[250]
 # AAA
-gr = gr[:3501]
-r = r[:3501]
+gr = gr[250:2501]
+r = r[250:2501]
 
 i = 0
 t0 = time.clock()
@@ -33,20 +34,23 @@ current_atoms = atoms[:]
 new_atoms = current_atoms
 traj = [new_atoms]
 
-rmax =35.01
+rmax =25.01
+rmin = 2.5
 dpc = DebyePDFCalculator()
 dpc.qmax = 25
-dpc.rmin = 0.00
+dpc.rmin = rmin
 dpc.rmax = rmax
 
 gcalc = dpc(convert_atoms_to_stru(new_atoms), qmin=2.5)[1]
 scale = np.max(gcalc) / np.max(gr)
 print scale
 gr = gr * scale
+print len(r), len(gcalc)
 # plt.plot(r, gcalc, r, gr), plt.show()
+# AAA
 basename = '/home/christopher/dev/IID_data/results' \
-           '/mhmc_NiPd_35nm_expT'
-current_U = Debye_srreal_U(new_atoms, gr, rmax)
+           '/mhmc_NiPd_25nm_rmin'
+current_U = Debye_srreal_U(new_atoms, gr, rmax, rmin)
 print current_U
 u_list = [current_U]
 iterat = 3000
@@ -54,27 +58,28 @@ start_T = .9
 alpha = 10**-2.5
 final_T = .1
 for i in range(iterat):
-    try:
-        # T = .5 - float(i)/iterat*.99999*.5
-        # T = .1
-        T = start_T*np.exp(-i*alpha) + final_T
-        new_atoms, move_type, current_U = MHMC(new_atoms, Debye_srreal_U,
-                                               current_U, gr,T, \
-                                          .01, rmax)
-        traj += [new_atoms]
-        move_list.append(move_type)
-        u_list.append(current_U)
-        print i, current_U, move_type, T
-        i += 1
-    # except:
-    #     raise
-    except KeyboardInterrupt:
-        io.write(basename+'.traj', traj)
-        with open(basename+'.txt', 'wb') as f:
-            pickle.dump(u_list, f)
-        with open(basename+'_bool.txt', 'wb') as f:
-            pickle.dump(move_list, f)
-        raise
+    if current_U < .20:
+        break
+    else:
+        try:
+            # T = .5 - float(i)/iterat*.99999*.5
+            # T = .1
+            T = start_T*np.exp(-i*alpha) + final_T
+            new_atoms, move_type, current_U = MHMC(new_atoms, Debye_srreal_U, current_U, gr,T,  .01, rmax, rmin)
+            traj += [new_atoms]
+            move_list.append(move_type)
+            u_list.append(current_U)
+            print i, current_U, move_type, T
+            i += 1
+        # except:
+        #     raise
+        except KeyboardInterrupt:
+            io.write(basename+'.traj', traj)
+            with open(basename+'.txt', 'wb') as f:
+                pickle.dump(u_list, f)
+            with open(basename+'_bool.txt', 'wb') as f:
+                pickle.dump(move_list, f)
+            raise
 t1 = time.clock()
 
 print 'time = ', (t1 - t0), ' sec'
@@ -102,10 +107,10 @@ plt.plot(
 plt.show()
 baseline = np.min(gr) * 1.7
 
-dpc = DebyePDFCalculator()
-dpc.qmax = 25
-dpc.rmin = 0.00
-dpc.rmax = 40.01
+# dpc = DebyePDFCalculator()
+# dpc.qmax = 25
+# dpc.rmin = 0.00
+# dpc.rmax = 40.01
 
 gcalc = dpc(convert_atoms_to_stru(traj[-1]), qmin=2.5)[1]
 gdiff = gr - gcalc
