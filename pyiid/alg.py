@@ -147,6 +147,9 @@ def srFit_mhmc(atom_len, current_U, fit, T, step_size, U = Debye_srfit_U):
     prop_U = U(fit)
     if prop_U < current_U:
         return fit, True, prop_U
+    elif T <= 0:
+        fit._contributions['NiPd'].NiPd.phase.stru.xyz = old_q
+        return fit, (False, False), current_U
     elif np.random.random((1,)) * 1/T < np.exp((current_U - prop_U)):
         return fit, False, prop_U
     else:

@@ -71,3 +71,4 @@ docs/_build/
 *.tif
 *.dat
 *.DAT
+.idea

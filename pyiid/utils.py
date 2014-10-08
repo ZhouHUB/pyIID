@@ -65,3 +65,16 @@ def load_gr_file(gr_file=None, skiplines=None):
                     break
     data = np.loadtxt(gr_file, skiprows=skiplines)
     return data[:, 0], data[:, 1]
+
+
+def convert_stru_to_atoms(stru):
+    ase_atoms = []
+    symbols = []
+    xyz = []
+    tags = []
+    for d_atom in stru:
+        symbols.append(d_atom.element)
+        xyz.append(d_atom.xyz)
+        tags.append(d_atom.label)
+    atoms = AAtoms(symbols, xyz, tags=tags)
+    return atoms

@@ -3,6 +3,8 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/../IID_data/.idea/IID_data.iml" filepath="$PROJECT_DIR$/../IID_data/.idea/IID_data.iml" />
+      <module fileurl="file://$USER_HOME$/other_source/cmi/cmi_exchange/cmi_scripts/.idea/cmi_scripts.iml" filepath="$USER_HOME$/other_source/cmi/cmi_exchange/cmi_scripts/.idea/cmi_scripts.iml" />
+      <module fileurl="file://$USER_HOME$/PycharmProjects/nanoparticle_build_fit/.idea/nanoparticle_build_fit.iml" filepath="$USER_HOME$/PycharmProjects/nanoparticle_build_fit/.idea/nanoparticle_build_fit.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/pyIID.iml" filepath="$PROJECT_DIR$/.idea/pyIID.iml" />
     </modules>
   </component>

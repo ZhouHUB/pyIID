@@ -12,6 +12,7 @@ from diffpy.srfit.fitbase import FitRecipe, FitResults
 from pyiid.potential_core import Debye_srfit_U
 from pyiid.alg import srFit_mhmc
 from pyiid.utils import convert_atoms_to_stru
+import copy
 
 atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
 current_atoms = atoms[:]
@@ -58,11 +59,10 @@ nipdFit.constrain(lattice.c, zoomscale)
 
 
 # print nipdFit._contributions['NiPd'].NiPd.phase.stru.xyz
-# new = nipdFit
+# new = copy.deepcopy(nipdFit)
 # new._contributions['NiPd'].NiPd.phase.stru.xyz += np.ones(
 #     nipdFit._contributions['NiPd'].NiPd.phase.stru.xyz.shape)
 # print nipdFit._contributions['NiPd'].NiPd.phase.stru.xyz
-# AAA
 # nipdPDF.NiPd.phase.stru.xyz
 
 
@@ -117,31 +117,6 @@ print 'time = ', (t1 - t0), ' sec'
 print u_list[-1]
 dist_from_crystal = []
 q_crystal = current_atoms.get_positions()
-
-for atoms in traj:
-    q1 = atoms.get_positions()
-    # print q1
-    W = q1 - q_crystal
-    # print W
-    d = 0
-    for element in W:
-        d += np.dot(element, element)
-    d = np.sqrt(d)
-    dist_from_crystal.append(d)
-x_line = np.arange(i + 1)
-# print '\n\n\n'
-# print len(x_line), len(dist_from_crystal), len(u_list)
-plt.plot(
-    # x_line, dist_from_crystal, 'k',
-    x_line, u_list, 'r'
-)
-plt.show()
-baseline = np.min(gr) * 1.7
-
-# dpc = DebyePDFCalculator()
-# dpc.qmax = 25
-# dpc.rmin = 0.00
-# dpc.rmax = 40.01
 
 # Get the experimental data from the recipe
 r = nipdFit.NiPd.profile.x

@@ -5,6 +5,8 @@
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="IID_data" />
+    <orderEntry type="module" module-name="nanoparticle_build_fit" />
+    <orderEntry type="module" module-name="cmi_scripts" />
   </component>
 </module>
 
