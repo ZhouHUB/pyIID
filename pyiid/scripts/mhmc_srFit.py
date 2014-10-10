@@ -11,7 +11,7 @@ from diffpy.srfit.fitbase import FitRecipe, FitResults
 
 from pyiid.potential_core import Debye_srfit_U
 from pyiid.alg import srFit_mhmc
-from pyiid.utils import convert_atoms_to_stru
+from pyiid.utils import convert_atoms_to_stru, convert_stru_to_atoms
 import copy
 
 atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
@@ -69,6 +69,10 @@ nipdFit.constrain(lattice.c, zoomscale)
 
 t0 = time.clock()
 
+traj = convert_stru_to_atoms(nipdFit._contributions[
+                                       'NiPd'].NiPd.phase.stru)
+
+
 move_list = []
 
 basename = '/home/christopher/dev/IID_data/results' \
@@ -91,13 +95,15 @@ for i in range(iterat):
     else:
         try:
             # T = .5 - float(i)/iterat*.99999*.5
-            T = .1
+            T = 0
             # T = start_T*np.exp(-i*alpha) + final_T
             new_fit, move_type, current_U = srFit_mhmc(atom_len, current_U,
                                                        nipdFit, T, .01,
                                                        U = Debye_srfit_U)
 
-            # traj += [new_atoms]
+            new_atoms = convert_stru_to_atoms(nipdFit._contributions[
+                                       'NiPd'].NiPd.phase.stru)
+            traj += new_atoms
             move_list.append(move_type)
             u_list.append(current_U)
             print i, current_U, move_type, T
@@ -105,7 +111,7 @@ for i in range(iterat):
         # except:
         #     raise
         except KeyboardInterrupt:
-            # io.write(basename+'.traj', traj)
+            io.write(basename+'.traj', traj)
             with open(basename+'.txt', 'wb') as f:
                 pickle.dump(u_list, f)
             with open(basename+'_bool.txt', 'wb') as f:
@@ -140,8 +146,8 @@ plt.legend()
 
 plt.show()
 
-# view(traj)
-# io.write(basename+'.traj', traj)
+view(traj)
+io.write(basename+'.traj', traj)
 
 with open(basename+'.txt', 'wb') as f:
     pickle.dump(u_list, f)

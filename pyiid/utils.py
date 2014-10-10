@@ -68,7 +68,6 @@ def load_gr_file(gr_file=None, skiplines=None):
 
 
 def convert_stru_to_atoms(stru):
-    ase_atoms = []
     symbols = []
     xyz = []
     tags = []
@@ -76,5 +75,8 @@ def convert_stru_to_atoms(stru):
         symbols.append(d_atom.element)
         xyz.append(d_atom.xyz)
         tags.append(d_atom.label)
-    atoms = AAtoms(symbols, xyz, tags=tags)
+    # print symbols
+    # print np.array(xyz)
+    # print tags
+    atoms = AAtoms(symbols, np.array(xyz), tags=tags)
     return atoms
