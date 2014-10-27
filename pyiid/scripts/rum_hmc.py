@@ -27,7 +27,7 @@ move_list =[]
 u_list =[]
 k_list = []
 #this process is slow so only take some of the atoms
-new_atoms = current_atoms[:100]
+new_atoms = current_atoms[:10]
 
 #initial image for atoms
 traj =[new_atoms]
