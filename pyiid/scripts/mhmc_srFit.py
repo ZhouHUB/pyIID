@@ -1,3 +1,6 @@
+'''There is a problem with this code, it seems to copy tons of atoms without
+remvoing them'''
+
 __author__ = 'christopher'
 import time
 import pickle
