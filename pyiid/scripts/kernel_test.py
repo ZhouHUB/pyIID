@@ -13,10 +13,11 @@ dpc = DebyePDFCalculator()
 # t0 = time.time()
 
 # Load Atoms
-# atoms = io.read('/home/christopher/25_nm_half.xyz')
-atoms = io.read('/home/christopher/pdfgui_np_35.xyz')
+atoms = io.read('/home/christopher/25_nm_half.xyz')
+# atoms = io.read('/home/christopher/pdfgui_np_35.xyz')
 q = atoms.get_positions()
 symbols = atoms.get_chemical_symbols()
+
 # define Q information
 
 Qmax = 25.
@@ -34,7 +35,7 @@ d = np.zeros((N, N, 3))
 n_range = range(N)
 range_3 = range(3)
 # Get pair coordinate distance array
-get_d_array(d, q, n_range, range_3)
+get_d_array(d, q, n_range)
 print d
 
 # t1 = time.time()
@@ -55,7 +56,8 @@ get_fq_array(fq, r, scatter_array, n_range, Qmax_Qmin_bin_range, Qbin)
 
 norm_array = np.zeros(len(Q))
 get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range)
-FQ = np.nan_to_num(1 / (N * norm_array) * fq)
+# FQ = np.nan_to_num(1 / (N * norm_array) * fq)
+FQ = fq
 print FQ
 plt.plot(Q, FQ)
 plt.show()
