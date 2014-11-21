@@ -9,17 +9,15 @@ from pyiid.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
 
 dpc = DebyePDFCalculator()
 
-# import time
-# t0 = time.time()
-
 # Load Atoms
 atoms = io.read('/home/christopher/25_nm_half.xyz')
 # atoms = io.read('/home/christopher/pdfgui_np_35.xyz')
+
+#extract data from atoms
 q = atoms.get_positions()
 symbols = atoms.get_chemical_symbols()
 
 # define Q information
-
 Qmax = 25.
 Qmin = 2.5
 Qbin = .11846216
@@ -28,34 +26,37 @@ Qmax_bin = int(Qmax / Qbin)
 Qmax_Qmin_bin_range = np.arange(Qmin_bin, Qmax_bin + Qbin)
 Q = np.arange(0, Qmax, Qbin)
 
-# print q
+#initialize constants
 N = len(q)
 print N
 d = np.zeros((N, N, 3))
 n_range = range(N)
 range_3 = range(3)
+
 # Get pair coordinate distance array
 get_d_array(d, q, n_range)
 print d
-
-# t1 = time.time()
-# print d
 
 #Get pair distance array
 r = np.zeros((N, N))
 get_r_array(r, d, n_range)
 print r
+
 #get scatter array
 scatter_array = np.zeros((N, len(Q)))
 get_scatter_array(scatter_array, symbols, dpc, n_range,
                   Qmax_Qmin_bin_range, Qbin)
 
+#remove self_scattering
 np.fill_diagonal(scatter_array, 0)
+
+#get non-normalized FQ
 fq = np.zeros(len(Q))
 get_fq_array(fq, r, scatter_array, n_range, Qmax_Qmin_bin_range, Qbin)
 
-norm_array = np.zeros(len(Q))
-get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range)
+#Normalize FQ
+# norm_array = np.zeros(len(Q))
+# get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range)
 # FQ = np.nan_to_num(1 / (N * norm_array) * fq)
 FQ = fq
 print FQ
