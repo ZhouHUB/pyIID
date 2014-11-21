@@ -69,6 +69,7 @@ AAA
 rmax = 40
 rbin = .01
 rbins = rmax / rbin
+
 print rbins
 gr = np.zeros(rbins)
 for tx in n_range:

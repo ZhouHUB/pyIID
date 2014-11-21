@@ -122,3 +122,9 @@ def get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range,
                 norm_array*1/(scatter_array.shape[0])**2
 
 # def get_pdf_at_Qmin(qmin):
+
+
+def get_gr(gr, r, rbin, n_range):
+    for tx in n_range:
+        for ty in n_range:
+            gr[int(r[tx, ty] / rbin)] += 1
