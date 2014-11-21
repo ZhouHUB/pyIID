@@ -19,7 +19,8 @@ symbols = atoms.get_chemical_symbols()
 
 # define Q information
 Qmax = 25.
-Qmin = 2.5
+# Qmin = 2.5
+Qmin = 0.0
 Qbin = .11846216
 Qmin_bin = int(Qmin / Qbin)
 Qmax_bin = int(Qmax / Qbin)
@@ -46,40 +47,19 @@ print r
 scatter_array = np.zeros((N, len(Q)))
 get_scatter_array(scatter_array, symbols, dpc, n_range,
                   Qmax_Qmin_bin_range, Qbin)
-
+print scatter_array
 #remove self_scattering
-np.fill_diagonal(scatter_array, 0)
+# np.fill_diagonal(scatter_array, 0)
 
 #get non-normalized FQ
 fq = np.zeros(len(Q))
 get_fq_array(fq, r, scatter_array, n_range, Qmax_Qmin_bin_range, Qbin)
 
 #Normalize FQ
-# norm_array = np.zeros(len(Q))
-# get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range)
-# FQ = np.nan_to_num(1 / (N * norm_array) * fq)
-FQ = fq
+norm_array = np.zeros(len(Q))
+get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range)
+FQ = np.nan_to_num(1 / (N * norm_array) * fq)
+# ''')
 print FQ
 plt.plot(Q, FQ)
 plt.show()
-AAA
-
-# t2 = time.time()
-# print reduced_d
-rmax = 40
-rbin = .01
-rbins = rmax / rbin
-
-print rbins
-gr = np.zeros(rbins)
-for tx in n_range:
-    for ty in n_range:
-        gr[int(r[tx, ty] / rbin)] += 1
-        # print gr
-        # import matplotlib.pyplot as plt
-        # plt.plot(np.arange(0, rmax, rbin), gr)
-        # plt.show()
-
-        # print t1-t0
-        # print t2-t1
-        # print t2-t0
