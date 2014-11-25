@@ -90,6 +90,7 @@ def get_fq_array(fq, r, scatter_array, n_range, Qmax_Qmin_bin_range, Qbin):
             if tx != ty:
                 for kq in Qmax_Qmin_bin_range:
                     dwscale = 1
+                    # dwscale = math.exp(-.5 * dw_signal_sqrd * (kq*Qbin)**2)
                     fq[kq] += smscale * \
                               dwscale * \
                               scatter_array[tx, kq] * \
@@ -130,7 +131,22 @@ def get_pdf_at_Qmin(fpad):
     nfromdr = int(ceil(pi / rstep / Qstep))
 
 
+def get_dw_sigma_squared(s, u, r, n_range):
+
+
+
 def get_gr(gr, r, rbin, n_range):
+    """
+    Generate gr the histogram of the atomic distances
+
+    Parameters
+    ----------
+    gr: Nd array
+    r: NxN array
+    rbin: float
+    n_range: Nd array
+    :return:
+    """
     for tx in n_range:
         for ty in n_range:
             gr[int(r[tx, ty] / rbin)] += 1

@@ -72,3 +72,4 @@ docs/_build/
 *.dat
 *.DAT
 .idea
+pyiid/grad_test.txt
