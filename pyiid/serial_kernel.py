@@ -99,8 +99,7 @@ def get_fq_array(fq, r, scatter_array, n_range, Qmax_Qmin_bin_range, Qbin):
                               math.sin(kq * Qbin * r[tx, ty])
 
 
-def get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range,
-                            n_range):
+def get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -131,8 +130,15 @@ def get_pdf_at_Qmin(fpad):
     nfromdr = int(ceil(pi / rstep / Qstep))
 
 
-def get_dw_sigma_squared(s, u, r, n_range):
-
+def get_dw_sigma_squared(s, u, r, d, n_range):
+    for tx in n_range:
+            for ty in n_range:
+                rnormx = d[tx, ty, 0]/r[tx, ty]
+                rnormy = d[tx, ty, 1]/r[tx, ty]
+                rnormz = d[tx, ty, 2]/r[tx, ty]
+                ux, uy, uz = u[tx] - u[ty]
+                u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
+                s[tx, ty] = u_dot_r * u_dot_r
 
 
 def get_gr(gr, r, rbin, n_range):
