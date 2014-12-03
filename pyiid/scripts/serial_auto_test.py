@@ -1,13 +1,12 @@
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import cProfile
-# cProfile.run('''
+cProfile.run('''
 __author__ = 'christopher'
 import numpy as np
 import ase.io as io
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-from pyiid.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
-    get_fq_array, get_normalization_array, get_pdf_at_Qmin
-from scipy.fftpack import idst
+from pyiid.gpu.serial_autojit_kernel import get_d_array, get_r_array, get_scatter_array, \
+    get_fq_array, get_normalization_array
 
 dpc = DebyePDFCalculator()
 
@@ -21,17 +20,13 @@ symbols = atoms.get_chemical_symbols()
 
 # define Q information
 Qmax = 25.
-rmax = 40
 # Qmin = 2.5
 Qmin = 0.0
-Qbin = np.pi/(rmax+6*2*np.pi/25)
+Qbin = .11846216
 Qmin_bin = int(Qmin / Qbin)
 Qmax_bin = int(Qmax / Qbin)
 Qmax_Qmin_bin_range = np.arange(Qmin_bin, Qmax_bin + Qbin)
 Q = np.arange(0, Qmax, Qbin)
-
-rstep = .01
-
 
 #initialize constants
 N = len(q)
@@ -68,14 +63,7 @@ get_fq_array(fq, r, scatter_array, n_range, Qmax_Qmin_bin_range, Qbin)
 norm_array = np.zeros(len(Q))
 get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_range)
 FQ = np.nan_to_num(1 / (N * norm_array) * fq)
-print(FQ)
-# pdf = idst(FQ)
-pdf0 = get_pdf_at_Qmin(FQ, rstep, Qbin, np.arange(0, rmax, rstep), Qmin,
-                             rmax)
-# print pdf
-# plt.plot(pdf)
-# plt.show()
-# ''', sort='cumtime')
+''', sort='cumtime')
 # print FQ
 # plt.plot(Q, FQ)
 # plt.show()
