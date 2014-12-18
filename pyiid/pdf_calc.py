@@ -88,8 +88,6 @@ class pdf_calc(Calculator):
 if __name__ == '__main__':
     import cProfile
     from ase import Atoms
-    atoms = Atoms
-    atoms.get_potential_energy()
     import matplotlib.pyplot as plt
     # cProfile.run('''
     import ase.io as aseio
