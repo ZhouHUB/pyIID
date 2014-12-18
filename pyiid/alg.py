@@ -96,6 +96,9 @@ def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L,
     else:
         return current_atoms, False, current_U, current_K
 
+def HMC(current_atoms, U, current_U, grad_U, exp_data, T, epsilon, L,
+        delta_qi, fixed=(None,)):
+
 
 def MHMC(current_atoms, U, current_U, exp_data, T, step_size, rmax, rmin,
          fixed=None):
