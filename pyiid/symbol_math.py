@@ -48,13 +48,16 @@ RW = symbols('RW')
 al = symbols('alpha')
 Rw = sqrt(summation((gob(r)-al*gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2,
           (r, rmin, rmax)))
-pprint(Rw)
-print(latex(Rw))
-pprint(diff(Rw, x).simplify()
-       .subs(sqrt(summation((gob(r)-al*gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2,
-          (r, rmin, rmax))), RW)
-       )
-print(latex(diff(Rw, x).simplify().subs(sqrt(summation((gob(r)-gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2, (r, rmin, rmax))), RW)))
+# pprint(Rw)
+# print(latex(Rw))
+sol = diff(Rw, x).simplify().subs(sqrt(summation((gob(r)-al*gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2, (r, rmin, rmax))), RW)
+pprint(sol)
+dg = symbols('Delta_g')
+
+# print(latex(sol))
+pprint(sol.subs((al*gcalc-(gob(r))), dg))
+pprint()
+pprint(dg)
 '''
 F = Function('F')(Q, x)
 gcalc = 2/pi*Integral(F*sin(Q*r), (Q,Qmin, Qmax))

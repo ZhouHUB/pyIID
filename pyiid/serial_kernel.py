@@ -4,7 +4,6 @@ from numbapro import autojit
 import mkl
 from numbapro import cuda
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy import interpolate
 import numpy.linalg as lg
 
@@ -315,6 +314,10 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     N = len(grad_pdf)
     for tx in range(N):
         for tz in range(3):
-            part1 = 1.0/np.sum(np.sum(weight[:]*(scale*gcalc[:]-gobs[:])**2))
-            part2 = np.sum(scale*(scale*gcalc[:] - gobs[:])*grad_pdf[tx, tz, :])
+            # part1 = 1.0/np.sum(weight[:]*(scale*gcalc[:]-gobs[:])**2)
+            part1 = 1.0/np.sum(weight[:]*(scale*gcalc[:]-gobs[:]))
+            # print('part1', part1)
+            # part2 = np.sum(scale*(scale*gcalc[:] - gobs[:])*grad_pdf[tx, tz, :])
+            part2 = np.sum(scale*grad_pdf[tx, tz, :])
+            # print('part2', part2)
             grad_rw[tx, tz] = rw.real/part1.real * part2.real

@@ -99,4 +99,5 @@ def wrap_grad_rw(atoms, gobs, Qmax=25., Qmin=0.0, Qbin=.1, rmax=40., rstep=.01, 
     grad_pdf(pdf_grad, fq_grad, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
+    # print 'scale:', scale
     return grad_rw*100
