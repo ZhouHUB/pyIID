@@ -50,7 +50,7 @@ def get_r_array(r, d, n):
             r[tx, ty] = math.sqrt(
                 d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
 
-@autojit(target=targ)
+# @autojit(target=targ)
 def get_scatter_array(scatter_array, symbols, dpc, n, Qmin_bin, Qmax_bin, Qbin):
     """
     Generate the scattering array, which holds all the Q dependant scatter

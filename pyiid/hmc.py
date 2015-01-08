@@ -117,44 +117,55 @@ if __name__ == '__main__':
     from pyiid.pdf_calc import pdf_calc
     from copy import deepcopy as dc
     import ase.io as aseio
-    # atomsi = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
-    # atomsi = Atoms('Au4', [(0,0,0), (3,0,0), (0,3.5,0), (3,3,0)])
-    atomsi = Atoms('Au2', [(0,0,0), (3,0,0)])
-    pdf, fq = wrap_pdf(atomsi,
+    from utils import load_gr_file
+    import matplotlib.pyplot as plt
+
+
+    atomsi = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
+    atomsi.rattle(.1)
+    # atomsi = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0)])
+    # atomsi = Atoms('Au2', [(0,0,0), (3,0,0)])
+    # pdf, fq = wrap_pdf(atomsi,
                        # Qmin=2.5
-    )
+    # )
+    apdf, afq = wrap_pdf(atomsi, Qmin=2.5)
+    plt.plot(apdf)
+    r, pdf = load_gr_file('/home/christopher/7_7_7_FinalSum.gr')
+    pdf = pdf[:-1]
+    plt.plot(pdf)
+    plt.show()
     calc = pdf_calc(gobs=pdf,
                     conv=.0001,
                     # Qmax = 100
-                    # Qmin=2.5
+                    Qmin=2.5
     )
     atomsi.set_calculator(calc)
-    atoms2 = dc(atomsi)
-    atoms2[1].position = (3.08,0,0)
+    # atoms2 = dc(atomsi)
+    # atoms2[1].position = (3.05,0,0)
     # atoms2[2].position = (0,3.,0)
-    pdf2, fq2 = wrap_pdf(atoms2,
-                       # Qmin=2.5
-    )
-    rwi = atoms2.get_potential_energy()
+    # pdf2, fq2 = wrap_pdf(atoms2,
+    #                    Qmin=2.5
+    # )
+    rwi = atomsi.get_potential_energy()
     print(rwi*10000)
-    atoms2.set_velocities(np.zeros((len(atoms2), 3)))
+    atomsi.set_velocities(np.zeros((len(atomsi), 3)))
 
     # traj = simulate_dynamics(atoms2, .005, 20)
     pe_list = []
 
 
     # '''
-    traj, accept_list, move_list = run_hmc(atoms2, 50, .005, 5, 0.9, 0, .9,
-                                           1.02, .98, .001, .25)
+    traj, accept_list, move_list = run_hmc(atomsi, 100, .005, 5, 0.9, 0, .9,
+                                           1.02, .98, .001, .65)
 
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
     # print(accept_list)
     # print(traj)
-    print(rwi - traj[-1].get_potential_energy())
+    print((rwi - traj[-1].get_potential_energy())*10000)
 
     wtraj = PickleTrajectory(
-        '/home/christopher/dev/pyIID/extra/au_two'
+        '/home/christopher/dev/pyIID/extra/nipd_test'
                              '.traj'
                              ,'w')
     for atoms in traj:
@@ -167,7 +178,7 @@ if __name__ == '__main__':
     alp = 500
     # '''
     i = 0
-    import matplotlib.pyplot as plt
+
     plt.plot(pe_list)
     plt.show()
     '''
