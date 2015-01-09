@@ -4,18 +4,6 @@ import numpy as np
 from pyiid.kernel_wrap import wrap_rw, wrap_grad_rw, wrap_pdf
 
 
-def get_rw_grad(atoms):
-    print 'hi'
-    print atoms
-    return np.ones((len(atoms), 3))
-
-
-def get_rw(atoms):
-    print 'hi'
-    print atoms
-    return 1
-
-
 class PDFCalc(Calculator):
     """
     Class for doing PDF based RW calculations

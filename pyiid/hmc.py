@@ -253,23 +253,24 @@ if __name__ == '__main__':
     from pyiid.pdfcalc import PDFCalc
     from copy import deepcopy as dc
     import ase.io as aseio
-    from utils import load_gr_file
+    from pyiid.utils import load_gr_file
     import matplotlib.pyplot as plt
 
 
     atomsi = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
-    atomsi.rattle(.1)
+    # atomsi.rattle(.1)
     # atomsi = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0)])
     # atomsi = Atoms('Au2', [(0,0,0), (3,0,0)])
     # pdf, fq = wrap_pdf(atomsi,
     # Qmin=2.5
     # )
-    apdf, afq = wrap_pdf(atomsi, Qmin=2.5)
+    apdf, afq = wrap_pdf(atomsi, qmin=2.5)
     plt.plot(apdf)
     r, pdf = load_gr_file('/home/christopher/7_7_7_FinalSum.gr')
     pdf = pdf[:-1]
-    plt.plot(pdf)
+    # plt.plot(pdf)
     plt.show()
+    AAA
     calc = PDFCalc(gobs=pdf, qmin=2.5, Qmin=2.5, conv=.0001)
     atomsi.set_calculator(calc)
     # atoms2 = dc(atomsi)
