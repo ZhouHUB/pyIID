@@ -5,7 +5,7 @@ from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 dpc = DebyePDFCalculator()
 
 
-def wrap_fq(atoms, qmax=25., qbin=.1):
+def wrap_fq(atoms, qmax=25., qmin=0.0, qbin=.1):
     """
     Generate the reduced structure function
 
@@ -26,7 +26,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     fq:1darray
         The reduced structure function
     """
-    qmin = 0.0
     q = atoms.get_positions()
     symbols = atoms.get_chemical_symbols()
 
@@ -58,6 +57,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / (n * norm_array) * fq)
     np.seterr(**old_settings)
+    fq[:qmin_bin] = 0.0
     return fq
 
 
@@ -88,12 +88,8 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     fq:1darray
         The reduced structure function
     """
-    fq = wrap_fq(atoms, qmax, qbin)
-    qmin_bin = int(qmin / qbin)
-    fqpad = fq
-    fqpad[:qmin_bin] = 0.0
-    qmin = 0.0
-    pdf0 = get_pdf_at_qmin(fqpad, rstep, qbin, np.arange(0, rmax, rstep), qmin,
+    fq = wrap_fq(atoms, qmax, qmin, qbin)
+    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep), 0.0,
                            rmax)
     return pdf0, fq
 
@@ -191,9 +187,9 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
+            dfq_dq[tx, tz, :qmin_bin] = 0.0
             dfq_dq[tx, tz] = np.nan_to_num(
                 1 / (n * norm_array) * dfq_dq[tx, tz])
-
     np.seterr(**old_settings)
     return dfq_dq
 
@@ -232,7 +228,6 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
         rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
                                        rstep)
     fq_grad = wrap_fq_grad(atoms, qmax, qmin, qbin)
-    n = len(atoms)
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
     grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep), qmin,
              rmax)
