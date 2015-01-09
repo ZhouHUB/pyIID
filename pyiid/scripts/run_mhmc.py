@@ -1,16 +1,18 @@
 __author__ = 'christopher'
 import time
+import pickle
 
 import ase.io as io
 from ase.visualize import view
 import matplotlib.pyplot as plt
 import numpy as np
-from pyiid.utils import load_gr_file
-from pyiid.potential_core import Debye_srreal_U
-from pyiid.alg import MHMC
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+
+from pyiid.utils import load_gr_file
+from pyiid.old_hmc.potential_core import Debye_srreal_U
+from pyiid.old_hmc.alg import MHMC
 from pyiid.utils import convert_atoms_to_stru
-import pickle
+
 
 r, gr = load_gr_file(
     '/home/christopher/7_7_7_FinalSum.gr')

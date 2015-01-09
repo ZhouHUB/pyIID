@@ -16,20 +16,21 @@ def get_rw(atoms):
     return 1
 
 
-class pdf_calc(Calculator):
+class PDFCalc(Calculator):
     """
     Class for doing PDF based RW calculations
     """
     implemented_properties = ['energy', 'forces']
 
-    def __init__(self, restart=None, ignore_bad_restart_file=False,
-                  label=None, atoms=None, gobs = None, Qmin=0.0, Qmax = 25.0, Qbin = None, rmin = 0.0, rmax = 40.0, rbin = .01, conv = 1.,**kwargs):
+    def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
+                 atoms=None, gobs=None, qmin=0.0, qmax=25.0, qbin=None,
+                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., **kwargs):
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
-        self.Qmin = Qmin
-        self.Qmax = Qmax
-        if Qbin is None:
-            self.Qbin = np.pi/(rmax+6*2*np.pi/Qmax)
+        self.Qmin = qmin
+        self.Qmax = qmax
+        if qbin is None:
+            self.Qbin = np.pi / (rmax + 6 * 2 * np.pi / qmax)
         self.rmin = rmin
         self.rmax = rmax
         self.rmin = rmin
@@ -42,7 +43,7 @@ class pdf_calc(Calculator):
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
-                                  'pbc', 'charges','magmoms']):
+                                  'pbc', 'charges', 'magmoms']):
         """PDF Calculator
 
         atoms: Atoms object
@@ -74,14 +75,17 @@ class pdf_calc(Calculator):
                     self.calculate_forces(self.atoms)
 
     def calculate_energy(self, atoms):
-        energy, scale, gcalc, FQ = wrap_rw(atoms, self.gobs, self.Qmax, self.Qmin, self.Qbin, self.rmax, self.rbin)
-        self.energy_free = energy* self.rw_to_eV
-        self.energy_zero = energy* self.rw_to_eV
-        self.results['energy'] = energy* self.rw_to_eV
+        energy, scale, gcalc, fq = wrap_rw(atoms, self.gobs, self.Qmax,
+                                           self.Qmin, self.Qbin, self.rmax,
+                                           self.rbin)
+        self.energy_free = energy * self.rw_to_eV
+        self.energy_zero = energy * self.rw_to_eV
+        self.results['energy'] = energy * self.rw_to_eV
 
     def calculate_forces(self, atoms):
         self.results['forces'] = np.zeros((len(atoms), 3))
-        forces = wrap_grad_rw(atoms, self.gobs, self.Qmax, self.Qmin, self.Qbin, self.rmax, self.rbin) * self.rw_to_eV
+        forces = wrap_grad_rw(atoms, self.gobs, self.Qmax, self.Qmin, self.Qbin,
+                              self.rmax, self.rbin) * self.rw_to_eV
         self.results['forces'] = forces
 
 
@@ -92,9 +96,10 @@ if __name__ == '__main__':
     # cProfile.run('''
     import ase.io as aseio
     from copy import deepcopy as dc
+
     atoms = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
     pdf, FQ = wrap_pdf(atoms, Qmin=2.5)
-    calc = pdf_calc(gobs=pdf, Qmin=2.5)
+    calc = PDFCalc(gobs=pdf, qmin=2.5)
     atoms.set_calculator(calc)
 
     # plt.show()
@@ -110,7 +115,7 @@ if __name__ == '__main__':
     # print(atoms2.get_forces())
     # t2 = time.time()
     # ''', sort='tottime')
-    #     print('energy', t1-t0, 'forces', t2-t1)
+    # print('energy', t1-t0, 'forces', t2-t1)
     plt.plot(pdf)
     plt.plot(pdf2)
     # plt.plot(pdf-pdf2)

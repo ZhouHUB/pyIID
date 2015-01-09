@@ -10,12 +10,12 @@ from ase.visualize import view
 import numpy as np
 import matplotlib.pyplot as plt
 from diffpy.srfit.pdf import PDFContribution
-from diffpy.srfit.fitbase import FitRecipe, FitResults
+from diffpy.srfit.fitbase import FitRecipe
 
-from pyiid.potential_core import Debye_srfit_U
-from pyiid.alg import srFit_mhmc
+from pyiid.old_hmc.potential_core import Debye_srfit_U
+from pyiid.old_hmc.alg import srFit_mhmc
 from pyiid.utils import convert_atoms_to_stru, convert_stru_to_atoms
-import copy
+
 
 atoms = io.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
 current_atoms = atoms[:]

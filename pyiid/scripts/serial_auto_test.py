@@ -23,9 +23,9 @@ Qmax = 25.
 # Qmin = 2.5
 Qmin = 0.0
 Qbin = .11846216
-Qmin_bin = int(Qmin / Qbin)
+qmin_bin = int(Qmin / Qbin)
 Qmax_bin = int(Qmax / Qbin)
-Qmax_Qmin_bin_range = np.arange(Qmin_bin, Qmax_bin + Qbin)
+Qmax_Qmin_bin_range = np.arange(qmin_bin, Qmax_bin + Qbin)
 Q = np.arange(0, Qmax, Qbin)
 
 #initialize constants

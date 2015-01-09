@@ -1,103 +1,235 @@
 __author__ = 'christopher'
 from pyiid.serial_kernel import *
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+# TODO: Replace this SrFit dependence with scikit-xray
 dpc = DebyePDFCalculator()
 
 
-def wrap_FQ(atoms, Qmax=25., Qmin=0.0, Qbin=.1, rmax=40., rstep=.01):
+def wrap_fq(atoms, qmax=25., qmin=0.0, qbin=.1):
+    """
+    Generate the reduced structure function
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+
+    Returns
+    -------
+    
+    fq:1darray
+        The reduced structure function
+    """
     q = atoms.get_positions()
     symbols = atoms.get_chemical_symbols()
 
-    # define Q information and initialize constants
-    Qmin_bin = int(Qmin / Qbin)
-    Qmax_bin = int(Qmax / Qbin) - Qmin_bin
-    Q = np.arange(Qmin, Qmax, Qbin)
-    N = len(q)
+    # define scatter_q information and initialize constants
+    qmin_bin = int(qmin / qbin)
+    qmax_bin = int(qmax / qbin) - qmin_bin
+    scatter_q = np.arange(qmin, qmax, qbin)
+    n = len(q)
 
     # Get pair coordinate distance array
-    d = np.zeros((N, N, 3))
-    get_d_array(d, q, N)
+    d = np.zeros((n, n, 3))
+    get_d_array(d, q, n)
 
-    #Get pair distance array
-    r = np.zeros((N, N))
-    get_r_array(r, d, N)
+    # Get pair distance array
+    r = np.zeros((n, n))
+    get_r_array(r, d, n)
 
-    #get scatter array
-    scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+    # get scatter array
+    scatter_array = np.zeros((n, len(scatter_q)))
+    get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin)
 
-    #get non-normalized FQ
-    fq = np.zeros(len(Q))
-    get_fq_array(fq, r, scatter_array, N, Qmin_bin, Qmax_bin, Qbin)
+    # get non-normalized fq
+    fq = np.zeros(len(scatter_q))
+    get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin)
 
-    #Normalize FQ
-    norm_array = np.zeros(len(Q))
-    get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+    #Normalize fq
+    norm_array = np.zeros(len(scatter_q))
+    get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n)
     old_settings = np.seterr(all='ignore')
-    FQ = np.nan_to_num(1 / (N * norm_array) * fq)
+    fq = np.nan_to_num(1 / (n * norm_array) * fq)
     np.seterr(**old_settings)
-    return FQ
-
-def wrap_pdf(atoms, Qmax=25., Qmin=0.0, Qbin=.1, rmax=40., rstep=.01):
-    FQ = wrap_FQ(atoms, Qmax, Qmin, Qbin, rmax, rstep)
-    pdf0 = get_pdf_at_Qmin(FQ, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
-    return pdf0, FQ
+    return fq
 
 
-def wrap_rw(atoms, gobs, Qmax=25., Qmin=0.0, Qbin=.1, rmax=40., rstep=.01):
-    gcalc, FQ = wrap_pdf(atoms, Qmax, Qmin, Qbin, rmax, rstep)
-    rw, scale = get_rw(gobs, gcalc, weight=None)
-    return rw*100, scale, gcalc, FQ
+def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+    """
+    Generate the atomic pair distribution function
+    
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+    
+    pdf0:1darray
+        The atomic pair distributuion function
+    fq:1darray
+        The reduced structure function
+    """
+    fq = wrap_fq(atoms, qmax, qmin, qbin)
+    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep), qmin,
+                           rmax)
+    return pdf0, fq
 
 
-def wrap_FQ_grad(atoms, Qmax=25., Qmin=0.0, Qbin=.1):
+def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+    """
+    Generate the Rw value
+
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+    
+    rw: float
+        The Rw value in percent
+    scale: float
+        The scale factor between the observed and calculated PDF
+    pdf0:1darray
+        The atomic pair distributuion function
+    fq:1darray
+        The reduced structure function
+    """
+    g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
+    rw, scale = get_rw(gobs, g_calc, weight=None)
+    return rw * 100, scale, g_calc, fq
+
+
+def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
+    """
+    Generate the reduced structure function gradient
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+
+    Returns
+    -------
+    
+    dfq_dq:ndarray
+        The reduced structure function gradient
+    """
     q = atoms.get_positions()
     symbols = atoms.get_chemical_symbols()
 
-    # define Q information and initialize constants
-    Qmin_bin = int(Qmin / Qbin)
-    Qmax_bin = int(Qmax / Qbin)
-    Q = np.arange(Qmin, Qmax, Qbin)
-    N = len(q)
+    # define scatter_q information and initialize constants
+    qmin_bin = int(qmin / qbin)
+    qmax_bin = int(qmax / qbin)
+    scatter_q = np.arange(qmin, qmax, qbin)
+    n = len(q)
 
 
-    #initialize constants
-    N = len(q)
     # Get pair coordinate distance array
-    d = np.zeros((N, N, 3))
-    get_d_array(d, q, N)
+    d = np.zeros((n, n, 3))
+    get_d_array(d, q, n)
 
-    #Get pair distance array
-    r = np.zeros((N, N))
-    get_r_array(r, d, N)
+    # Get pair distance array
+    r = np.zeros((n, n))
+    get_r_array(r, d, n)
 
-    #get scatter array
-    scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+    # get scatter array
+    scatter_array = np.zeros((n, len(scatter_q)))
+    get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin)
 
-    #get non-normalized FQ
+    # get non-normalized FQ
 
     #Normalize FQ
-    norm_array = np.zeros(len(Q))
-    get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+    norm_array = np.zeros(len(scatter_q))
+    get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n)
 
-    grad_p = np.zeros((N, 3, len(Q)))
-    fq_grad_position(grad_p, d, r, scatter_array, norm_array, Qmin_bin, Qmax_bin, Qbin)
+    dfq_dq = np.zeros((n, 3, len(scatter_q)))
+    fq_grad_position(dfq_dq, d, r, scatter_array, norm_array, qmin_bin,
+                     qmax_bin, qbin)
     old_settings = np.seterr(all='ignore')
-    for tx in range(N):
+    for tx in range(n):
         for tz in range(3):
-            grad_p[tx, tz] = np.nan_to_num(1 / (N * norm_array) * grad_p[tx, tz])
+            dfq_dq[tx, tz] = np.nan_to_num(
+                1 / (n * norm_array) * dfq_dq[tx, tz])
     np.seterr(**old_settings)
-    return grad_p
+    return dfq_dq
 
 
-def wrap_grad_rw(atoms, gobs, Qmax=25., Qmin=0.0, Qbin=.1, rmax=40., rstep=.01, rw=None, gcalc=None, scale=None):
+def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
+                 rw=None, gcalc=None, scale=None):
+    """
+    Generate the Rw value gradient
+
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+    
+    grad_rw: float
+        The gradient of the Rw value with respect to the atomic positions, 
+        in percent
+    
+    """
     if rw is None:
-        rw, scale, gcalc, FQ = wrap_rw(atoms, gobs, Qmax, Qmin, Qbin, rmax, rstep)
-    fq_grad = wrap_FQ_grad(atoms, Qmax, Qmin, Qbin)
-    pdf_grad = np.zeros((len(atoms), 3, rmax/rstep))
-    grad_pdf(pdf_grad, fq_grad, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
+        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
+                                       rstep)
+    fq_grad = wrap_fq_grad(atoms, qmax, qmin, qbin)
+    pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
+    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep), qmin,
+             rmax)
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     # print 'scale:', scale
-    return grad_rw*100
+    return grad_rw * 100

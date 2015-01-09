@@ -143,7 +143,7 @@ def get_normalization_array(norm_array, scatter_array, Qmax_Qmin_bin_range, n_ra
 @autojit(target=targ)
 def get_pdf_at_Qmin(fpad):
     # Zero all F values below qmin, which I think we have already done
-    # nqmin = Qmin_bin
+    # nqmin = qmin_bin
     # if nqmin > fpad.shape:
     #     nqmin = fpad.shape
     nfromdr = int(ceil(pi / rstep / Qstep))

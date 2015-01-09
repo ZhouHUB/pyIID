@@ -1,9 +1,10 @@
 __author__ = 'christopher'
 
-import numpy as np
 from copy import deepcopy as dc
-from ase import Atoms
-from potential_core import Debye_srfit_U
+
+import numpy as np
+
+from pyiid.old_hmc.potential_core import Debye_srfit_U
 
 
 def PDF_only_grad(atoms, exp_data, delta_qi, current_U=None):

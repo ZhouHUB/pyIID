@@ -14,6 +14,7 @@ try:
 except:
     targ = 'cpu'
 
+
 @autojit(target=targ)
 def get_d_array(d, q, n):
     """
@@ -31,6 +32,7 @@ def get_d_array(d, q, n):
         for ty in range(n):
             for tz in range(3):
                 d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
+
 
 @autojit(target=targ)
 def get_r_array(r, d, n):
@@ -50,8 +52,9 @@ def get_r_array(r, d, n):
             r[tx, ty] = math.sqrt(
                 d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
 
-# @autojit(target=targ)
-def get_scatter_array(scatter_array, symbols, dpc, n, Qmin_bin, Qmax_bin, Qbin):
+
+@autojit(target=targ)
+def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
     """
     Generate the scattering array, which holds all the Q dependant scatter
     factors
@@ -64,24 +67,27 @@ def get_scatter_array(scatter_array, symbols, dpc, n, Qmin_bin, Qmax_bin, Qbin):
         Holds the string reps of the atomic symbols
     dpc: DebyePDFCalculator instance
         The gives method to get atomic scatter factors
-    n:
+    n: int
         Number of atoms
-    Qmax_Qmin_bin_range:
-        Range between Qmin and Qmax
-    Qbin:
-        The Qbin size
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
     """
     for tx in range(n):
-        for kq in range(Qmin_bin, Qmax_bin):
+        for kq in range(qmin_bin, qmax_bin):
             scatter_array[tx, kq] = dpc.scatteringfactortable.lookup(
-                symbols[tx], q=kq * Qbin)
+                symbols[tx], q=kq * qbin)
+
 
 @autojit(target=targ)
-def get_fq_array(fq, r, scatter_array, n, Qmin_bin, Qmax_bin, Qbin):
+def get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin):
     """
-    Generate F(Q), not normalized, via the debye sum
+    Generate F(Q), not normalized, via the Debye sum
 
-    :param Qmax_bin:
+    :param
     Parameters:
     ---------
     fq: Nd array
@@ -92,28 +98,30 @@ def get_fq_array(fq, r, scatter_array, n, Qmin_bin, Qmax_bin, Qbin):
         The scatter factor array
     n: Nd array
         The range of number of atoms
-    Qmax_Qmin_bin_range:
-        Range between Qmin and Qmax
-    Qbin:
-        The Qbin size
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
     """
-    smscale = 1
+    sum_scale = 1
     for tx in range(n):
         for ty in range(n):
             if tx != ty:
-                for kq in range(Qmin_bin, Qmax_bin):
-                    dwscale = 1
-                    # dwscale = math.exp(-.5 * dw_signal_sqrd * (kq*Qbin)**2)
-                    fq[kq] += smscale * \
-                              dwscale * \
+                for kq in range(qmin_bin, qmax_bin):
+                    debye_waller_scale = 1
+                    # debye_waller_scale = math.exp(-.5 * dw_signal_sqrd * (kq*Qbin)**2)
+                    fq[kq] += sum_scale * \
+                              debye_waller_scale * \
                               scatter_array[tx, kq] * \
                               scatter_array[ty, kq] / \
                               r[tx, ty] * \
-                              math.sin(kq * Qbin * r[tx, ty])
+                              math.sin(kq * qbin * r[tx, ty])
 
 
 @autojit(target=targ)
-def get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, n):
+def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -128,7 +136,7 @@ def get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, n):
      n: Nd array
         The range of number of atoms
     """
-    for kq in range(Qmin_bin, Qmax_bin):
+    for kq in range(qmin_bin, qmax_bin):
         for tx in range(n):
             for ty in range(n):
                 norm_array[kq] += (
@@ -136,90 +144,94 @@ def get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, n):
     norm_array *= 1. / (scatter_array.shape[0] ** 2)
 
 
-def get_pdf_at_Qmin(fpad, rstep, Qstep, rgrid, qmin, rmax):
+def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):
     # Zero all F values below qmin, which I think we have already done
-    # nqmin = Qmin_bin
+    # nqmin = qmin_bin
     # if nqmin > fpad.shape:
-    #     nqmin = fpad.shape
-    nfromdr = int(math.ceil(math.pi / rstep / Qstep))
+    # nqmin = fpad.shape
+    nfromdr = int(math.ceil(math.pi / rstep / qstep))
     if nfromdr > int(len(fpad)):
-        #put in a bunch of zeros
+        # put in a bunch of zeros
         fpad2 = np.zeros(nfromdr)
         fpad2[:len(fpad)] = fpad
         fpad = fpad2
-    gpad = fftftog(fpad, Qstep, qmin)
+    gpad = fft_fq_to_gr(fpad, qstep, qmin)
     # # print len(gpad)
-    drpad = math.pi/(len(gpad)*Qstep)
+    drpad = math.pi / (len(gpad) * qstep)
     pdf0 = np.zeros(len(rgrid), dtype=complex)
     for i, r in enumerate(rgrid):
-        xdrp = r/drpad/2
+        xdrp = r / drpad / 2
         iplo = int(xdrp)
         iphi = iplo + 1
         wphi = xdrp - iplo
         wplo = 1.0 - wphi
-    #     # print 'i=', i
-    #     # print 'wphi=', wphi
-    #     # print 'wplo=', wplo
-    #     # print 'iplo=',iplo
-    #     # print 'iphi=', iphi
-    #     # print 'r=', r
+        # # print 'i=', i
+        # # print 'wphi=', wphi
+        # # print 'wplo=', wplo
+        # # print 'iplo=',iplo
+        # # print 'iphi=', iphi
+        # # print 'r=', r
         pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
-    #     # print pdf0[i]
-    pdf1 = pdf0*2
+    # # print pdf0[i]
+    pdf1 = pdf0 * 2
     return pdf1
     # return gpad
 
-def fftftog(f, qstep, qmin):
-    g = fftgtof(f, qstep, qmin)
-    g *= 2.0/math.pi
+
+def fft_fq_to_gr(f, qstep, qmin):
+    g = fft_gr_to_fq(f, qstep, qmin)
+    g *= 2.0 / math.pi
     return g
 
-def fftgtof(g, rstep, rmin):
+
+def fft_gr_to_fq(g, rstep, rmin):
     if g is None:
         return g
-    padrmin = int(round(rmin / rstep))
-    Npad1 = padrmin + len(g)
+    pad_rmin = int(round(rmin / rstep))
+    npad1 = pad_rmin + len(g)
     # pad to the next power of 2 for fast Fourier transformation
-    Npad2 = (1 << int(math.ceil(math.log(Npad1, 2))))
-    # print Npad2
+    npad2 = (1 << int(math.ceil(math.log(npad1, 2))))
+    # print npad2
     # // sine transformations needs an odd extension
     # // gpadc array has to be doubled for complex coefficients
-    Npad4 = 4 * Npad2
-    gpadc = np.zeros(Npad4)
+    npad4 = 4 * npad2
+    gpadc = np.zeros(npad4)
     # // copy the original g signal
-    ilo = padrmin
+    ilo = pad_rmin
     for i in range(len(g)):
-        gpadc[2*ilo] = g[i]
+        gpadc[2 * ilo] = g[i]
         ilo += 1
     # // copy the odd part of g skipping the first point,
     # // because it is periodic image of gpadc[0]
-    ihi = 2 * Npad2 - 1
+    ihi = 2 * npad2 - 1
     ilo = 1
-    for ilo in range(1, Npad2):
-    # while ilo < Npad2:
+    for ilo in range(1, npad2):
+        # while ilo < npad2:
         gpadc[2 * ihi] = -1 * gpadc[2 * ilo]
         # ilo += 1
         ihi -= 1
     gpadcfft = np.fft.ihfft(gpadc,
-                            # 2 * Npad2
+                            # 2 * npad2
     )
     # # print gpadcfft
     # plt.plot(gpadcfft)
     # plt.show()
-    f = np.zeros(Npad2, dtype=complex)
-    for i in range(Npad2):
-        f[i] = gpadcfft[2 * i + 1] * Npad2 * rstep
+    f = np.zeros(npad2, dtype=complex)
+    for i in range(npad2):
+        f[i] = gpadcfft[2 * i + 1] * npad2 * rstep
     return f.imag
+
 
 def get_dw_sigma_squared(s, u, r, d, n):
     for tx in range(n):
-            for ty in range(n):
-                rnormx = d[tx, ty, 0]/r[tx, ty]
-                rnormy = d[tx, ty, 1]/r[tx, ty]
-                rnormz = d[tx, ty, 2]/r[tx, ty]
-                ux, uy, uz = u[tx] - u[ty]
-                u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
-                s[tx, ty] = u_dot_r * u_dot_r
+        for ty in range(n):
+            rnormx = d[tx, ty, 0] / r[tx, ty]
+            rnormy = d[tx, ty, 1] / r[tx, ty]
+            rnormz = d[tx, ty, 2] / r[tx, ty]
+            ux, uy, uz = u[tx] - u[ty]
+            u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
+            s[tx, ty] = u_dot_r * u_dot_r
+
 
 @autojit
 def get_gr(gr, r, rbin, n):
@@ -238,8 +250,10 @@ def get_gr(gr, r, rbin, n):
         for ty in range(n):
             gr[int(r[tx, ty] / rbin)] += 1
 
+
 @autojit
-def fq_grad_position(grad_p, d, r, scatter_array, norm_array, Qmin_bin, Qmax_bin, Qbin):
+def fq_grad_position(grad_p, d, r, scatter_array, norm_array, qmin_bin,
+                     qmax_bin, qbin):
     '''
     Generate the gradient F(Q) for an atomic configuration
     :param grad_p: Nx3xQ numpy array
@@ -249,75 +263,88 @@ def fq_grad_position(grad_p, d, r, scatter_array, norm_array, Qmin_bin, Qmax_bin
     :param r:
     :param scatter_array:
     :param norm_array:
-    :param Qmin_bin:
-    :param Qmax_bin:
-    :param Qbin:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
     :return:
     '''
-    N = len(r)
-    for tx in range(N):
+    n = len(r)
+    for tx in range(n):
         for tz in range(3):
-            for ty in range(N):
+            for ty in range(n):
                 if tx != ty:
-                    for kq in range(Qmin_bin, Qmax_bin):
+                    for kq in range(qmin_bin, qmax_bin):
                         sub_grad_p = \
                             scatter_array[tx, kq] * \
                             scatter_array[ty, kq] * \
                             d[tx, ty, tz] * \
                             (
-                             (kq*Qbin) *
-                             r[tx, ty] *
-                             math.cos(kq*Qbin * r[tx, ty]) -
-                             math.sin(kq*Qbin * r[tx, ty])
-                            )\
-                            /(r[tx, ty]**3)
+                                (kq * qbin) *
+                                r[tx, ty] *
+                                math.cos(kq * qbin * r[tx, ty]) -
+                                math.sin(kq * qbin * r[tx, ty])
+                            ) \
+                            / (r[tx, ty] ** 3)
                         grad_p[tx, tz, kq] += sub_grad_p
-            # old_settings = np.seterr(all='ignore')
-            # grad_p[tx, tz] = np.nan_to_num(1 / (N * norm_array) * grad_p[tx, tz])
-            # np.seterr(**old_settings)
+                        # old_settings = np.seterr(all='ignore')
+                        # grad_p[tx, tz] = np.nan_to_num(1 / (n * norm_array) * grad_p[tx, tz])
 
-# def pdf_grad_position(pdf_grad_p, grad_p, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax):
-#     N = len(grad_p)
-#     for tx in range(N):
-#         for ty in range(3):
-#                   pdf_grad_p[tx, ty] = get_pdf_at_Qmin(grad_p, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
+                        # np.seterr(**old_settings)
+
+
+# def pdf_grad_position(pdf_grad_p, grad_p, rstep, Qbin, np.arange(0, rmax,
+# rstep), Qmin, rmax):
+# N = len(grad_p)
+# for tx in range(N):
+# for ty in range(3):
+# pdf_grad_p[tx, ty] = get_pdf_at_Qmin(grad_p, rstep, Qbin, np.arange(0,
+# rmax, rstep), Qmin, rmax)
 
 def simple_grad(grad_p, d, r):
-    N = len(r)
-    for tx in range(N):
-        for ty in range(N):
+    """
+    Gradient of the delta function gr
+    :param grad_p:
+    :param d:
+    :param r:
+    :return:
+    """
+    n = len(r)
+    for tx in range(n):
+        for ty in range(n):
             if tx != ty:
                 for tz in range(3):
-                    grad_p[tx, tz] += d[tx, ty, tz]/(r[tx, ty]**3)
+                    grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
 
 
-def grad_pdf(grad_pdf, grad_fq, rstep, Qstep, rgrid, qmin, rmax):
-    N = len(grad_fq)
-    for tx in range(N):
+def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin, rmax):
+    n = len(grad_fq)
+    for tx in range(n):
         for tz in range(3):
-            grad_pdf[tx, tz] = get_pdf_at_Qmin(grad_fq[tx, tz], rstep, Qstep, rgrid, qmin, rmax)
+            grad_pdf[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
+                                               rgrid, qmin, rmax)
+
 
 # @autojit(target=targ)
 def get_rw(gobs, gcalc, weight=None):
     # print np.dot(gcalc.T, gcalc)
-    scale = np.dot(np.dot(1./(np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
-    if weight == None:
+    scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    if weight is None:
         weight = np.ones(gcalc.shape)
-    top = np.sum(weight[:]*(gobs[:]-scale*gcalc[:])**2)
-    bottom = np.sum(weight[:]*gobs[:]**2)
-    return np.sqrt(top/bottom).real, scale
+    top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
+    bottom = np.sum(weight[:] * gobs[:] ** 2)
+    return np.sqrt(top / bottom).real, scale
 
 
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     if weight is None:
         weight = np.ones(gcalc.shape)
-    N = len(grad_pdf)
-    for tx in range(N):
+    n = len(grad_pdf)
+    for tx in range(n):
         for tz in range(3):
             # part1 = 1.0/np.sum(weight[:]*(scale*gcalc[:]-gobs[:])**2)
-            part1 = 1.0/np.sum(weight[:]*(scale*gcalc[:]-gobs[:]))
+            part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
             # print('part1', part1)
             # part2 = np.sum(scale*(scale*gcalc[:] - gobs[:])*grad_pdf[tx, tz, :])
-            part2 = np.sum(scale*grad_pdf[tx, tz, :])
+            part2 = np.sum(scale * grad_pdf[tx, tz, :])
             # print('part2', part2)
-            grad_rw[tx, tz] = rw.real/part1.real * part2.real
+            grad_rw[tx, tz] = rw.real / part1.real * part2.real

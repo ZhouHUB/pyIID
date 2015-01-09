@@ -7,7 +7,7 @@ import numpy as np
 import ase.io as io
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 from pyiid.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
-    get_fq_array, get_normalization_array, get_pdf_at_Qmin, fq_grad_position
+    get_fq_array, get_normalization_array, get_pdf_at_qmin, fq_grad_position
 from scipy.fftpack import idst
 from ase import Atoms
 
@@ -42,7 +42,7 @@ def get_pdf(atoms):
     # Qmin = 2.5
     Qmin = 0.0
     Qbin = np.pi/(rmax+6*2*np.pi/Qmax)
-    Qmin_bin = int(Qmin / Qbin)
+    qmin_bin = int(Qmin / Qbin)
     Qmax_bin = int(Qmax / Qbin)
     Q = np.arange(Qmin, Qmax, Qbin)
 
@@ -70,7 +70,7 @@ def get_pdf(atoms):
 
     #get scatter array
     scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+    get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
     print 'sa'
     print scatter_array
     #remove self_scattering
@@ -78,15 +78,15 @@ def get_pdf(atoms):
 
     #get non-normalized FQ
     fq = np.zeros(len(Q))
-    get_fq_array(fq, r, scatter_array, N, Qmin_bin, Qmax_bin, Qbin)
+    get_fq_array(fq, r, scatter_array, N, qmin_bin, Qmax_bin, Qbin)
 
     #Normalize FQ
     norm_array = np.zeros(len(Q))
-    get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+    get_normalization_array(norm_array, scatter_array, qmin_bin, Qmax_bin, N)
     FQ = np.nan_to_num(1 / (N * norm_array) * fq)
     print(FQ)
     # pdf = idst(FQ)
-    pdf0 = get_pdf_at_Qmin(FQ, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
+    pdf0 = get_pdf_at_qmin(FQ, rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
     rgrid = np.arange(0, rmax, rstep)
     return rgrid, pdf0
     # plt.plot(rgrid, pdf0)
@@ -95,7 +95,8 @@ def get_pdf(atoms):
 
 
     grad_p = np.zeros((N, 3, len(Q)))
-    fq_grad_position(grad_p, d, r, scatter_array, norm_array, Qmin_bin, Qmax_bin, Qbin)
+    fq_grad_position(grad_p, d, r, scatter_array, norm_array, qmin_bin,
+                     Qmax_bin, Qbin)
     print grad_p
     print grad_p.shape
 
@@ -131,7 +132,7 @@ def get_FQ(atoms):
     # Qmin = 2.5
     Qmin = 0.0
     Qbin = np.pi/(rmax+6*2*np.pi/25)
-    Qmin_bin = int(Qmin / Qbin)
+    qmin_bin = int(Qmin / Qbin)
     Qmax_bin = int(Qmax / Qbin)
     Q = np.arange(Qmin, Qmax, Qbin)
 
@@ -159,7 +160,7 @@ def get_FQ(atoms):
 
     #get scatter array
     scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+    get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
     print 'sa'
     print scatter_array
     #remove self_scattering
@@ -167,11 +168,11 @@ def get_FQ(atoms):
 
     #get non-normalized FQ
     fq = np.zeros(len(Q))
-    get_fq_array(fq, r, scatter_array, N, Qmin_bin, Qmax_bin, Qbin)
+    get_fq_array(fq, r, scatter_array, N, qmin_bin, Qmax_bin, Qbin)
 
     #Normalize FQ
     norm_array = np.zeros(len(Q))
-    get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+    get_normalization_array(norm_array, scatter_array, qmin_bin, Qmax_bin, N)
     FQ = np.nan_to_num(1 / (N * norm_array) * fq)
     return Q, FQ
 
@@ -185,7 +186,7 @@ def get_FQ_dir(atoms):
     # Qmin = 2.5
     Qmin = 0.0
     Qbin = np.pi/(rmax+6*2*np.pi/25)
-    Qmin_bin = int(Qmin / Qbin)
+    qmin_bin = int(Qmin / Qbin)
     Qmax_bin = int(Qmax / Qbin)
     Q = np.arange(Qmin, Qmax, Qbin)
 
@@ -213,7 +214,7 @@ def get_FQ_dir(atoms):
 
     #get scatter array
     scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+    get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
     print 'sa'
     print scatter_array
     #remove self_scattering
@@ -221,14 +222,15 @@ def get_FQ_dir(atoms):
 
     #get non-normalized FQ
     fq = np.zeros(len(Q))
-    get_fq_array(fq, r, scatter_array, N, Qmin_bin, Qmax_bin, Qbin)
+    get_fq_array(fq, r, scatter_array, N, qmin_bin, Qmax_bin, Qbin)
 
     #Normalize FQ
     norm_array = np.zeros(len(Q))
-    get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+    get_normalization_array(norm_array, scatter_array, qmin_bin, Qmax_bin, N)
     FQ = np.nan_to_num(1 / (N * norm_array) * fq)
     grad_p = np.zeros((N, 3, len(Q)))
-    fq_grad_position(grad_p, d, r, scatter_array, norm_array, Qmin_bin, Qmax_bin, Qbin)
+    fq_grad_position(grad_p, d, r, scatter_array, norm_array, qmin_bin,
+                     Qmax_bin, Qbin)
     return grad_p
 
 atoms = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0)])

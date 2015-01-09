@@ -1,10 +1,13 @@
 __author__ = 'christopher'
-from pyiid.potential_core import Debye_srreal_U
-import copy.deepcopy as dc
-import numpy as np
-from pyiid.utils import load_gr_file
-import ase.io as aseio
 import time
+
+import numpy as np
+import ase.io as aseio
+
+from pyiid.old_hmc.potential_core import Debye_srreal_U
+import copy.deepcopy as dc
+from pyiid.utils import load_gr_file
+
 
 @autojit(target='gpu')
 def mc_grad(atoms, exp_data, U, delta_qi, fixed = (None,)):

@@ -8,7 +8,7 @@ import numpy as np
 import ase.io as io
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 from pyiid.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
-    get_fq_array, get_normalization_array, get_pdf_at_Qmin, fq_grad_position
+    get_fq_array, get_normalization_array, get_pdf_at_qmin, fq_grad_position
 from scipy.fftpack import idst
 from copy import deepcopy as dc
 from ase import Atoms
@@ -24,7 +24,7 @@ rmax = 40
 # Qmin = 2.5
 Qmin = 0.0
 Qbin = np.pi/(rmax+6*2*np.pi/25)
-Qmin_bin = int(Qmin / Qbin)
+qmin_bin = int(Qmin / Qbin)
 Qmax_bin = int(Qmax / Qbin)
 Q = np.arange(Qmin, Qmax, Qbin)
 rstep = .01
@@ -50,7 +50,7 @@ get_r_array(r, d, N)
 
 #get scatter array
 scatter_array = np.zeros((N, len(Q)))
-get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
 #print 'sa'
 #print scatter_array
 #remove self_scattering
@@ -58,11 +58,11 @@ get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
 
 #get non-normalized FQ
 fq = np.zeros(len(Q))
-get_fq_array(fq, r, scatter_array, N, Qmin_bin, Qmax_bin, Qbin)
+get_fq_array(fq, r, scatter_array, N, qmin_bin, Qmax_bin, Qbin)
 
 #Normalize FQ
 norm_array = np.zeros(len(Q))
-get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+get_normalization_array(norm_array, scatter_array, qmin_bin, Qmax_bin, N)
 start_FQ = np.nan_to_num(1 / (N * norm_array) * fq)
 a = .00001
 total_FQ = np.zeros((N, 3, len(Q)))
@@ -79,7 +79,7 @@ total_FQ = np.zeros((N, 3, len(Q)))
 #         # Qmin = 2.5
 #         Qmin = 0.0
 #         Qbin = np.pi/(rmax+6*2*np.pi/25)
-#         Qmin_bin = int(Qmin / Qbin)
+#         qmin_bin = int(Qmin / Qbin)
 #         Qmax_bin = int(Qmax / Qbin)
 #         Q = np.arange(Qmin, Qmax, Qbin)
 #         rstep = .01
@@ -105,7 +105,7 @@ total_FQ = np.zeros((N, 3, len(Q)))
 #
 #         #get scatter array
 #         scatter_array = np.zeros((N, len(Q)))
-#         get_scatter_array(scatter_array, symbols, dpc, N, Qmin_bin, Qmax_bin, Qbin)
+#         get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
 #         #print 'sa'
 #         #print scatter_array
 #         #remove self_scattering
@@ -113,11 +113,11 @@ total_FQ = np.zeros((N, 3, len(Q)))
 #
 #         #get non-normalized FQ
 #         fq = np.zeros(len(Q))
-#         get_fq_array(fq, r, scatter_array, N, Qmin_bin, Qmax_bin, Qbin)
+#         get_fq_array(fq, r, scatter_array, N, qmin_bin, Qmax_bin, Qbin)
 #
 #         #Normalize FQ
 #         norm_array = np.zeros(len(Q))
-#         get_normalization_array(norm_array, scatter_array, Qmin_bin, Qmax_bin, N)
+#         get_normalization_array(norm_array, scatter_array, qmin_bin, Qmax_bin, N)
 #         FQ = np.nan_to_num(1 / (N * norm_array) * fq)
 #         total_FQ[tx, tz, :] += FQ
 # print total_FQ
@@ -131,7 +131,7 @@ for tx in range(N):
     for tz in range(3):
         for ty in range(N):
             if tx != ty:
-                for kq in range(Qmin_bin, Qmax_bin):
+                for kq in range(qmin_bin, Qmax_bin):
                     sub_grad_p = \
                         scatter_array[tx, kq] * \
                         scatter_array[ty, kq] * \
@@ -147,7 +147,7 @@ for tx in range(N):
         old_settings = np.seterr(all='ignore')
         grad_p[tx, tz] = np.nan_to_num(1 / (N * norm_array) * grad_p[tx, tz])
         np.seterr(**old_settings)
-partial = get_pdf_at_Qmin(grad_p[2, 1,:], rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
+partial = get_pdf_at_qmin(grad_p[2, 1,:], rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
 plt.plot(
     np.arange(0, 40, .01), partial
     # Q, total_FQ[2,1,:],
