@@ -96,8 +96,8 @@ def mh_accept(inital_energy, next_energy):
     ave = np.average([inital_energy, next_energy])
     rand = np.random.random((1,))
     expe = np.exp(diff / ave)
-    print 'initial, next, rand, exp'
-    print inital_energy, next_energy, rand, expe
+    # print 'initial, next, rand, exp'
+    # print inital_energy, next_energy, rand, expe
     return rand < expe
     # print np.exp(diff) - np.random.random(inital_energy.shape)
     # return np.exp(diff) - np.random.random(inital_energy.shape) >= 0
@@ -221,8 +221,8 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     try:
         while i < iterations:
             accept, atoms = hmc_move(atoms, stepsize, n_steps)
-            print i, accept, atoms.get_potential_energy() * 10000, stepsize
-            print '--------------------------------'
+            # print i, accept, atoms.get_potential_energy() * 10000, stepsize
+            # print '--------------------------------'
             if accept is True:
                 traj += [atoms]
             accept_list.append(accept)
@@ -255,6 +255,7 @@ if __name__ == '__main__':
     import ase.io as aseio
     from pyiid.utils import load_gr_file
     import matplotlib.pyplot as plt
+    from time import time
 
 
     atomsi = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
@@ -264,15 +265,18 @@ if __name__ == '__main__':
     # pdf, fq = wrap_pdf(atomsi,
     # Qmin=2.5
     # )
-    apdf, afq = wrap_pdf(atomsi, qmin=2.5)
-    plt.plot(apdf)
+    atomsi.rattle(.05)
     r, pdf = load_gr_file('/home/christopher/7_7_7_FinalSum.gr')
     pdf = pdf[:-1]
-    # plt.plot(pdf)
-    plt.show()
-    AAA
-    calc = PDFCalc(gobs=pdf, qmin=2.5, Qmin=2.5, conv=.0001)
+    rw, scale, apdf, afq = wrap_rw(atomsi, pdf, qmin=2.5)
+    # plt.plot(apdf*scale, label='initial')
+    calc = PDFCalc(gobs=pdf, qmin=2.5, conv=.0001, qbin=.1)
     atomsi.set_calculator(calc)
+    # print(atomsi.get_potential_energy()*10000)
+    # plt.plot(pdf, label='experiment')
+    # plt.legend()
+    # plt.show()
+    # AAA
     # atoms2 = dc(atomsi)
     # atoms2[1].position = (3.05,0,0)
     # atoms2[2].position = (0,3.,0)
@@ -288,6 +292,10 @@ if __name__ == '__main__':
 
 
     # '''
+    # t0 = time()
+    # atomsi.get_forces()
+    # print(time()-t0)
+    # AAA
     traj, accept_list, move_list = run_hmc(atomsi, 100, .005, 5, 0.9, 0, .9,
                                            1.02, .98, .001, .65)
 

@@ -158,10 +158,9 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
 
     # define scatter_q information and initialize constants
     qmin_bin = int(qmin / qbin)
-    qmax_bin = int(qmax / qbin)
+    qmax_bin = int(qmax / qbin) - qmin_bin
     scatter_q = np.arange(qmin, qmax, qbin)
     n = len(q)
-
 
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))

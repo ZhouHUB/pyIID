@@ -87,7 +87,6 @@ def get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
 
-    :param
     Parameters:
     ---------
     fq: Nd array
@@ -145,6 +144,28 @@ def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
 
 
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):
+    """
+    Get the atomic pair distribution function
+
+    Parameters
+    -----------
+    :param fpad: 1d array
+        The reduced structure function, padded with zeros to qmin
+    :param rstep: float
+        The step size in real space
+    :param qstep: float
+        The step size in inverse space
+    :param rgrid: 1d array
+        The real space r values
+    :param qmin: float
+        The minimum q value
+    :param rmax: float
+        The maximum r vlaue
+    Returns
+    -------
+    1d array:
+        The atomic pair distributuion function
+    """
     # Zero all F values below qmin, which I think we have already done
     # nqmin = qmin_bin
     # if nqmin > fpad.shape:
@@ -221,19 +242,22 @@ def fft_gr_to_fq(g, rstep, rmin):
         f[i] = gpadcfft[2 * i + 1] * npad2 * rstep
     return f.imag
 
-
+@autojit(target=targ)
 def get_dw_sigma_squared(s, u, r, d, n):
     for tx in range(n):
         for ty in range(n):
             rnormx = d[tx, ty, 0] / r[tx, ty]
             rnormy = d[tx, ty, 1] / r[tx, ty]
             rnormz = d[tx, ty, 2] / r[tx, ty]
-            ux, uy, uz = u[tx] - u[ty]
+            ux = u[tx, 0] - u[ty, 0]
+            uy = u[tx, 1] - u[ty, 1]
+            uz = u[tx, 2] - u[ty, 2]
             u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
             s[tx, ty] = u_dot_r * u_dot_r
 
 
-@autojit
+@autojit(target=targ)
+
 def get_gr(gr, r, rbin, n):
     """
     Generate gr the histogram of the atomic distances
@@ -251,7 +275,7 @@ def get_gr(gr, r, rbin, n):
             gr[int(r[tx, ty] / rbin)] += 1
 
 
-@autojit
+@autojit(target=targ)
 def fq_grad_position(grad_p, d, r, scatter_array, norm_array, qmin_bin,
                      qmax_bin, qbin):
     '''
