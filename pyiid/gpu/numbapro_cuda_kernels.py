@@ -8,17 +8,11 @@ from scipy import interpolate
 import numpy.linalg as lg
 from numba import *
 
-'''
-try:
-    cuda.select_device(0)
-    cuda.close()
-    targ = 'gpu'
-except:
-    targ = 'cpu'
-'''
 targ = 'cpu'
 cuda.select_device(1)
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_d_array(d, q):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
@@ -39,7 +33,7 @@ def get_d_array(d, q):
         d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
 
 
-@cuda.jit(argtypes=[f4[:,:], f4[:,:,:]])
+@cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -56,11 +50,13 @@ def get_r_array(r, d):
     n = len(d)
     if tx >= n or ty >= n:
         return
-    r[tx, ty] = math.sqrt(d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
+    r[tx, ty] = math.sqrt(
+        d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
 
 
 @autojit(target='cpu')
-def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
+def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin,
+                      qbin):
     """
     Generate the scattering array, which holds all the Q dependant scatter
     factors
@@ -88,92 +84,99 @@ def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
                 symbols[tx], q=kq * qbin)
 
 
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
-def get_fq_p0(tzr, r):
-    tx, ty = cuda.grid(2)
-    n = len(r)
-    qmax_bin = tzr.shape[2]
-    if tx >= n or ty >= n:
-        return
-    if tx == ty:
-        return
-
-    for tz in range(0, qmax_bin):
-        tzr[tx, ty, tz] = tz * 0.1 * r[tx, ty]
-
-
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:]])
-def get_fq_p1(fq_ns, tzr):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
+def get_fq_p0(fq, r, qbin):
     """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    n: Nd array
-        The range of number of atoms
-    qmin_bin: int
-        Binned scatter vector minimum
-    qmax_bin: int
-        Binned scatter vector maximum
-    qbin: float
-        The qbin size
-    """
-
-    tx, ty = cuda.grid(2)
-    n = len(tzr)
-    qmax_bin = fq_ns.shape[2]
-    if tx >= n or ty >= n:
-        return
-    if tx == ty:
-        return
-
-    for tz in range(qmax_bin):
-        fq_ns[tx, ty, tz] = math.sin(tzr[tx, ty, tz])
-
-
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
-def get_fq_p2(fq_ns, r):
-    """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    n: Nd array
-        The range of number of atoms
-    qmin_bin: int
-        Binned scatter vector minimum
-    qmax_bin: int
-        Binned scatter vector maximum
-    qbin: float
-        The qbin size
+    Get part of the reduced structure factor.  The FQ calculation is broken up because of GPU register issues
+    :param fq:
+    :param r:
+    :param qbin:
+    :return:
     """
 
     tx, ty = cuda.grid(2)
     n = len(r)
-    qmax_bin = fq_ns.shape[2]
+    qmax_bin = fq.shape[2]
     if tx >= n or ty >= n:
         return
     if tx == ty:
         return
 
-    for tz in range(0, qmax_bin):
-        fq_ns[tx, ty, tz] /= r[tx, ty]
+    for kq in range(0, qmax_bin):
+        fq[tx, ty, kq] = kq * qbin * r[tx, ty]
+
+@cuda.jit(argtypes=[f4[:, :, :]])
+def get_fq_p1(fq):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    n: Nd array
+        The range of number of atoms
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(fq)
+    qmax_bin = fq.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for kq in range(qmax_bin):
+        fq[tx, ty, kq] = math.sin(fq[tx, ty, kq])
 
 
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
-def get_fq_p3(fq_ns, scat):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
+def get_fq_p2(fq, r):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    n: Nd array
+        The range of number of atoms
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(r)
+    qmax_bin = fq.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for kq in range(0, qmax_bin):
+        fq[tx, ty, kq] /= r[tx, ty]
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])
+def get_fq_p3(fq, norm_array):
     """
     Generate F(Q), not normalized, via the Debye sum
 
@@ -197,18 +200,18 @@ def get_fq_p3(fq_ns, scat):
 
     tx, ty = cuda.grid(2)
 
-    n = len(scat)
-    qmax_bin = fq_ns.shape[2]
+    n = len(norm_array)
+    qmax_bin = fq.shape[2]
     if tx >= n or ty >= n:
         return
     if tx == ty:
         return
 
-    for tz in range(qmax_bin):
-        fq_ns[tx, ty,tz] *= scat[tx, tz] * scat[ty, tz]
+    for kq in range(qmax_bin):
+        fq[tx, ty, kq] *= norm_array[tx, ty, kq]
 
 
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_normalization_array(norm_array, scat):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -337,6 +340,7 @@ def fft_gr_to_fq(g, rstep, rmin):
         f[i] = gpadcfft[2 * i + 1] * npad2 * rstep
     return f.imag
 
+
 @autojit(target=targ)
 def get_dw_sigma_squared(s, u, r, d, n):
     for tx in range(n):
@@ -368,11 +372,9 @@ def get_gr(gr, r, rbin, n):
         for ty in range(n):
             gr[int(r[tx, ty] / rbin)] += 1
 
-
-@autojit(target=targ)
-def fq_grad_position(grad_p, d, r, scatter_array, norm_array, qmin_bin,
-                     qmax_bin, qbin):
-    '''
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:,:]])
+def fq_grad_position0(rgrad, d, r):
+    """
     Generate the gradient F(Q) for an atomic configuration
     :param grad_p: Nx3xQ numpy array
         The array which will store the FQ gradient
@@ -385,53 +387,267 @@ def fq_grad_position(grad_p, d, r, scatter_array, norm_array, qmin_bin,
     :param qmax_bin:
     :param qbin:
     :return:
-    '''
-    n = len(r)
-    for tx in range(n):
-        for tz in range(3):
-            for ty in range(n):
-                if tx != ty:
-                    for kq in range(qmin_bin, qmax_bin):
-                        sub_grad_p = \
-                            scatter_array[tx, kq] * \
-                            scatter_array[ty, kq] * \
-                            d[tx, ty, tz] * \
-                            (
-                                (kq * qbin) *
-                                r[tx, ty] *
-                                math.cos(kq * qbin * r[tx, ty]) -
-                                math.sin(kq * qbin * r[tx, ty])
-                            ) \
-                            / (r[tx, ty] ** 3)
-                        grad_p[tx, tz, kq] += sub_grad_p
-                        # old_settings = np.seterr(all='ignore')
-                        # grad_p[tx, tz] = np.nan_to_num(1 / (n * norm_array) * grad_p[tx, tz])
-
-                        # np.seterr(**old_settings)
-
-
-# def pdf_grad_position(pdf_grad_p, grad_p, rstep, Qbin, np.arange(0, rmax,
-# rstep), Qmin, rmax):
-# N = len(grad_p)
-# for tx in range(N):
-# for ty in range(3):
-# pdf_grad_p[tx, ty] = get_pdf_at_Qmin(grad_p, rstep, Qbin, np.arange(0,
-# rmax, rstep), Qmin, rmax)
-
-def simple_grad(grad_p, d, r):
     """
-    Gradient of the delta function gr
-    :param grad_p:
+
+    tx, ty = cuda.grid(2)
+    n = len(r)
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for tz in range(3):
+        rgrad[tx, ty, tz] = d[tx, ty, tz] / r[tx, ty]
+
+@cuda.jit(argtypes=[f4[:, :, :], f4])
+def fq_grad_position1(q_over_r, qbin):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param q_over_r: Nx3xQ numpy array
+        The array which will store the FQ gradient
     :param d:
+        The distance array for the configuration
     :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
     :return:
     """
+
+    tx, ty = cuda.grid(2)
+    n = len(q_over_r)
+    qmax_bin = q_over_r.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        q_over_r[tx, ty, kq] = kq * qbin
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:,:]])
+def fq_grad_position2(q_over_r, r):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param q_over_r: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
     n = len(r)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for tz in range(3):
-                    grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
+    qmax_bin = q_over_r.shape[3]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        q_over_r[tx, ty, kq] /= r[tx, ty]
+
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :,:]])
+def fq_grad_position3(cos_term, kqr):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(cos_term)
+    qmax_bin = cos_term.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        cos_term[tx, ty, kq] = math.cos(kqr[tx, ty, kq])
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :,:]])
+def fq_grad_position4(cos_term, q_over_r):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(cos_term)
+    qmax_bin = cos_term.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        cos_term[tx, ty, kq] *= q_over_r[tx, ty, kq]
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :,:]])
+def fq_grad_position5(cos_term, norm):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(cos_term)
+    qmax_bin = cos_term.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        cos_term[tx, ty, kq] *= norm[tx, ty, kq]
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:,:]])
+def fq_grad_position6(fq, r):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(r)
+    qmax_bin = r.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        fq[tx, ty, kq] /= r[tx, ty]
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:,:, :]])
+def fq_grad_position7(cos_term, fq):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(cos_term)
+    qmax_bin = cos_term.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for kq in range(qmax_bin):
+        cos_term[tx, ty, kq] -= fq[tx, ty, kq]
+
+
+
+@cuda.jit(argtypes=[f4[:, :, :, :], f4[:,:, :]])
+def fq_grad_position_final1(grad_p, rgrad):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(grad_p)
+    qmax_bin = grad_p.shape[3]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for tz in range(3):
+        for kq in range(qmax_bin):
+            grad_p[tx, ty, tz, kq] = rgrad[tx, ty, tz]
+
+@cuda.jit(argtypes=[f4[:, :, :, :], f4[:,:, :]])
+def fq_grad_position_final2(grad_p, cos_term):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+    :param grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    :param d:
+        The distance array for the configuration
+    :param r:
+    :param scatter_array:
+    :param norm_array:
+    :param qmin_bin:
+    :param qmax_bin:
+    :param qbin:
+    :return:
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(grad_p)
+    qmax_bin = grad_p.shape[3]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+    for tz in range(3):
+        for kq in range(qmax_bin):
+            grad_p[tx, ty, tz, kq] *= cos_term[tx, ty, kq]
 
 
 def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin, rmax):
@@ -467,13 +683,16 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
             # print('part2', part2)
             grad_rw[tx, tz] = rw.real / part1.real * part2.real
 
+'''
 if __name__ == '__main__':
     from ase.atoms import Atoms as atoms
     import ase.io as aseio
     from ase.visualize import view
     import matplotlib.pyplot as plt
     from timeit import default_timer as time
-    atoms = aseio.read('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz')
+
+    atoms = aseio.read(
+        '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz')
     q = atoms.get_positions()
     qmin = .25
     qmax = 25
@@ -484,34 +703,31 @@ if __name__ == '__main__':
     qmin_bin = 0
     qmax_bin = int(qmax / qbin)
 
-    #Atoms definition, outside of calc
+    # Atoms definition, outside of calc
 
     scatter_array = np.zeros((n, qmax_bin))
-    scatter_array = np.ones((n, qmax_bin), dtype=np.float32)*2
+    scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
     # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
 
-
-
     d = np.zeros((n, n, 3), dtype=np.float32)
     r = np.zeros((n, n), dtype=np.float32)
-    norm_array = np.zeros((n,n, qmax_bin), dtype=np.float32)
+    norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
     tzr = np.zeros((n, n, qmax_bin), dtype=np.float32)
     print tzr.shape[2]
 
     # scatter_array = np.zeros((n, qmax_bin))
-    scatter_array = np.ones((n, qmax_bin), dtype=np.float32)*2
+    scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
     # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
 
     super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
     print super_fq.shape
 
-
     stream = cuda.stream()
     tpb = 32
-    bpg = int(math.ceil(float(n)/tpb))
-    print(qmax_bin, len(r), bpg*tpb)
+    bpg = int(math.ceil(float(n) / tpb))
+    print(qmax_bin, len(r), bpg * tpb)
 
     s = time()
     #push empty d, full q, and number n to GPU
@@ -520,10 +736,9 @@ if __name__ == '__main__':
     dr = cuda.to_device(r, stream)
     dfq = cuda.to_device(super_fq, stream)
     dscat = cuda.to_device(scatter_array, stream)
-    dtzr = cuda.to_device(tzr,stream)
+    dtzr = cuda.to_device(tzr, stream)
     # dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
     dnorm = cuda.to_device(norm_array)
-
 
     get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
     cuda.synchronize()
@@ -531,7 +746,7 @@ if __name__ == '__main__':
     get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
     cuda.synchronize()
 
-    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dtzr, dr)
+    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dtzr, dr, qbin)
     cuda.synchronize()
 
     get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq, dtzr)
@@ -540,11 +755,14 @@ if __name__ == '__main__':
     get_fq_p2[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
     cuda.synchronize()
 
-    get_fq_p3[(bpg, bpg), (tpb, tpb), stream](dfq, dscat)
+    get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
+    cuda.synchronize()
+
+    get_fq_p3[(bpg, bpg), (tpb, tpb), stream](dfq, dnorm)
     cuda.synchronize()
 
     dfq.to_host(stream)
-    get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
+
 
     #sum down to 1D array
     fq = super_fq.sum(axis=(0, 1))
@@ -553,13 +771,12 @@ if __name__ == '__main__':
     dnorm.to_host(stream)
 
     #sum reduce to 1D
-    na = norm_array.sum(axis=(0,1))
+    na = norm_array.sum(axis=(0, 1))
 
     na *= 1. / (scatter_array.shape[0] ** 2)
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / (n * na) * fq)
     np.seterr(**old_settings)
-
 
     print time() - s
     print(fq.shape)
@@ -567,3 +784,14 @@ if __name__ == '__main__':
 
     plt.plot(fq)
     plt.show()
+
+
+    dd = cuda.to_device(d, stream)
+    dq = cuda.to_device(q, stream)
+    dr = cuda.to_device(r, stream)
+    dfq = cuda.to_device(super_fq, stream)
+    dscat = cuda.to_device(scatter_array, stream)
+    dtzr = cuda.to_device(tzr, stream)
+    # dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
+    dnorm = cuda.to_device(norm_array)
+    '''
