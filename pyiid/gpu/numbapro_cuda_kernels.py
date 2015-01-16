@@ -8,15 +8,16 @@ from scipy import interpolate
 import numpy.linalg as lg
 from numba import *
 
-
+'''
 try:
     cuda.select_device(0)
     cuda.close()
     targ = 'gpu'
 except:
     targ = 'cpu'
-
-
+'''
+targ = 'cpu'
+cuda.select_device(1)
 @cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
 def get_d_array(d, q):
     """
@@ -87,8 +88,9 @@ def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
                 symbols[tx], q=kq * qbin)
 
 
-@autojit(target=targ)
-def get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin):
+# @cuda.jit(argtypes=[f4[:,:,:], f4[:,:], f4[:,:], f4[:]])
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
+def get_fq_noscat_array(fq_ns, r):
     """
     Generate F(Q), not normalized, via the Debye sum
 
@@ -109,20 +111,57 @@ def get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin):
     qbin: float
         The qbin size
     """
-    sum_scale = 1
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for kq in range(qmin_bin, qmax_bin):
-                    debye_waller_scale = 1
-                    # debye_waller_scale = math.exp(-.5 * dw_signal_sqrd * (kq*Qbin)**2)
-                    fq[kq] += sum_scale * \
-                              debye_waller_scale * \
-                              scatter_array[tx, kq] * \
-                              scatter_array[ty, kq] / \
-                              r[tx, ty] * \
-                              math.sin(kq * qbin * r[tx, ty])
 
+    tx, ty = cuda.grid(2)
+
+
+
+    n = len(r)
+    qmax_bin = len(fq_ns)
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for tz in range(qmax_bin):
+        fq_ns[tz, tx, ty] = math.sin(tz * 0.1 * r[tx, ty]) / r[tx, ty]
+
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
+def get_fq_scat_array(fq_ns, scatter_array):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    n: Nd array
+        The range of number of atoms
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
+    """
+
+    tx, ty = cuda.grid(2)
+
+
+    n = len(scatter_array)
+    qmax_bin = len(fq_ns)
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for tz in range(qmax_bin):
+        fq_ns[tz, tx, ty] *= scatter_array[tx, tz] * scatter_array[ty, tz]
 
 @autojit(target=targ)
 def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
@@ -380,43 +419,61 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
 if __name__ == '__main__':
     from ase.atoms import Atoms as atoms
     import ase.io as aseio
+    from ase.visualize import view
     import matplotlib.pyplot as plt
 
-    b = xraylib.FF_Rayl(1, 1)
-    a = xraylib.Atomic_Factors(1, 65, 1, 1)
-    print a, b
-    print a[0]-a[1]-a[2]
-    AAA
-
-
-
-
     atoms = aseio.read('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz')
-    atoms.set_array()
+    # atoms.set_array()
+    # view(atoms)
     q = atoms.get_positions()
-    print(q.dtype)
-    # AAA
+    qmin = .25
+    qmax = 25
+    qbin = .1
+
+    qmin_bin = 0
+    qmax_bin = int(qmax / qbin)
+
     q = q.astype(np.float32)
     n = len(q)
     d = np.zeros((n, n, 3), dtype=np.float32)
     r = np.zeros((n, n), dtype=np.float32)
 
-    cuda.select_device(1)
-    stream = cuda.stream()
+    # scatter_array = np.zeros((n, qmax_bin))
+    scatter_array = np.ones((n, qmax_bin), dtype=np.float32)
+    # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
+    atoms.set_array('scatter', scatter_array)
 
+    super_fq = np.zeros((qmax_bin, n, n), dtype=np.float32)
+    print super_fq.shape
+
+
+    stream = cuda.stream()
+    print cuda.get_current_device()
+    print cuda.current_context
     tpb = 32
     bpg = int(math.ceil(float(n)/tpb))
-    # print type(bpg)
-    # bpg = 2
     print(n, bpg)
 
-    with stream.auto_synchronize():
-        #push empty d, full q, and number n to GPU
-        dd = cuda.to_device(d, stream)
-        dq = cuda.to_device(q, stream)
-        get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
-        # dd.to_host(stream)
-        dr = cuda.to_device(r, stream)
-        get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
-        dr.to_host(stream)
-        print r
+    tpbq = 32
+    bpgq = int(math.ceil(float(qmax_bin)/tpb))
+    print(qmax_bin, bpg)
+
+
+    #push empty d, full q, and number n to GPU
+    dd = cuda.to_device(d, stream)
+    dq = cuda.to_device(q, stream)
+    dr = cuda.to_device(r, stream)
+    dfq = cuda.to_device(super_fq, stream)
+    dscat = cuda.to_device(scatter_array, stream)
+    dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
+    stream.synchronize()
+    get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
+    stream.synchronize()
+    get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
+    stream.synchronize()
+    print [(bpg, bpg), (tpb, tpb), stream]
+    get_fq_noscat_array[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
+    # get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
+
+    dfq.to_host(stream)
+    print super_fq

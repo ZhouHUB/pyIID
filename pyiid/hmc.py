@@ -1,9 +1,7 @@
 __author__ = 'christopher'
 import numpy as np
-from ase.atoms import Atoms
+from ase.atoms import Atoms as atoms
 from copy import deepcopy as dc
-
-atoms = Atoms
 
 
 def leapfrog(atoms, step):
