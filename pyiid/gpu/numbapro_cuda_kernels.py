@@ -88,47 +88,92 @@ def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
                 symbols[tx], q=kq * qbin)
 
 
-# @cuda.jit(argtypes=[f4[:,:,:], f4[:,:], f4[:,:], f4[:]])
 @cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
-def get_fq_noscat_array(fq_ns, r):
-    """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    n: Nd array
-        The range of number of atoms
-    qmin_bin: int
-        Binned scatter vector minimum
-    qmax_bin: int
-        Binned scatter vector maximum
-    qbin: float
-        The qbin size
-    """
-
+def get_fq_p0(tzr, r):
     tx, ty = cuda.grid(2)
-
-
-
     n = len(r)
-    qmax_bin = len(fq_ns)
+    qmax_bin = tzr.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for tz in range(0, qmax_bin):
+        tzr[tx, ty, tz] = tz * 0.1 * r[tx, ty]
+
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:]])
+def get_fq_p1(fq_ns, tzr):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    n: Nd array
+        The range of number of atoms
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(tzr)
+    qmax_bin = fq_ns.shape[2]
     if tx >= n or ty >= n:
         return
     if tx == ty:
         return
 
     for tz in range(qmax_bin):
-        fq_ns[tz, tx, ty] = math.sin(tz * 0.1 * r[tx, ty]) / r[tx, ty]
+        fq_ns[tx, ty, tz] = math.sin(tzr[tx, ty, tz])
 
 
 @cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
-def get_fq_scat_array(fq_ns, scatter_array):
+def get_fq_p2(fq_ns, r):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    n: Nd array
+        The range of number of atoms
+    qmin_bin: int
+        Binned scatter vector minimum
+    qmax_bin: int
+        Binned scatter vector maximum
+    qbin: float
+        The qbin size
+    """
+
+    tx, ty = cuda.grid(2)
+    n = len(r)
+    qmax_bin = fq_ns.shape[2]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for tz in range(0, qmax_bin):
+        fq_ns[tx, ty, tz] /= r[tx, ty]
+
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
+def get_fq_p3(fq_ns, scat):
     """
     Generate F(Q), not normalized, via the Debye sum
 
@@ -152,19 +197,19 @@ def get_fq_scat_array(fq_ns, scatter_array):
 
     tx, ty = cuda.grid(2)
 
-
-    n = len(scatter_array)
-    qmax_bin = len(fq_ns)
+    n = len(scat)
+    qmax_bin = fq_ns.shape[2]
     if tx >= n or ty >= n:
         return
     if tx == ty:
         return
 
     for tz in range(qmax_bin):
-        fq_ns[tz, tx, ty] *= scatter_array[tx, tz] * scatter_array[ty, tz]
+        fq_ns[tx, ty,tz] *= scat[tx, tz] * scat[ty, tz]
 
-@autojit(target=targ)
-def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:]])
+def get_normalization_array(norm_array, scat):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -179,12 +224,18 @@ def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
      n: Nd array
         The range of number of atoms
     """
-    for kq in range(qmin_bin, qmax_bin):
-        for tx in range(n):
-            for ty in range(n):
-                norm_array[kq] += (
-                    scatter_array[tx, kq] * scatter_array[ty, kq])
-    norm_array *= 1. / (scatter_array.shape[0] ** 2)
+
+    tx, ty = cuda.grid(2)
+
+    n = len(scat)
+    qmax_bin = scat.shape[1]
+    if tx >= n or ty >= n:
+        return
+    if tx == ty:
+        return
+
+    for tz in range(qmax_bin):
+        norm_array[tx, ty, tz] = (scat[tx, tz] * scat[ty, tz])
 
 
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):
@@ -421,59 +472,98 @@ if __name__ == '__main__':
     import ase.io as aseio
     from ase.visualize import view
     import matplotlib.pyplot as plt
-
+    from timeit import default_timer as time
     atoms = aseio.read('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz')
-    # atoms.set_array()
-    # view(atoms)
     q = atoms.get_positions()
     qmin = .25
     qmax = 25
     qbin = .1
 
+    q = q.astype(np.float32)
+    n = len(q)
     qmin_bin = 0
     qmax_bin = int(qmax / qbin)
 
-    q = q.astype(np.float32)
-    n = len(q)
-    d = np.zeros((n, n, 3), dtype=np.float32)
-    r = np.zeros((n, n), dtype=np.float32)
+    #Atoms definition, outside of calc
 
-    # scatter_array = np.zeros((n, qmax_bin))
-    scatter_array = np.ones((n, qmax_bin), dtype=np.float32)
+    scatter_array = np.zeros((n, qmax_bin))
+    scatter_array = np.ones((n, qmax_bin), dtype=np.float32)*2
     # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
 
-    super_fq = np.zeros((qmax_bin, n, n), dtype=np.float32)
+
+
+    d = np.zeros((n, n, 3), dtype=np.float32)
+    r = np.zeros((n, n), dtype=np.float32)
+    norm_array = np.zeros((n,n, qmax_bin), dtype=np.float32)
+    tzr = np.zeros((n, n, qmax_bin), dtype=np.float32)
+    print tzr.shape[2]
+
+    # scatter_array = np.zeros((n, qmax_bin))
+    scatter_array = np.ones((n, qmax_bin), dtype=np.float32)*2
+    # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
+    atoms.set_array('scatter', scatter_array)
+
+    super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
     print super_fq.shape
 
 
     stream = cuda.stream()
-    print cuda.get_current_device()
-    print cuda.current_context
     tpb = 32
     bpg = int(math.ceil(float(n)/tpb))
-    print(n, bpg)
+    print(qmax_bin, len(r), bpg*tpb)
 
-    tpbq = 32
-    bpgq = int(math.ceil(float(qmax_bin)/tpb))
-    print(qmax_bin, bpg)
-
-
+    s = time()
     #push empty d, full q, and number n to GPU
     dd = cuda.to_device(d, stream)
     dq = cuda.to_device(q, stream)
     dr = cuda.to_device(r, stream)
     dfq = cuda.to_device(super_fq, stream)
     dscat = cuda.to_device(scatter_array, stream)
-    dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
-    stream.synchronize()
+    dtzr = cuda.to_device(tzr,stream)
+    # dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
+    dnorm = cuda.to_device(norm_array)
+
+
     get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
-    stream.synchronize()
+    cuda.synchronize()
+
     get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
-    stream.synchronize()
-    print [(bpg, bpg), (tpb, tpb), stream]
-    get_fq_noscat_array[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
-    # get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
+    cuda.synchronize()
+
+    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dtzr, dr)
+    cuda.synchronize()
+
+    get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq, dtzr)
+    cuda.synchronize()
+
+    get_fq_p2[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
+    cuda.synchronize()
+
+    get_fq_p3[(bpg, bpg), (tpb, tpb), stream](dfq, dscat)
+    cuda.synchronize()
 
     dfq.to_host(stream)
-    print super_fq
+    get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
+
+    #sum down to 1D array
+    fq = super_fq.sum(axis=(0, 1))
+
+    cuda.synchronize()
+    dnorm.to_host(stream)
+
+    #sum reduce to 1D
+    na = norm_array.sum(axis=(0,1))
+
+    na *= 1. / (scatter_array.shape[0] ** 2)
+    old_settings = np.seterr(all='ignore')
+    fq = np.nan_to_num(1 / (n * na) * fq)
+    np.seterr(**old_settings)
+
+
+    print time() - s
+    print(fq.shape)
+    print fq
+
+    plt.plot(fq)
+    plt.show()
