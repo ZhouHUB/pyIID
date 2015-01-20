@@ -1,6 +1,7 @@
 __author__ = 'christopher'
-__author__ = 'christopher'
 
+import cProfile
+# cProfile.run('''
 from ase.atoms import Atoms as atoms
 import ase.io as aseio
 from ase.visualize import view
@@ -38,7 +39,6 @@ d = np.zeros((n, n, 3), dtype=np.float32)
 r = np.zeros((n, n), dtype=np.float32)
 norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
 tzr = np.zeros((n, n, qmax_bin), dtype=np.float32)
-print tzr.shape[2]
 
 # scatter_array = np.zeros((n, qmax_bin))
 scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
@@ -46,13 +46,10 @@ scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
 atoms.set_array('scatter', scatter_array)
 
 super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
-print super_fq.shape
 
 stream = cuda.stream()
 tpb = 32
 bpg = int(math.ceil(float(n) / tpb))
-print(qmax_bin, len(r), bpg * tpb)
-
 s = time()
 #push empty d, full q, and number n to GPU
 dd = cuda.to_device(d, stream)
@@ -125,9 +122,6 @@ dgrad_p.to_host(stream)
 #sum down to 1D array
 grad_p=grad_p.sum(axis=(1))
 
-print(grad_p)
-
-
 dnorm.to_host(stream)
 
 #sum reduce to 1D
@@ -140,6 +134,5 @@ for tx in range(n):
             grad_p[tx, tz] = np.nan_to_num(
                 1 / (n * na) * grad_p[tx, tz])
 np.seterr(**old_settings)
-
-print time() - s
-print(grad_p.shape)
+print(time()-s)
+# ''', sort='cumtime')

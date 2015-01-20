@@ -1,5 +1,6 @@
 __author__ = 'christopher'
-
+import cProfile
+# cProfile.run('''
 from ase.atoms import Atoms as atoms
 import ase.io as aseio
 from ase.visualize import view
@@ -22,7 +23,6 @@ qbin = .1
 
 q = q.astype(np.float32)
 n = len(q)
-print n
 qmin_bin = 0
 qmax_bin = int(qmax / qbin)
 
@@ -43,12 +43,10 @@ scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
 atoms.set_array('scatter', scatter_array)
 
 super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
-# print super_fq.shape
 
 stream = cuda.stream()
 tpb = 32
 bpg = int(math.ceil(float(n) / tpb))
-print(bpg, tpb, bpg * tpb)
 
 s = time()
 #push empty d, full q, and number n to GPU
@@ -93,12 +91,8 @@ na *= 1. / (scatter_array.shape[0] ** 2)
 old_settings = np.seterr(all='ignore')
 fq = np.nan_to_num(1 / (n * na) * fq)
 np.seterr(**old_settings)
-
-print time() - s
-# print(fq.shape)
-# print fq
+print(time()-s)
 
 plt.plot(fq)
 plt.show()
-
-
+# ''', sort='tottime')
