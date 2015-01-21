@@ -210,7 +210,7 @@ def get_fq_p3(fq, norm_array):
     for kq in range(qmax_bin):
         fq[tx, ty, kq] *= norm_array[tx, ty, kq]
 
-
+# '''
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_normalization_array(norm_array, scat):
     """
@@ -229,17 +229,14 @@ def get_normalization_array(norm_array, scat):
     """
 
     tx, ty = cuda.grid(2)
-
     n = len(scat)
-    qmax_bin = scat.shape[1]
+
     if tx >= n or ty >= n:
         return
-    if tx == ty:
-        return
-
-    for tz in range(qmax_bin):
-        norm_array[tx, ty, tz] = (scat[tx, tz] * scat[ty, tz])
-
+    qmax_bin = scat.shape[1]
+    for kq in range(qmax_bin):
+        norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
+# '''
 
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):
     """
@@ -683,7 +680,7 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
             # print('part2', part2)
             grad_rw[tx, tz] = rw.real / part1.real * part2.real
 
-'''
+
 if __name__ == '__main__':
     from ase.atoms import Atoms as atoms
     import ase.io as aseio
@@ -705,8 +702,9 @@ if __name__ == '__main__':
 
     # Atoms definition, outside of calc
 
-    scatter_array = np.zeros((n, qmax_bin))
-    scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
+    # scatter_array = np.zeros((n, qmax_bin))
+    # scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
+    scatter_array = np.loadtxt('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/c60_scat.txt', dtype=np.float32)
     # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
 
@@ -716,8 +714,6 @@ if __name__ == '__main__':
     tzr = np.zeros((n, n, qmax_bin), dtype=np.float32)
     print tzr.shape[2]
 
-    # scatter_array = np.zeros((n, qmax_bin))
-    scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
     # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
 
@@ -731,67 +727,10 @@ if __name__ == '__main__':
 
     s = time()
     #push empty d, full q, and number n to GPU
-    dd = cuda.to_device(d, stream)
-    dq = cuda.to_device(q, stream)
-    dr = cuda.to_device(r, stream)
-    dfq = cuda.to_device(super_fq, stream)
     dscat = cuda.to_device(scatter_array, stream)
-    dtzr = cuda.to_device(tzr, stream)
-    # dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
     dnorm = cuda.to_device(norm_array)
-
-    get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
-    cuda.synchronize()
-
-    get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
-    cuda.synchronize()
-
-    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dtzr, dr, qbin)
-    cuda.synchronize()
-
-    get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq, dtzr)
-    cuda.synchronize()
-
-    get_fq_p2[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
-    cuda.synchronize()
 
     get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
     cuda.synchronize()
-
-    get_fq_p3[(bpg, bpg), (tpb, tpb), stream](dfq, dnorm)
-    cuda.synchronize()
-
-    dfq.to_host(stream)
-
-
-    #sum down to 1D array
-    fq = super_fq.sum(axis=(0, 1))
-
-    cuda.synchronize()
     dnorm.to_host(stream)
-
-    #sum reduce to 1D
-    na = norm_array.sum(axis=(0, 1))
-
-    na *= 1. / (scatter_array.shape[0] ** 2)
-    old_settings = np.seterr(all='ignore')
-    fq = np.nan_to_num(1 / (n * na) * fq)
-    np.seterr(**old_settings)
-
-    print time() - s
-    print(fq.shape)
-    print fq
-
-    plt.plot(fq)
-    plt.show()
-
-
-    dd = cuda.to_device(d, stream)
-    dq = cuda.to_device(q, stream)
-    dr = cuda.to_device(r, stream)
-    dfq = cuda.to_device(super_fq, stream)
-    dscat = cuda.to_device(scatter_array, stream)
-    dtzr = cuda.to_device(tzr, stream)
-    # dqbin = cuda.to_device(np.asarray(qbin, dtype=np.float32))
-    dnorm = cuda.to_device(norm_array)
-    '''
+    print norm_array

@@ -8,11 +8,11 @@ from scipy import interpolate
 import numpy.linalg as lg
 
 
-try:
-    cuda.select_device(0)
-    targ = 'gpu'
-except:
-    targ = 'cpu'
+# try:
+#     cuda.select_device(0)
+#     targ = 'gpu'
+# except:
+targ = 'cpu'
 
 
 @autojit(target=targ)
@@ -120,7 +120,7 @@ def get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin):
 
 
 @autojit(target=targ)
-def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
+def get_normalization_array(norm_array, scatter_array):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -135,12 +135,13 @@ def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
      n: Nd array
         The range of number of atoms
     """
-    for kq in range(qmin_bin, qmax_bin):
+    n = len(scatter_array)
+    qmax_bin = scatter_array.shape[1]
+    for kq in range(qmax_bin):
         for tx in range(n):
             for ty in range(n):
-                norm_array[kq] += (
+                norm_array[tx, ty, kq] = (
                     scatter_array[tx, kq] * scatter_array[ty, kq])
-    norm_array *= 1. / (scatter_array.shape[0] ** 2)
 
 
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):

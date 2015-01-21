@@ -31,8 +31,9 @@ qmax_bin = int(qmax / qbin)
 # Atoms definition, outside of calc
 
 # scatter_array = np.zeros((n, qmax_bin))
-scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
+# scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
 # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
+scatter_array = np.loadtxt('mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/c60_scat.txt')
 atoms.set_array('scatter', scatter_array)
 
 d = np.zeros((n, n, 3), dtype=np.float32)
