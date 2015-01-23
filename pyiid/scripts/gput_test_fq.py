@@ -41,7 +41,7 @@ atoms.set_array('scatter', scatter_array)
 d = np.zeros((n, n, 3), dtype=np.float32)
 r = np.zeros((n, n), dtype=np.float32)
 norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
-get_normalization_array(norm_array, scatter_array)
+# get_normalization_array(norm_array, scatter_array)
 
 super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
 

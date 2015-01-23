@@ -395,8 +395,8 @@ def fq_grad_position0(rgrad, d, r):
     for tz in range(3):
         rgrad[tx, ty, tz] = d[tx, ty, tz] / r[tx, ty]
 
-@cuda.jit(argtypes=[f4[:, :, :], f4])
-def fq_grad_position1(q_over_r, qbin):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:,:], f4])
+def fq_grad_position1(q_over_r, r, qbin):
     """
     Generate the gradient F(Q) for an atomic configuration
     :param q_over_r: Nx3xQ numpy array
@@ -420,11 +420,13 @@ def fq_grad_position1(q_over_r, qbin):
     if tx == ty:
         return
     for kq in range(qmax_bin):
-        q_over_r[tx, ty, kq] = kq * qbin
+        q_over_r[tx, ty, kq] = kq/r[tx, ty]
+        q_over_r[tx, ty, kq] *= qbin
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:,:]])
-def fq_grad_position2(q_over_r, r):
+'''
+@cuda.jit(argtypes=[f4[:, :, :], f4])
+def fq_grad_position2(q_over_r, qbin):
     """
     Generate the gradient F(Q) for an atomic configuration
     :param q_over_r: Nx3xQ numpy array
@@ -441,16 +443,15 @@ def fq_grad_position2(q_over_r, r):
     """
 
     tx, ty = cuda.grid(2)
-    n = len(r)
+    n = len(q_over_r)
     qmax_bin = q_over_r.shape[3]
     if tx >= n or ty >= n:
         return
     if tx == ty:
         return
     for kq in range(qmax_bin):
-        q_over_r[tx, ty, kq] /= r[tx, ty]
-
-
+        q_over_r[tx, ty, kq] *= qbin
+'''
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :,:]])
 def fq_grad_position3(cos_term, kqr):
@@ -552,13 +553,13 @@ def fq_grad_position6(fq, r):
 
     tx, ty = cuda.grid(2)
     n = len(r)
-    qmax_bin = r.shape[2]
+    qmax_bin = fq.shape[2]
     if tx >= n or ty >= n:
         return
     if tx == ty:
         return
     for kq in range(qmax_bin):
-        fq[tx, ty, kq] /= r[tx, ty]
+        fq[tx, ty, kq] = fq[tx, ty, kq]/r[tx, ty]
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:,:, :]])

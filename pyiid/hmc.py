@@ -93,9 +93,10 @@ def mh_accept(inital_energy, next_energy):
     diff = inital_energy - next_energy
     ave = np.average([inital_energy, next_energy])
     rand = np.random.random((1,))
-    expe = np.exp(diff / ave)
-    # print 'initial, next, rand, exp'
-    # print inital_energy, next_energy, rand, expe
+    # expe = np.exp(diff / ave)
+    expe = np.exp(diff)
+    print 'initial, next, rand, exp'
+    print inital_energy, next_energy, rand, expe
     return rand < expe
     # print np.exp(diff) - np.random.random(inital_energy.shape)
     # return np.exp(diff) - np.random.random(inital_energy.shape) >= 0
@@ -135,6 +136,8 @@ def hamil(atoms):
         The energy of the system
     
     """
+    print 'pot', atoms.get_potential_energy()
+    print 'kin', kin_energy(atoms)
     return atoms.get_potential_energy() \
            + kin_energy(atoms)
 
@@ -158,7 +161,7 @@ def hmc_move(atoms, stepsize, n_steps):
         The atomic configuration to be used in the next iteration
     
     """
-    atoms.set_velocities(np.random.normal(0, .1, (len(atoms), 3)))
+    atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3)))
     prop = dc(atoms)
     moves = simulate_dynamics(prop, stepsize, n_steps)
     accept = mh_accept(hamil(atoms), hamil(prop))
@@ -219,8 +222,8 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     try:
         while i < iterations:
             accept, atoms = hmc_move(atoms, stepsize, n_steps)
-            # print i, accept, atoms.get_potential_energy() * 10000, stepsize
-            # print '--------------------------------'
+            print i, accept, atoms.get_potential_energy() * 10000, stepsize
+            print '--------------------------------'
             if accept is True:
                 traj += [atoms]
             accept_list.append(accept)
@@ -245,15 +248,13 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
 
 
 if __name__ == '__main__':
-    from ase import Atoms
     from ase.io.trajectory import PickleTrajectory
-    from pyiid.kernel_wrap import wrap_rw, wrap_grad_rw, wrap_pdf
+    from pyiid.wrappers.kernel_wrap import wrap_rw, wrap_pdf
     from pyiid.pdfcalc import PDFCalc
     from copy import deepcopy as dc
     import ase.io as aseio
     from pyiid.utils import load_gr_file
     import matplotlib.pyplot as plt
-    from time import time
 
 
     atomsi = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')

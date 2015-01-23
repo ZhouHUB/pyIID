@@ -1,8 +1,8 @@
 __author__ = 'christopher'
 from pyiid.serial_kernel import *
-from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+# from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 # TODO: Replace this SrFit dependence with scikit-xray
-dpc = DebyePDFCalculator()
+# dpc = DebyePDFCalculator()
 
 def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
     """
@@ -21,11 +21,6 @@ def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
     get_scatter_array(scatter_array, symbols, dpc, n, 0, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
-
-    norm_array = np.zeros(qmax_bin)
-    get_normalization_array(norm_array, scatter_array, 0, qmax_bin, n)
-    atoms.set_array('norm', norm_array)
-
 
 
 
@@ -74,8 +69,13 @@ def wrap_fq(atoms, qmax=25., qmin=0.0, qbin=.1):
     fq = np.zeros(len(scatter_q))
     get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin)
 
+
     #Normalize fq
-    norm_array =atoms.get_array('norm')
+    norm_array = np.zeros((n, n, len(scatter_q)))
+    get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n)
+    norm_array = norm_array.sum(axis=(0, 1))
+    norm_array *= 1. / (scatter_array.shape[0] ** 2)
+
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / (n * norm_array) * fq)
     np.seterr(**old_settings)
@@ -193,14 +193,15 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
     get_r_array(r, d, n)
 
     # get scatter array
-    scatter_array = np.zeros((n, len(scatter_q)))
-    get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin)
+    scatter_array =atoms.get_array('scatter')
 
     # get non-normalized FQ
 
     #Normalize FQ
-    norm_array = np.zeros(len(scatter_q))
+    norm_array = np.zeros((n, n, len(scatter_q)))
     get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n)
+    norm_array = norm_array.sum(axis=(0, 1))
+    norm_array *= 1. / (scatter_array.shape[0] ** 2)
 
     dfq_dq = np.zeros((n, 3, len(scatter_q)))
     fq_grad_position(dfq_dq, d, r, scatter_array, norm_array, qmin_bin,

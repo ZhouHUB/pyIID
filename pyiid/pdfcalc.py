@@ -1,7 +1,8 @@
 __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
-from pyiid.kernel_wrap import wrap_rw, wrap_grad_rw, wrap_pdf
+
+from pyiid.wrappers.kernel_wrap import wrap_rw, wrap_grad_rw, wrap_pdf
 
 
 class PDFCalc(Calculator):
@@ -81,8 +82,6 @@ class PDFCalc(Calculator):
 
 
 if __name__ == '__main__':
-    import cProfile
-    from ase import Atoms
     import matplotlib.pyplot as plt
     # cProfile.run('''
     import ase.io as aseio

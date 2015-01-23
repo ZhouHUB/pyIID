@@ -120,7 +120,7 @@ def get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin):
 
 
 @autojit(target=targ)
-def get_normalization_array(norm_array, scatter_array):
+def get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -135,9 +135,7 @@ def get_normalization_array(norm_array, scatter_array):
      n: Nd array
         The range of number of atoms
     """
-    n = len(scatter_array)
-    qmax_bin = scatter_array.shape[1]
-    for kq in range(qmax_bin):
+    for kq in range(qmin_bin, qmax_bin):
         for tx in range(n):
             for ty in range(n):
                 norm_array[tx, ty, kq] = (
