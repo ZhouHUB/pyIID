@@ -70,7 +70,7 @@ def get_pdf(atoms):
 
     #get scatter array
     scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
+    get_scatter_array(scatter_array, symbols, N, qmin_bin, Qmax_bin, Qbin)
     print 'sa'
     print scatter_array
     #remove self_scattering
@@ -160,7 +160,7 @@ def get_FQ(atoms):
 
     #get scatter array
     scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
+    get_scatter_array(scatter_array, symbols, N, qmin_bin, Qmax_bin, Qbin)
     print 'sa'
     print scatter_array
     #remove self_scattering
@@ -214,7 +214,7 @@ def get_FQ_dir(atoms):
 
     #get scatter array
     scatter_array = np.zeros((N, len(Q)))
-    get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
+    get_scatter_array(scatter_array, symbols, N, qmin_bin, Qmax_bin, Qbin)
     print 'sa'
     print scatter_array
     #remove self_scattering

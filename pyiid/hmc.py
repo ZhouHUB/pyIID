@@ -69,6 +69,7 @@ def simulate_dynamics(atoms, stepsize, n_steps):
         else:
             moves += prop_move
         '''
+        moves += prop_move
     atoms.set_velocities(atoms.get_velocities() + 0.5 * stepsize *
                          atoms.get_forces())
     return moves
@@ -91,12 +92,12 @@ def mh_accept(inital_energy, next_energy):
         Whether to accept the new configuration
     """
     diff = inital_energy - next_energy
-    ave = np.average([inital_energy, next_energy])
+    # ave = np.average([inital_energy, next_energy])
     rand = np.random.random((1,))
     # expe = np.exp(diff / ave)
-    expe = np.exp(diff)
-    print 'initial, next, rand, exp'
-    print inital_energy, next_energy, rand, expe
+    expe = np.exp(diff*5)
+    # print 'initial, next, rand, exp'
+    # print inital_energy, next_energy, rand, expe
     return rand < expe
     # print np.exp(diff) - np.random.random(inital_energy.shape)
     # return np.exp(diff) - np.random.random(inital_energy.shape) >= 0
@@ -136,8 +137,8 @@ def hamil(atoms):
         The energy of the system
     
     """
-    print 'pot', atoms.get_potential_energy()
-    print 'kin', kin_energy(atoms)
+    # print 'pot', atoms.get_potential_energy()
+    # print 'kin', kin_energy(atoms)
     return atoms.get_potential_energy() \
            + kin_energy(atoms)
 
@@ -161,7 +162,7 @@ def hmc_move(atoms, stepsize, n_steps):
         The atomic configuration to be used in the next iteration
     
     """
-    atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3)))
+    atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3))/3/len(atoms))
     prop = dc(atoms)
     moves = simulate_dynamics(prop, stepsize, n_steps)
     accept = mh_accept(hamil(atoms), hamil(prop))
@@ -222,8 +223,8 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     try:
         while i < iterations:
             accept, atoms = hmc_move(atoms, stepsize, n_steps)
-            print i, accept, atoms.get_potential_energy() * 10000, stepsize
-            print '--------------------------------'
+            # print i, accept, atoms.get_potential_energy(), stepsize
+            # print '--------------------------------'
             if accept is True:
                 traj += [atoms]
             accept_list.append(accept)

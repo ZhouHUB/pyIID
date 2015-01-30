@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 import math
 from numbapro import autojit
-# import mkl
+import mkl
 from numbapro import cuda
 import numpy as np
 from scipy import interpolate
@@ -237,7 +237,7 @@ def get_normalization_array(norm_array, scat):
     for kq in range(qmax_bin):
         norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
 # '''
-
+@autojit(target='cpu')
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):
     """
     Get the atomic pair distribution function
@@ -293,13 +293,13 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin, rmax):
     return pdf1
     # return gpad
 
-
+@autojit(target='cpu')
 def fft_fq_to_gr(f, qstep, qmin):
     g = fft_gr_to_fq(f, qstep, qmin)
     g *= 2.0 / math.pi
     return g
 
-
+@autojit(target='cpu')
 def fft_gr_to_fq(g, rstep, rmin):
     if g is None:
         return g
@@ -647,7 +647,7 @@ def fq_grad_position_final2(grad_p, cos_term):
         for kq in range(qmax_bin):
             grad_p[tx, ty, tz, kq] *= cos_term[tx, ty, kq]
 
-
+@autojit(target='cpu')
 def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin, rmax):
     n = len(grad_fq)
     for tx in range(n):
@@ -659,26 +659,24 @@ def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin, rmax):
 # @autojit(target=targ)
 def get_rw(gobs, gcalc, weight=None):
     # print np.dot(gcalc.T, gcalc)
-    scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    scale = 1
     if weight is None:
         weight = np.ones(gcalc.shape)
     top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
     bottom = np.sum(weight[:] * gobs[:] ** 2)
     return np.sqrt(top / bottom).real, scale
 
-
+# @autojit(target='cpu')
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     if weight is None:
         weight = np.ones(gcalc.shape)
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
-            # part1 = 1.0/np.sum(weight[:]*(scale*gcalc[:]-gobs[:])**2)
             part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
-            # print('part1', part1)
-            # part2 = np.sum(scale*(scale*gcalc[:] - gobs[:])*grad_pdf[tx, tz, :])
+
             part2 = np.sum(scale * grad_pdf[tx, tz, :])
-            # print('part2', part2)
             grad_rw[tx, tz] = rw.real / part1.real * part2.real
 
 

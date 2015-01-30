@@ -17,9 +17,10 @@ def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
     n = len(atoms)
     qmax_bin = int(qmax / qbin)
     symbols = atoms.get_chemical_symbols()
+    e_num = atoms.get_atomic_numbers()
 
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
-    get_scatter_array(scatter_array, symbols, dpc, n, 0, qmax_bin, qbin)
+    get_scatter_array(scatter_array, e_num, n, 0, qmax_bin, qbin)
     atoms.set_array('scatter', scatter_array)
 
 
@@ -151,7 +152,7 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     """
     g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
     rw, scale = get_rw(gobs, g_calc, weight=None)
-    return rw * 100, scale, g_calc, fq
+    return rw, scale, g_calc, fq
 
 
 def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
@@ -256,4 +257,4 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     # print 'scale:', scale
-    return grad_rw * 100
+    return grad_rw

@@ -6,6 +6,7 @@ from numbapro import cuda
 import numpy as np
 from scipy import interpolate
 import numpy.linalg as lg
+import xraylib.FF_Rayl as ffr
 
 
 # try:
@@ -54,7 +55,7 @@ def get_r_array(r, d, n):
 
 
 @autojit(target=targ)
-def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
+def get_scatter_array(scatter_array, numbers, n, qmin_bin, qmax_bin, qbin):
     """
     Generate the scattering array, which holds all the Q dependant scatter
     factors
@@ -78,8 +79,7 @@ def get_scatter_array(scatter_array, symbols, dpc, n, qmin_bin, qmax_bin, qbin):
     """
     for tx in range(n):
         for kq in range(qmin_bin, qmax_bin):
-            scatter_array[tx, kq] = dpc.scatteringfactortable.lookup(
-                symbols[tx], q=kq * qbin)
+            scatter_array[tx, kq] = ffr(numbers[tx], kq * qbin/10.)
 
 
 @autojit(target=targ)

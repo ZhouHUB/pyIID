@@ -50,7 +50,7 @@ get_r_array(r, d, N)
 
 #get scatter array
 scatter_array = np.zeros((N, len(Q)))
-get_scatter_array(scatter_array, symbols, dpc, N, qmin_bin, Qmax_bin, Qbin)
+get_scatter_array(scatter_array, symbols, N, qmin_bin, Qmax_bin, Qbin)
 #print 'sa'
 #print scatter_array
 #remove self_scattering
