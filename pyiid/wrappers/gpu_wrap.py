@@ -1,8 +1,11 @@
 __author__ = 'christopher'
 from pyiid.kernels.gpu.numbapro_cuda_kernels import *
 
+
 def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
+
     #get information for FQ transformation
+
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
@@ -10,6 +13,7 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     scatter_array = atoms.get_array('scatter')
 
     #build the empty arrays
+
     d = np.zeros((n, n, 3), dtype=np.float32)
     r = np.zeros((n, n), dtype=np.float32)
     super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)

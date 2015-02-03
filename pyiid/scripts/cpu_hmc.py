@@ -8,7 +8,7 @@ from ase.visualize import view
 from ase.io.trajectory import PickleTrajectory
 import ase.io as aseio
 
-from pyiid.hmc import run_hmc
+from pyiid.sim.hmc import run_hmc
 from pyiid.wrappers.kernel_wrap import wrap_rw, wrap_pdf
 from pyiid.calc.pdfcalc import PDFCalc
 

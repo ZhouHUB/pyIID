@@ -73,6 +73,7 @@ def get_scatter_array(scatter_array, numbers, n, qmin_bin, qmax_bin, qbin):
     """
     for tx in range(n):
         for kq in range(qmin_bin, qmax_bin):
+            #note x-ray lib is in nm^-1, hence the qbin/10. to convert from A^-1
             scatter_array[tx, kq] = xraylib.FF_Rayl(numbers[tx], kq * qbin/10.)
 
 

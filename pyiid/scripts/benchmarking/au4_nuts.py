@@ -9,7 +9,7 @@ from ase.atoms import Atoms
 from pyiid.wrappers.gpu_wrap import wrap_pdf
 from pyiid.calc.pdfcalc_gpu import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
-from pyiid.nuts_hmc import nuts_da_hmc
+from pyiid.sim.nuts_hmc import nuts_da_hmc
 
 
 atomsio = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
