@@ -75,7 +75,7 @@ def simulate_dynamics(atoms, stepsize, n_steps):
     return moves
 
 
-def mh_accept(inital_energy, next_energy):
+def mh_accept(inital_energy, next_energy, T=1):
     """
     Decide wheter to accept or reject the new configuration
 
@@ -95,9 +95,9 @@ def mh_accept(inital_energy, next_energy):
     # ave = np.average([inital_energy, next_energy])
     rand = np.random.random((1,))
     # expe = np.exp(diff / ave)
-    expe = np.exp(diff*5)
-    # print 'initial, next, rand, exp'
-    # print inital_energy, next_energy, rand, expe
+    expe = np.exp(diff*T)
+    print 'initial, next, rand, exp'
+    print inital_energy, next_energy, rand, expe
     return rand < expe
     # print np.exp(diff) - np.random.random(inital_energy.shape)
     # return np.exp(diff) - np.random.random(inital_energy.shape) >= 0
@@ -143,7 +143,7 @@ def hamil(atoms):
            + kin_energy(atoms)
 
 
-def hmc_move(atoms, stepsize, n_steps):
+def hmc_move(atoms, stepsize, n_steps, T):
     """
     Move atoms and check if they are accepted, returning the new 
     configuration if accepted, the old if not
@@ -165,7 +165,7 @@ def hmc_move(atoms, stepsize, n_steps):
     atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3))/3/len(atoms))
     prop = dc(atoms)
     moves = simulate_dynamics(prop, stepsize, n_steps)
-    accept = mh_accept(hamil(atoms), hamil(prop))
+    accept = mh_accept(hamil(atoms), hamil(prop), T)
     # print accept
     # print(accept is 0)
     # assert(type(accept) == bool)
@@ -179,7 +179,7 @@ def hmc_move(atoms, stepsize, n_steps):
 
 def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             avg_acceptance_rate, target_acceptance_rate, stepsize_inc,
-            stepsize_dec, stepsize_min, stepsize_max):
+            stepsize_dec, stepsize_min, stepsize_max, T=1):
     """
     Wrapper for running Hamiltonian (Hybrid) Monte Carlo refinements, using a dynamic stepsize refinement, based on whether moves are being accepted
     
@@ -222,9 +222,9 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     i = 0
     try:
         while i < iterations:
-            accept, atoms = hmc_move(atoms, stepsize, n_steps)
-            # print i, accept, atoms.get_potential_energy(), stepsize
-            # print '--------------------------------'
+            accept, atoms = hmc_move(atoms, stepsize, n_steps, T)
+            print i, accept, atoms.get_potential_energy(), stepsize
+            print '--------------------------------'
             if accept is True:
                 traj += [atoms]
             accept_list.append(accept)

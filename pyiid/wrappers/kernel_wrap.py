@@ -1,5 +1,6 @@
 __author__ = 'christopher'
 from pyiid.serial_kernel import *
+from ase.atoms import Atoms as atoms
 # from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 # TODO: Replace this SrFit dependence with scikit-xray
 # dpc = DebyePDFCalculator()
@@ -13,10 +14,9 @@ def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
     :param qbin:
     :return:
     """
-    from ase.atoms import Atoms as atoms
+
     n = len(atoms)
     qmax_bin = int(qmax / qbin)
-    symbols = atoms.get_chemical_symbols()
     e_num = atoms.get_atomic_numbers()
 
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
@@ -256,5 +256,4 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
              rmax)
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
-    # print 'scale:', scale
     return grad_rw

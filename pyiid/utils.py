@@ -4,6 +4,8 @@ import numpy as np
 from diffpy.Structure.structure import Structure
 from diffpy.Structure.atom import Atom as dAtom
 from ase.atoms import Atoms as AAtoms
+import ase.io as aseio
+import math
 
 
 def convert_atoms_to_stru(atoms):
@@ -80,3 +82,16 @@ def convert_stru_to_atoms(stru):
     # print tags
     atoms = AAtoms(symbols, np.array(xyz), tags=tags)
     return atoms
+
+
+def build_sphere_np(file, radius):
+    atoms = aseio.read(file)
+    cell_dist = atoms.get_cell()
+    multiple = np.ceil(2 * radius / cell_dist)
+    atoms.repeat((multiple[0,0], multiple[1,1], multiple[2,2]))
+    com = atoms.get_center_of_mass()
+    atoms.translate(-com)
+    del atoms[[atoms.index for atom in atoms if np.sqrt(np.dot(atom.position, atom.position)) >= np.sqrt(radius**2)]]
+    return atoms
+
+

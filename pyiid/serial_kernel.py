@@ -6,7 +6,7 @@ from numbapro import cuda
 import numpy as np
 from scipy import interpolate
 import numpy.linalg as lg
-import xraylib.FF_Rayl as ffr
+import xraylib
 
 
 # try:
@@ -79,7 +79,7 @@ def get_scatter_array(scatter_array, numbers, n, qmin_bin, qmax_bin, qbin):
     """
     for tx in range(n):
         for kq in range(qmin_bin, qmax_bin):
-            scatter_array[tx, kq] = ffr(numbers[tx], kq * qbin/10.)
+            scatter_array[tx, kq] = xraylib.FF_Rayl(numbers[tx], kq * qbin/10.)
 
 
 @autojit(target=targ)
@@ -350,7 +350,8 @@ def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin, rmax):
 # @autojit(target=targ)
 def get_rw(gobs, gcalc, weight=None):
     # print np.dot(gcalc.T, gcalc)
-    scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    scale = 1
     if weight is None:
         weight = np.ones(gcalc.shape)
     top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
