@@ -1,18 +1,18 @@
 __author__ = 'christopher'
-import numpy as np
-import matplotlib.pyplot as plt
-
 import os
 from copy import deepcopy as dc
 
+import numpy as np
+import matplotlib.pyplot as plt
 from ase.visualize import view
 from ase.io.trajectory import PickleTrajectory
 import ase.io as aseio
 
 from pyiid.hmc import run_hmc
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.pdfcalc_gpu import PDFCalc
+from pyiid.calc.pdfcalc_gpu import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
+
 
 atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
 atoms_file_no_ext = os.path.splitext(atoms_file)[0]
@@ -26,18 +26,21 @@ n = len(atomsio)
 qmax_bin = int(qmax / qbin)
 
 atoms = dc(atomsio)
-pdf, fq = wrap_pdf(atoms, qmin=2.5, qbin=.1)
+pdf, fq = wrap_pdf(atoms, qmin=0, qbin=.1)
 atoms.positions *= .95
 # atoms.rattle(.1)
-rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=2.5, qbin=.1)
+rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=0, qbin=.1)
+plt.plot(pdf)
+plt.plot(apdf)
+plt.show()
 
-calc = PDFCalc(gobs=pdf, qmin=2.5, conv=1, qbin=.1)
+calc = PDFCalc(gobs=pdf, qmin=0, conv=1, qbin=.1)
 atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
-atoms.set_velocities(np.zeros((len(atoms), 3)))
+atoms.set_momenta(np.zeros((len(atoms), 3)))
 
 pe_list = []
-traj, accept_list, move_list = run_hmc(atoms, 30, .1, 12, 0.9, 0, .9,
+traj, accept_list, move_list = run_hmc(atoms, 30, .01, 12, 0.9, 0, .9,
                                        1.02, .98, .001, .65, 5)
 for atoms in traj:
     pe_list.append(atoms.get_potential_energy())

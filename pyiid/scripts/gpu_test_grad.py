@@ -1,16 +1,10 @@
 __author__ = 'christopher'
 
-import cProfile
 # cProfile.run('''
-from ase.atoms import Atoms as atoms
-import ase.io as aseio
-from ase.visualize import view
-import matplotlib.pyplot as plt
-from timeit import default_timer as time
-import numpy as np
-from numbapro import cuda
-from pyiid.gpu.numbapro_cuda_kernels import *
 from copy import deepcopy as dc
+
+from pyiid.kernels.gpu.numbapro_cuda_kernels import *
+
 
 atomsio = aseio.read(
     '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz')

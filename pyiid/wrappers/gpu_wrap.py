@@ -1,9 +1,5 @@
 __author__ = 'christopher'
-import matplotlib.pyplot as plt
-from timeit import default_timer as time
-import numpy as np
-from numbapro import cuda
-from pyiid.gpu.numbapro_cuda_kernels import *
+from pyiid.kernels.gpu.numbapro_cuda_kernels import *
 
 def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     #get information for FQ transformation
@@ -27,7 +23,6 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
 
 
     #start calculations
-    s = time()
 
     dscat = cuda.to_device(scatter_array, stream)
     dnorm = cuda.to_device(norm_array)
@@ -65,7 +60,6 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / (n * na) * fq)
     np.seterr(**old_settings)
-    # print(time()-s)
     return fq
 
 def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
@@ -160,7 +154,6 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     bpg = int(math.ceil(float(n) / tpb))
 
     #start calculations
-    s = time()
     dscat = cuda.to_device(scatter_array, stream)
     dnorm = cuda.to_device(norm_array)
     get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
@@ -252,7 +245,6 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
                 grad_p[tx, tz] = np.nan_to_num(
                     1 / (n * na) * grad_p[tx, tz])
     np.seterr(**old_settings)
-    # print(time()-s)
     return grad_p
 
 

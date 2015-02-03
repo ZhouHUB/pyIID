@@ -1,22 +1,16 @@
 __author__ = 'christopher'
+from copy import deepcopy as dc
+
 import numpy as np
 import matplotlib.pyplot as plt
-
-import os
-from copy import deepcopy as dc
-from scipy.stats import chisquare
-
 from ase.visualize import view
-from ase.io.trajectory import PickleTrajectory
-import ase.io as aseio
-from ase.neb import NEB
-from ase.optimize import BFGS
+from ase.atoms import Atoms
 
-from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.pdfcalc_gpu import PDFCalc
+from pyiid.wrappers.gpu_wrap import wrap_pdf
+from pyiid.calc.pdfcalc_gpu import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
 from pyiid.nuts_hmc import nuts_da_hmc
-from ase.atoms import Atoms
+
 
 atomsio = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
 wrap_atoms(atomsio)

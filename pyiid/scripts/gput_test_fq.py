@@ -1,15 +1,9 @@
 __author__ = 'christopher'
-import cProfile
 # cProfile.run('''
-from ase.atoms import Atoms as atoms
-import ase.io as aseio
-from ase.visualize import view
-import matplotlib.pyplot as plt
-from timeit import default_timer as time
-import numpy as np
-from numbapro import cuda
-from pyiid.gpu.numbapro_cuda_kernels import *
 from copy import deepcopy as dc
+
+from pyiid.kernels.gpu.numbapro_cuda_kernels import *
+
 # from pyiid.serial_kernel import get_normalization_array
 
 atomsio = aseio.read(

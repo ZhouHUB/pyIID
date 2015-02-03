@@ -1,18 +1,18 @@
 __author__ = 'christopher'
-import numpy as np
-import matplotlib.pyplot as plt
-
 import os
 from copy import deepcopy as dc
 
+import numpy as np
+import matplotlib.pyplot as plt
 from ase.visualize import view
 from ase.io.trajectory import PickleTrajectory
 import ase.io as aseio
 
 from pyiid.hmc import run_hmc
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.pdfcalc_gpu import PDFCalc
+from pyiid.calc.pdfcalc_gpu import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
+
 
 atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
 atoms_file_no_ext = os.path.splitext(atoms_file)[0]

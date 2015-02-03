@@ -1,7 +1,6 @@
 __author__ = 'christopher'
 import numpy as np
 from ase.atoms import Atoms as atoms
-from copy import deepcopy as dc
 
 
 def leapfrog(atoms, step):
@@ -251,7 +250,7 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
 if __name__ == '__main__':
     from ase.io.trajectory import PickleTrajectory
     from pyiid.wrappers.kernel_wrap import wrap_rw, wrap_pdf
-    from pyiid.pdfcalc import PDFCalc
+    from pyiid.calc.pdfcalc import PDFCalc
     from copy import deepcopy as dc
     import ase.io as aseio
     from pyiid.utils import load_gr_file

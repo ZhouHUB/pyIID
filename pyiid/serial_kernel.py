@@ -8,13 +8,7 @@ from scipy import interpolate
 import numpy.linalg as lg
 import xraylib
 
-
-# try:
-#     cuda.select_device(0)
-#     targ = 'gpu'
-# except:
 targ = 'cpu'
-
 
 @autojit(target=targ)
 def get_d_array(d, q, n):

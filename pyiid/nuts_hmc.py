@@ -1,8 +1,8 @@
 __author__ = 'christopher'
-import numpy as np
-from ase.atoms import Atoms
-from copy import deepcopy as dc
 from numbapro import autojit
+
+from ase.atoms import Atoms
+
 
 atoms = Atoms
 
@@ -229,16 +229,13 @@ if __name__ == '__main__':
 
     import os
     from copy import deepcopy as dc
-    from scipy.stats import chisquare
 
     from ase.visualize import view
     from ase.io.trajectory import PickleTrajectory
     import ase.io as aseio
-    from ase.neb import NEB
-    from ase.optimize import BFGS
 
-    from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-    from pyiid.pdfcalc_gpu import PDFCalc
+    from pyiid.wrappers.gpu_wrap import wrap_pdf
+    from pyiid.calc.pdfcalc_gpu import PDFCalc
     from pyiid.wrappers.kernel_wrap import wrap_atoms
 
 

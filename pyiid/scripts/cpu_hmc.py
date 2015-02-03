@@ -1,17 +1,16 @@
 __author__ = 'christopher'
-import numpy as np
-import matplotlib.pyplot as plt
-
 import os
 from copy import deepcopy as dc
 
+import numpy as np
+import matplotlib.pyplot as plt
 from ase.visualize import view
 from ase.io.trajectory import PickleTrajectory
 import ase.io as aseio
 
 from pyiid.hmc import run_hmc
 from pyiid.wrappers.kernel_wrap import wrap_rw, wrap_pdf
-from pyiid.pdfcalc import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 
 
 atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz'

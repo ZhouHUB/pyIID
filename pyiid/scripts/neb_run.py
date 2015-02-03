@@ -1,18 +1,13 @@
 __author__ = 'christopher'
-import numpy as np
-import matplotlib.pyplot as plt
-
 import os
 from copy import deepcopy as dc
 
-from ase.visualize import view
-from ase.io.trajectory import PickleTrajectory
+import numpy as np
 import ase.io as aseio
 from ase.neb import NEB
-from ase.optimize import BFGS
 
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.pdfcalc_gpu import PDFCalc
+from pyiid.calc.pdfcalc_gpu import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
 
 

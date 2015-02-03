@@ -1,9 +1,6 @@
 __author__ = 'christopher'
 from pyiid.serial_kernel import *
 from ase.atoms import Atoms as atoms
-# from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-# TODO: Replace this SrFit dependence with scikit-xray
-# dpc = DebyePDFCalculator()
 
 def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
     """
