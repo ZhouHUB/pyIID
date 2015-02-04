@@ -82,8 +82,8 @@ def mh_accept(initial_energy, next_energy, T=1):
 
     rand = np.random.random((1,))
 
-    print 'initial, next, rand, exp'
-    print initial_energy, next_energy, rand, canon_part_prob
+    # print 'initial, next, rand, exp'
+    # print initial_energy, next_energy, rand, canon_part_prob
 
     return rand < canon_part_prob
 
@@ -170,8 +170,8 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     try:
         while i < iterations:
             accept, atoms = hmc_move(atoms, stepsize, n_steps, T)
-            print i, accept, atoms.get_potential_energy(), stepsize
-            print '--------------------------------'
+            # print i, accept, atoms.get_potential_energy(), stepsize
+            # print '--------------------------------'
             if accept is True:
                 traj += [atoms]
             accept_list.append(accept)

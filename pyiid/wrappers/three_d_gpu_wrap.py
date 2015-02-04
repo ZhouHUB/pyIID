@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 import numpy as np
 
-from pyiid.kernels.numbapro_cuda_kernels import *
+from pyiid.kernels.three_d_cuda import *
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, get_grad_rw
 
 
@@ -25,39 +25,43 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     #cuda kernel information
 
     stream = cuda.stream()
-    tpb = 32
-    bpg = int(math.ceil(float(n) / tpb))
 
+    # two kinds of kernels; NxN or NxNxQ
 
+    # NXN
+    elements_per_dim_2 = [n, n]
+    tpb_l_2 = [32, 32]
+    bpg_l_2 = []
+    for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
+        bpg_l_2.append(int(math.ceil(e_dim / tpb)))
+
+    # NxNxQ
+    elements_per_dim_3 = [n, n, qmax_bin]
+    tpb_l_3 = [16, 16, 4]
+    bpg_l_3 = []
+    for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
+        bpg_l_3.append(int(math.ceil(e_dim / tpb)))
     #start calculations
 
     dscat = cuda.to_device(scatter_array, stream)
     dnorm = cuda.to_device(norm_array)
-    get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
+    get_normalization_array[bpg_l_3, tpb_l_3, stream](dnorm, dscat)
 
     dd = cuda.to_device(d, stream)
     dq = cuda.to_device(q, stream)
     dr = cuda.to_device(r, stream)
     dfq = cuda.to_device(super_fq, stream)
 
-    get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
+    get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq)
     cuda.synchronize()
 
-    get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
+    get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
 
     cuda.synchronize()
     dr.to_host(stream)
-    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dfq, dr, qbin)
+    get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin, dnorm)
     cuda.synchronize()
-
-
-    get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq)
-    cuda.synchronize()
-    dnorm.to_host()
-
-    get_fq_p2[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
-    cuda.synchronize()
-    get_fq_p3[(bpg, bpg), (tpb, tpb), stream](dfq, dnorm)
+    get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
     cuda.synchronize()
     dfq.to_host(stream)
     fq = super_fq.sum(axis=(0, 1))
@@ -68,6 +72,7 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     fq = np.nan_to_num(1 / (n * na) * fq)
     np.seterr(**old_settings)
     return fq
+
 
 def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     """
@@ -158,81 +163,66 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
 
     #cuda info
     stream = cuda.stream()
-    tpb = 32
-    bpg = int(math.ceil(float(n) / tpb))
+
+    # two kinds of kernels; NxN or NxNxQ
+
+    # NXN
+    elements_per_dim_2 = [n, n]
+    tpb_l_2 = [32, 32]
+    bpg_l_2 = []
+    for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
+        bpg_l_2.append(int(math.ceil(float(e_dim) / tpb)))
+
+    # NxNxQ
+    elements_per_dim_3 = [n, n, qmax_bin]
+    tpb_l_3 = [16, 16, 4]
+    bpg_l_3 = []
+    for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
+        bpg_l_3.append(int(math.ceil(float(e_dim) / tpb)))
 
     #start calculations
     dscat = cuda.to_device(scatter_array, stream)
     dnorm = cuda.to_device(norm_array)
-    get_normalization_array[(bpg, bpg), (tpb, tpb), stream](dnorm, dscat)
+    get_normalization_array[bpg_l_3, tpb_l_3, stream](dnorm, dscat)
 
     dd = cuda.to_device(d, stream)
     dq = cuda.to_device(q, stream)
     dr = cuda.to_device(r, stream)
     dfq = cuda.to_device(super_fq, stream)
 
-    get_d_array[(bpg, bpg), (tpb, tpb), stream](dd, dq)
+    get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq)
     cuda.synchronize()
 
-    get_r_array[(bpg, bpg), (tpb, tpb), stream](dr, dd)
+    get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
 
     cuda.synchronize()
     dr.to_host(stream)
-    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dfq, dr, qbin)
+    get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin, dnorm)
     cuda.synchronize()
-
-    cuda.synchronize()
-
-    get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq)
-    cuda.synchronize()
-
-    get_fq_p2[(bpg, bpg), (tpb, tpb), stream](dfq, dr)
-    cuda.synchronize()
-    get_fq_p3[(bpg, bpg), (tpb, tpb), stream](dfq, dnorm)
+    get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
     cuda.synchronize()
     dfq.to_host(stream)
 
-    rgrad = np.zeros((n, n, 3), dtype=np.float32)
-    q_over_r = np.zeros((n, n, qmax_bin), dtype=np.float32)
+
     cos_term = np.zeros((n, n, qmax_bin), dtype=np.float32)
     grad_p = np.zeros((n, n, 3, qmax_bin), dtype=np.float32)
-    kqr = np.zeros((n, n, qmax_bin), dtype=np.float32)
 
-    drgrad = cuda.to_device(rgrad, stream)
-    dq_over_r = cuda.to_device(q_over_r, stream)
     dcos_term = cuda.to_device(cos_term, stream)
     dgrad_p = cuda.to_device(grad_p, stream)
-    dkqr = cuda.to_device(kqr, stream)
 
-
-    get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dkqr, dr, qbin)
+    fq_grad_position3[bpg_l_3, tpb_l_3, stream](dcos_term, dr,  qbin) #OK
     cuda.synchronize()
 
-    fq_grad_position1[(bpg, bpg), (tpb, tpb), stream](dq_over_r, dr, qbin) #OK
+    fq_grad_position5[bpg_l_3, tpb_l_3, stream](dcos_term, dnorm) #OK
     cuda.synchronize()
 
-
-
-    fq_grad_position0[(bpg, bpg), (tpb, tpb), stream](drgrad, dd, dr) #OK
-    fq_grad_position3[(bpg, bpg), (tpb, tpb), stream](dcos_term, dkqr) #OK
+    fq_grad_position7[bpg_l_3, tpb_l_3, stream](dcos_term, dfq, dr) #OK
     cuda.synchronize()
 
-    fq_grad_position4[(bpg, bpg), (tpb, tpb), stream](dcos_term, dq_over_r) #OK
+    fq_grad_position_final1[bpg_l_3, tpb_l_3, stream](dgrad_p, dd, dr) #OK
     cuda.synchronize()
 
-    fq_grad_position5[(bpg, bpg), (tpb, tpb), stream](dcos_term, dnorm) #OK
-    cuda.synchronize()
-
-    fq_grad_position6[(bpg, bpg), (tpb, tpb), stream](dfq, dr) #OK
-    cuda.synchronize()
-
-    fq_grad_position7[(bpg, bpg), (tpb, tpb), stream](dcos_term, dfq) #OK
-    cuda.synchronize()
-
-    fq_grad_position_final1[(bpg, bpg), (tpb, tpb), stream](dgrad_p, drgrad) #OK
-    cuda.synchronize()
-
-    fq_grad_position_final2[(bpg, bpg), (tpb, tpb), stream](dgrad_p, dcos_term) #ok
+    fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term) #Ok
     dgrad_p.to_host(stream)
 
 
