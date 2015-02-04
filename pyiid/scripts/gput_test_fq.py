@@ -2,7 +2,7 @@ __author__ = 'christopher'
 # cProfile.run('''
 from copy import deepcopy as dc
 
-from pyiid.kernels.gpu.numbapro_cuda_kernels import *
+from pyiid.kernels.numbapro_cuda_kernels import *
 
 # from pyiid.serial_kernel import get_normalization_array
 

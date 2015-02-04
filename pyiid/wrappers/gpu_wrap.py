@@ -1,5 +1,8 @@
 __author__ = 'christopher'
-from pyiid.kernels.gpu.numbapro_cuda_kernels import *
+import numpy as np
+
+from pyiid.kernels.numbapro_cuda_kernels import *
+from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, get_grad_rw
 
 
 def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
@@ -96,9 +99,9 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     qmin_bin = int(qmin / qbin)
     fq = wrap_fq_gpu(atoms, qmax, qbin)
     fq[:qmin_bin] = 0
-    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep), 0.0,
-                           rmax)
+    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep))
     return pdf0, fq
+
 
 def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     """
@@ -136,6 +139,7 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
     rw, scale = get_rw(gobs, g_calc, weight=None)
     return rw, scale, g_calc, fq
+
 
 def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     #atoms info
@@ -291,8 +295,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
         for tz in range(3):
             fq_grad[tx, tz, :qmin_bin] = 0
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
-    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep), qmin,
-             rmax)
+    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     # print 'scale:', scale

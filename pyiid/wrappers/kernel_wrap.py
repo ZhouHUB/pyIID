@@ -1,5 +1,5 @@
 __author__ = 'christopher'
-from pyiid.serial_kernel import *
+from pyiid.kernels.serial_kernel import *
 
 
 def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
@@ -17,7 +17,7 @@ def wrap_atoms(atoms, qmax=25., qmin=0.0, qbin=.1):
     e_num = atoms.get_atomic_numbers()
 
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
-    get_scatter_array(scatter_array, e_num, n, 0, qmax_bin, qbin)
+    get_scatter_array(scatter_array, e_num, qbin)
     atoms.set_array('scatter', scatter_array)
 
 
@@ -54,23 +54,23 @@ def wrap_fq(atoms, qmax=25., qmin=0.0, qbin=.1):
 
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
-    get_d_array(d, q, n)
+    get_d_array(d, q)
 
     # Get pair distance array
     r = np.zeros((n, n))
-    get_r_array(r, d, n)
+    get_r_array(r, d)
 
     # get scatter array
     scatter_array =atoms.get_array('scatter')
 
     # get non-normalized fq
     fq = np.zeros(len(scatter_q))
-    get_fq_array(fq, r, scatter_array, n, qmin_bin, qmax_bin, qbin)
+    get_fq_array(fq, r, scatter_array, qbin)
 
 
     #Normalize fq
     norm_array = np.zeros((n, n, len(scatter_q)))
-    get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n)
+    get_normalization_array(norm_array, scatter_array)
     norm_array = norm_array.sum(axis=(0, 1))
     norm_array *= 1. / (scatter_array.shape[0] ** 2)
 
@@ -109,8 +109,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
         The reduced structure function
     """
     fq = wrap_fq(atoms, qmax, qmin, qbin)
-    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep), 0.0,
-                           rmax)
+    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep))
     return pdf0, fq
 
 
@@ -184,11 +183,11 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
 
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
-    get_d_array(d, q, n)
+    get_d_array(d, q)
 
     # Get pair distance array
     r = np.zeros((n, n))
-    get_r_array(r, d, n)
+    get_r_array(r, d)
 
     # get scatter array
     scatter_array =atoms.get_array('scatter')
@@ -197,13 +196,12 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
 
     #Normalize FQ
     norm_array = np.zeros((n, n, len(scatter_q)))
-    get_normalization_array(norm_array, scatter_array, qmin_bin, qmax_bin, n)
+    get_normalization_array(norm_array, scatter_array)
     norm_array = norm_array.sum(axis=(0, 1))
     norm_array *= 1. / (scatter_array.shape[0] ** 2)
 
     dfq_dq = np.zeros((n, 3, len(scatter_q)))
-    fq_grad_position(dfq_dq, d, r, scatter_array, norm_array, qmin_bin,
-                     qmax_bin, qbin)
+    fq_grad_position(dfq_dq, d, r, scatter_array, qbin)
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
@@ -249,8 +247,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
                                        rstep)
     fq_grad = wrap_fq_grad(atoms, qmax, qmin, qbin)
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
-    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep), qmin,
-             rmax)
+    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     return grad_rw

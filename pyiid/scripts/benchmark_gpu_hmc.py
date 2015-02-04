@@ -5,9 +5,9 @@ import numpy as np
 import os
 import ase.io as aseio
 
-from pyiid.hmc import run_hmc
+from pyiid.sim.hmc import run_hmc
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.pdfcalc_gpu import PDFCalc
+from pyiid.calc.pdfcalc_gpu import PDFCalc
 
 
 atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz'
@@ -35,6 +35,6 @@ atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
 atoms.set_velocities(np.zeros((len(atoms), 3)))
 
-traj, accept_list, move_list = run_hmc(atoms, 2, .1, 10, 0.9, 0, .9,
+traj, accept_list = run_hmc(atoms, 2, .1, 10, 0.9, 0, .9,
                                        1.02, .98, .001, .65)
 ''', sort='tottime')

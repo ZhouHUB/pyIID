@@ -1,16 +1,11 @@
 __author__ = 'christopher'
 import matplotlib.pyplot as plt
-from pyiid.utils import convert_atoms_to_stru
-import cProfile
 # cProfile.run('''
 __author__ = 'christopher'
 import numpy as np
-import ase.io as io
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-from pyiid.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
-    get_fq_array, get_normalization_array, get_pdf_at_qmin, fq_grad_position
-from scipy.fftpack import idst
-from copy import deepcopy as dc
+from pyiid.kernels.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
+    get_fq_array, get_normalization_array, get_pdf_at_qmin
 from ase import Atoms
 dpc = DebyePDFCalculator()
 
@@ -37,20 +32,20 @@ n_range = range(N)
 range_3 = range(3)
 
 # Get pair coordinate distance array
-get_d_array(d, q, N)
+get_d_array(d, q)
 
 #print 'd'
 #print d
 
 #Get pair distance array
 r = np.zeros((N, N))
-get_r_array(r, d, N)
+get_r_array(r, d)
 #print 'r'
 #print r
 
 #get scatter array
 scatter_array = np.zeros((N, len(Q)))
-get_scatter_array(scatter_array, symbols, N, qmin_bin, Qmax_bin, Qbin)
+get_scatter_array(scatter_array, symbols, Qbin)
 #print 'sa'
 #print scatter_array
 #remove self_scattering
@@ -58,11 +53,11 @@ get_scatter_array(scatter_array, symbols, N, qmin_bin, Qmax_bin, Qbin)
 
 #get non-normalized FQ
 fq = np.zeros(len(Q))
-get_fq_array(fq, r, scatter_array, N, qmin_bin, Qmax_bin, Qbin)
+get_fq_array(fq, r, scatter_array, Qbin)
 
 #Normalize FQ
 norm_array = np.zeros(len(Q))
-get_normalization_array(norm_array, scatter_array, qmin_bin, Qmax_bin, N)
+get_normalization_array(norm_array, scatter_array)
 start_FQ = np.nan_to_num(1 / (N * norm_array) * fq)
 a = .00001
 total_FQ = np.zeros((N, 3, len(Q)))
@@ -147,7 +142,8 @@ for tx in range(N):
         old_settings = np.seterr(all='ignore')
         grad_p[tx, tz] = np.nan_to_num(1 / (N * norm_array) * grad_p[tx, tz])
         np.seterr(**old_settings)
-partial = get_pdf_at_qmin(grad_p[2, 1,:], rstep, Qbin, np.arange(0, rmax, rstep), Qmin, rmax)
+partial = get_pdf_at_qmin(grad_p[2, 1, :], rstep, Qbin,
+                          np.arange(0, rmax, rstep))
 plt.plot(
     np.arange(0, 40, .01), partial
     # Q, total_FQ[2,1,:],
