@@ -41,6 +41,7 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     bpg_l_3 = []
     for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
         bpg_l_3.append(int(math.ceil(e_dim / tpb)))
+
     #start calculations
 
     dscat = cuda.to_device(scatter_array, stream)
