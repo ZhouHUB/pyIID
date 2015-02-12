@@ -2,8 +2,6 @@ __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 
-from pyiid.wrappers.kernel_wrap import wrap_rw, wrap_grad_rw, wrap_pdf
-
 
 class PDFCalc(Calculator):
     """
@@ -13,7 +11,7 @@ class PDFCalc(Calculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, gobs=None, qmin=0.0, qmax=25.0, qbin=None,
-                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., **kwargs):
+                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., processor='gpu_3_d', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
@@ -32,6 +30,16 @@ class PDFCalc(Calculator):
             self.gobs = gobs
         else:
             raise NotImplementedError('Need an experimental PDF')
+
+        if processor == 'gpu_3_d':
+            from pyiid.wrappers.three_d_gpu_wrap import wrap_grad_rw, wrap_rw
+        elif processor == 'gpu_2_d':
+            from pyiid.wrappers.gpu_wrap import wrap_grad_rw, wrap_rw
+        else:
+            from pyiid.wrappers.kernel_wrap import wrap_grad_rw, wrap_rw
+
+        self.wrap_rw = wrap_rw
+        self.wrap_grad_rw = wrap_grad_rw
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
@@ -67,7 +75,7 @@ class PDFCalc(Calculator):
                     self.calculate_forces(self.atoms)
 
     def calculate_energy(self, atoms):
-        energy, scale, gcalc, fq = wrap_rw(atoms, self.gobs, self.qmax,
+        energy, scale, gcalc, fq = self.wrap_rw(atoms, self.gobs, self.qmax,
                                            self.qmin, self.qbin, self.rmax,
                                            self.rbin)
         self.energy_free = energy * self.rw_to_eV
@@ -76,7 +84,7 @@ class PDFCalc(Calculator):
 
     def calculate_forces(self, atoms):
         self.results['forces'] = np.zeros((len(atoms), 3))
-        forces = wrap_grad_rw(atoms, self.gobs, self.qmax, self.qmin, self.qbin,
+        forces = self.wrap_grad_rw(atoms, self.gobs, self.qmax, self.qmin, self.qbin,
                               self.rmax, self.rbin) * self.rw_to_eV
         self.results['forces'] = forces
 

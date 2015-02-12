@@ -5,7 +5,7 @@ from pyiid.kernels.three_d_cuda import *
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, get_grad_rw
 
 
-def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
+def wrap_fq(atoms, qmax=25., qbin=.1):
 
     #get information for FQ transformation
 
@@ -33,14 +33,22 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     tpb_l_2 = [32, 32]
     bpg_l_2 = []
     for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
-        bpg_l_2.append(int(math.ceil(e_dim / tpb)))
+        bpg = int(math.ceil(float(e_dim) / tpb))
+        if bpg < 1:
+            bpg = 1
+        assert(bpg*tpb >= e_dim)
+        bpg_l_2.append(bpg)
 
     # NxNxQ
     elements_per_dim_3 = [n, n, qmax_bin]
     tpb_l_3 = [16, 16, 4]
     bpg_l_3 = []
     for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
-        bpg_l_3.append(int(math.ceil(e_dim / tpb)))
+        bpg = int(math.ceil(float(e_dim) / tpb))
+        if bpg < 1:
+            bpg = 1
+        assert(bpg*tpb >= e_dim)
+        bpg_l_3.append(bpg)
 
     #start calculations
 
@@ -59,11 +67,15 @@ def wrap_fq_gpu(atoms, qmax=25., qbin=.1):
     get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
 
     cuda.synchronize()
-    dr.to_host(stream)
+
     get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin, dnorm)
     cuda.synchronize()
+
+    dnorm.to_host(stream)
+
     get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
     cuda.synchronize()
+
     dfq.to_host(stream)
     fq = super_fq.sum(axis=(0, 1))
     na = norm_array.sum(axis=(0, 1))
@@ -103,7 +115,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
         The reduced structure function
     """
     qmin_bin = int(qmin / qbin)
-    fq = wrap_fq_gpu(atoms, qmax, qbin)
+    fq = wrap_fq(atoms, qmax, qbin)
     fq[:qmin_bin] = 0
     pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep))
     return pdf0, fq
@@ -294,20 +306,21 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
 
 
 if __name__ == '__main__':
-    import cProfile
-    cProfile.run('''
-import ase.io as aseio
-import os
-from pyiid.wrappers.kernel_wrap import wrap_atoms
-# import matplotlib.pyplot as plt
+    # import cProfile
+    # cProfile.run('''
+    import ase.io as aseio
+    import os
+    from pyiid.wrappers.kernel_wrap import wrap_atoms
+    import matplotlib.pyplot as plt
 
-atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
-atoms_file_no_ext = os.path.splitext(atoms_file)[0]
-atomsio = aseio.read(atoms_file)
-wrap_atoms(atomsio)
-atomsio *= (10, 1, 1)
+    atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
+    atoms_file_no_ext = os.path.splitext(atoms_file)[0]
+    atomsio = aseio.read(atoms_file)
+    wrap_atoms(atomsio)
+    atomsio *= (10, 1, 1)
 
-# fq = wrap_fq_gpu(atomsio)
-for i in range(10):
-    gfq = wrap_fq_grad_gpu(atomsio)
-    ''', sort='tottime')
+    fq = wrap_fq(atomsio)
+    plt.plot(fq), plt.show()
+    # for i in range(10):
+    #     gfq = wrap_fq_grad_gpu(atomsio)
+    # ''', sort='tottime')

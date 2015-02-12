@@ -10,7 +10,7 @@ import ase.io as aseio
 
 from pyiid.sim.dynamics import simulate_dynamics
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.calc.pdfcalc_gpu import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
 
 
@@ -26,10 +26,11 @@ n = len(atomsio)
 qmax_bin = int(qmax / qbin)
 
 atoms = dc(atomsio)
+# view(atoms)
 pdf, fq = wrap_pdf(atoms, qmin=0, qbin=.1)
-# atoms.positions *= .95
+atoms.positions *= 1.05
 # atoms.rattle(.05)
-atoms[51].position += [1,0,0]
+# atoms[51].position += [1,0,0]
 rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=0, qbin=.1)
 
 calc = PDFCalc(gobs=pdf, qmin=0, conv=1, qbin=.1)
@@ -39,7 +40,7 @@ print(rwi)
 atoms.set_momenta(np.zeros((len(atoms), 3)))
 # atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
-traj = simulate_dynamics(atoms, 5e-2, 3)
+traj = simulate_dynamics(atoms, 1e-3, 100)
 
 pe_list = []
 
@@ -60,10 +61,10 @@ for atoms in traj:
     f2 = f*2
     wtraj.write(atoms)
 '''
-'''
+
 view(traj)
 plt.plot(pdf, label='ideal')
 plt.plot(wrap_pdf(traj[0], qmin= 0)[0], label='start')
 plt.plot(wrap_pdf(traj[min_pe], qmin= 0)[0], label='best:' + str(min_pe))
 plt.legend()
-plt.show()'''
+plt.show()

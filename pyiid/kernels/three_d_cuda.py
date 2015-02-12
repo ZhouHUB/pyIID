@@ -133,7 +133,7 @@ def fq_grad_position3(cos_term, r, qbin):
 
     Parameters
     -----------
-    :param qbin:
+    qbin:
     cos_term: Nx3xQ numpy array
         The array which will store the FQ gradient
     kqr: Nx3xQ array

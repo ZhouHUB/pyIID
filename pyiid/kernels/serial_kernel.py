@@ -60,7 +60,7 @@ def get_scatter_array(scatter_array, numbers, qbin):
         The qbin size
     """
     n = len(scatter_array)
-    qmax_bin = scatter_array.shape[-1]
+    qmax_bin = scatter_array.shape[1]
     for tx in range(n):
         for kq in range(0, qmax_bin):
             # note x-ray lib is in nm^-1,
@@ -116,7 +116,7 @@ def get_normalization_array(norm_array, scatter_array):
         The scatter factor array
     """
     n = len(norm_array)
-    qmax_bin = norm_array.shape[-1]
+    qmax_bin = norm_array.shape[2]
 
     for kq in range(0, qmax_bin):
         for tx in range(n):
@@ -287,7 +287,7 @@ def fq_grad_position(grad_p, d, r, scatter_array, qbin):
         The size of the Q bins
     """
     n = len(r)
-    qmax_bin = grad_p.shape[-1]
+    qmax_bin = grad_p.shape[2]
     for tx in range(n):
         for tz in range(3):
             for ty in range(n):
