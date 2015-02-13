@@ -343,9 +343,9 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
-            part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
-            part2 = np.sum(scale * grad_pdf[tx, tz, :])
-            grad_rw[tx, tz] = rw.real / part1.real * part2.real
+            part1 = np.sum((gobs[:] - gcalc[:])**2)
+            part2 = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])
+            grad_rw[tx, tz] = rw.real * part2.real / part1.real
 
 # Misc. Kernels----------------------------------------------------------------
 

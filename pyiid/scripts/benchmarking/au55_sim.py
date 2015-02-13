@@ -20,6 +20,8 @@ atomsio = aseio.read(atoms_file)
 wrap_atoms(atomsio)
 
 qmax = 25
+# qmin = 2.5
+qmin = 0.
 qbin = .1
 n = len(atomsio)
 
@@ -27,13 +29,13 @@ qmax_bin = int(qmax / qbin)
 
 atoms = dc(atomsio)
 # view(atoms)
-pdf, fq = wrap_pdf(atoms, qmin=0, qbin=.1)
+pdf, fq = wrap_pdf(atoms, qmin=qmin, qbin=.1)
 atoms.positions *= 1.05
 # atoms.rattle(.05)
 # atoms[51].position += [1,0,0]
-rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=0, qbin=.1)
+rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=qmin, qbin=.1)
 
-calc = PDFCalc(gobs=pdf, qmin=0, conv=1, qbin=.1)
+calc = PDFCalc(gobs=pdf, qmin=qmin, conv=1, qbin=.1)
 atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
 print(rwi)
@@ -63,8 +65,10 @@ for atoms in traj:
 '''
 
 view(traj)
-plt.plot(pdf, label='ideal')
-plt.plot(wrap_pdf(traj[0], qmin= 0)[0], label='start')
-plt.plot(wrap_pdf(traj[min_pe], qmin= 0)[0], label='best:' + str(min_pe))
+r = np.arange(0, 40, .01)
+plt.plot(r, pdf, label='ideal')
+plt.plot(r, wrap_pdf(traj[0], qmin= qmin)[0], label='start')
+plt.plot(r, wrap_pdf(traj[min_pe], qmin= qmin)[0], label='best:' + str(min_pe))
 plt.legend()
+plt.xlabel('r in A')
 plt.show()
