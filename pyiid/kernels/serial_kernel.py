@@ -7,6 +7,7 @@ import xraylib
 
 targ = 'cpu'
 
+# F(Q) test_kernels ---------------------------------------------------------------
 
 @autojit(target=targ)
 def get_d_array(d, q):
@@ -63,10 +64,10 @@ def get_scatter_array(scatter_array, numbers, qbin):
     qmax_bin = scatter_array.shape[1]
     for tx in range(n):
         for kq in range(0, qmax_bin):
-            # note x-ray lib is in nm^-1,
-            # hence the qbin/10. to convert from A^-1
+            # note xraylib uses q = sin(th/2)
+            # as opposed to our q = 4pi sin(th/2)
             scatter_array[tx, kq] = xraylib.FF_Rayl(numbers[tx],
-                                                    kq * qbin / 10.)
+                                                    kq * qbin / 4 /np.pi)
 
 
 @autojit(target=targ)
@@ -124,6 +125,7 @@ def get_normalization_array(norm_array, scatter_array):
                 norm_array[tx, ty, kq] = (
                     scatter_array[tx, kq] * scatter_array[ty, kq])
 
+# PDF test_kernels ----------------------------------------------------------------
 
 @autojit(target=targ)
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid):
@@ -236,38 +238,37 @@ def fft_gr_to_fq(g, rbin):
     return f.imag
 
 
-@autojit(target=targ)
-def get_dw_sigma_squared(s, u, r, d, n):
-    for tx in range(n):
-        for ty in range(n):
-            rnormx = d[tx, ty, 0] / r[tx, ty]
-            rnormy = d[tx, ty, 1] / r[tx, ty]
-            rnormz = d[tx, ty, 2] / r[tx, ty]
-            ux = u[tx, 0] - u[ty, 0]
-            uy = u[tx, 1] - u[ty, 1]
-            uz = u[tx, 2] - u[ty, 2]
-            u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
-            s[tx, ty] = u_dot_r * u_dot_r
-
-
-@autojit(target=targ)
-def get_gr(gr, r, rbin, n):
+def get_rw(gobs, gcalc, weight=None):
     """
-    Generate gr the histogram of the atomic distances
+    Get the rw value for the PDF
 
     Parameters
-    ----------
-    gr: Nd array
-    r: NxN array
-    rbin: float
-    n: Nd array
-    :return:
+    -----------
+    gobs: Nd array
+        The observed PDF
+    gcalc: Nd array
+        The model PDF
+    weight: Nd array, optional
+        The weight for the PDF
+
+    Returns
+    -------
+    float:
+        The rw
+    scale:
+        The scale factor in the rw calculation
     """
-    for tx in range(n):
-        for ty in range(n):
-            gr[int(r[tx, ty] / rbin)] += 1
+    # Note: The scale is set to 1, having a variable scale seems to create
+    # issues with the potential energy surface.
+    # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    scale = 1
+    if weight is None:
+        weight = np.ones(gcalc.shape)
+    top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
+    bottom = np.sum(weight[:] * gobs[:] ** 2)
+    return np.sqrt(top / bottom).real, scale
 
-
+# Gradient test_kernels -----------------------------------------------------------
 @autojit(target=targ)
 def fq_grad_position(grad_p, d, r, scatter_array, qbin):
     """
@@ -307,22 +308,6 @@ def fq_grad_position(grad_p, d, r, scatter_array, qbin):
                         grad_p[tx, tz, kq] += sub_grad_p
 
 
-def simple_grad(grad_p, d, r):
-    """
-    Gradient of the delta function gr
-    grad_p:
-    d:
-    r:
-    :return:
-    """
-    n = len(r)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for tz in range(3):
-                    grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
-
-
 @autojit(target=targ)
 def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid):
     n = len(grad_fq)
@@ -330,38 +315,6 @@ def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid):
         for tz in range(3):
             grad_pdf[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
                                                rgrid)
-
-
-
-def get_rw(gobs, gcalc, weight=None):
-    """
-    Get the rw value for the PDF
-
-    Parameters
-    -----------
-    gobs: Nd array
-        The observed PDF
-    gcalc: Nd array
-        The model PDF
-    weight: Nd array, optional
-        The weight for the PDF
-
-    Returns
-    -------
-    float:
-        The rw
-    scale:
-        The scale factor in the rw calculation
-    """
-    # Note: The scale is set to 1, having a variable scale seems to create
-    # issues with the potential energy surface.
-    # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
-    scale = 1
-    if weight is None:
-        weight = np.ones(gcalc.shape)
-    top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
-    bottom = np.sum(weight[:] * gobs[:] ** 2)
-    return np.sqrt(top / bottom).real, scale
 
 
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
@@ -393,3 +346,52 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
             part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
             part2 = np.sum(scale * grad_pdf[tx, tz, :])
             grad_rw[tx, tz] = rw.real / part1.real * part2.real
+
+# Misc. Kernels----------------------------------------------------------------
+
+@autojit(target=targ)
+def get_dw_sigma_squared(s, u, r, d, n):
+    for tx in range(n):
+        for ty in range(n):
+            rnormx = d[tx, ty, 0] / r[tx, ty]
+            rnormy = d[tx, ty, 1] / r[tx, ty]
+            rnormz = d[tx, ty, 2] / r[tx, ty]
+            ux = u[tx, 0] - u[ty, 0]
+            uy = u[tx, 1] - u[ty, 1]
+            uz = u[tx, 2] - u[ty, 2]
+            u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
+            s[tx, ty] = u_dot_r * u_dot_r
+
+
+@autojit(target=targ)
+def get_gr(gr, r, rbin, n):
+    """
+    Generate gr the histogram of the atomic distances
+
+    Parameters
+    ----------
+    gr: Nd array
+    r: NxN array
+    rbin: float
+    n: Nd array
+    :return:
+    """
+    for tx in range(n):
+        for ty in range(n):
+            gr[int(r[tx, ty] / rbin)] += 1
+
+
+def simple_grad(grad_p, d, r):
+    """
+    Gradient of the delta function gr
+    grad_p:
+    d:
+    r:
+    :return:
+    """
+    n = len(r)
+    for tx in range(n):
+        for ty in range(n):
+            if tx != ty:
+                for tz in range(3):
+                    grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)

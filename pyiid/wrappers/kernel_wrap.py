@@ -147,7 +147,7 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     return rw, scale, g_calc, fq
 
 
-def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
+def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     """
     Generate the reduced structure function gradient
 
@@ -172,9 +172,8 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
     symbols = atoms.get_chemical_symbols()
 
     # define scatter_q information and initialize constants
-    qmin_bin = int(qmin / qbin)
-    qmax_bin = int(qmax / qbin) - qmin_bin
-    scatter_q = np.arange(qmin, qmax, qbin)
+    qmax_bin = int(qmax / qbin)
+    scatter_q = np.arange(0, qmax, qbin)
     n = len(q)
 
     # Get pair coordinate distance array
@@ -186,7 +185,7 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
     get_r_array(r, d)
 
     # get scatter array
-    scatter_array =atoms.get_array('scatter')
+    scatter_array = atoms.get_array('scatter')
 
     # get non-normalized FQ
 
@@ -201,7 +200,6 @@ def wrap_fq_grad(atoms, qmax=25., qmin=0.0, qbin=.1):
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
-            dfq_dq[tx, tz, :qmin_bin] = 0.0
             dfq_dq[tx, tz] = np.nan_to_num(
                 1 / (n * norm_array) * dfq_dq[tx, tz])
     np.seterr(**old_settings)
@@ -241,7 +239,11 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
     if rw is None:
         rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
                                        rstep)
-    fq_grad = wrap_fq_grad(atoms, qmax, qmin, qbin)
+    fq_grad = wrap_fq_grad(atoms, qmax, qbin)
+    qmin_bin = int(qmin / qbin)
+    for tx in range(len(atoms)):
+        for tz in range(3):
+            fq_grad[tx, tz, :qmin_bin] = 0.
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
     grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
     grad_rw = np.zeros((len(atoms), 3))

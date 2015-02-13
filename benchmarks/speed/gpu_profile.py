@@ -10,8 +10,10 @@ atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT
 atoms_file_no_ext = os.path.splitext(atoms_file)[0]
 atomsio = aseio.read(atoms_file)
 wrap_atoms(atomsio)
-atomsio *= (10, 1, 1)
+atomsio *= (14, 1, 1)
 
-for i in range(3):
-    fq = wrap_fq(atomsio)
+# for i in range(3):
+# fq = wrap_fq(atomsio)
     # grad = wrap_fq_grad_gpu(atomsio)
+grad = wrap_fq_grad_gpu(atomsio)
+# print grad

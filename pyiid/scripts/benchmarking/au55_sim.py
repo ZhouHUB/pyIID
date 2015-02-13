@@ -40,7 +40,7 @@ print(rwi)
 atoms.set_momenta(np.zeros((len(atoms), 3)))
 # atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
-traj = simulate_dynamics(atoms, 1e-3, 100)
+traj = simulate_dynamics(atoms, 1e-3, 30)
 
 pe_list = []
 

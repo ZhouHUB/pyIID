@@ -7,6 +7,7 @@ import math
 # TODO: need more clever way to deal with this, including multiple GPUs
 cuda.select_device(1)
 
+# F(Q) test_kernels ---------------------------------------------------------------
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_d_array(d, q):
@@ -124,7 +125,7 @@ def get_normalization_array(norm_array, scat):
 
     norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
 
-# Start Gradient kernels -----------------------------------------------------
+# Gradient test_kernels -----------------------------------------------------------
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
 def fq_grad_position3(cos_term, r, qbin):

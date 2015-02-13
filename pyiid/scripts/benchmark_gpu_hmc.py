@@ -6,7 +6,7 @@ import os
 import ase.io as aseio
 
 from pyiid.sim.hmc import run_hmc
-from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
+from pyiid.test_wrappers.gpu_wrap import wrap_rw, wrap_pdf
 from pyiid.calc.pdfcalc_gpu import PDFCalc
 
 
