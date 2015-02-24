@@ -19,9 +19,11 @@ from pyiid.wrappers.three_d_gpu_wrap import wrap_grad_rw as gpu_grad_rw
 from ase.atoms import Atoms
 from pyiid.wrappers.kernel_wrap import wrap_atoms, grad_pdf
 
+# n = 50
+n = 10
 
 def test_fq():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -35,7 +37,7 @@ def test_fq():
 
 
 def test_pdf0():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -49,7 +51,7 @@ def test_pdf0():
 
 
 def test_pdf1():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -63,7 +65,7 @@ def test_pdf1():
 
 
 def test_rw0():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -78,7 +80,7 @@ def test_rw0():
 
 
 def test_rw1():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -93,7 +95,7 @@ def test_rw1():
 
 
 def test_grad_fq():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -107,7 +109,7 @@ def test_grad_fq():
 
 
 def test_grad_rw0():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -122,7 +124,7 @@ def test_grad_rw0():
 
 
 def test_grad_rw1():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -137,7 +139,7 @@ def test_grad_rw1():
 
 
 def test_grad_pdf1():
-    n = 10
+    
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)

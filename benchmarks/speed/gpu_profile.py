@@ -11,9 +11,8 @@ atoms_file_no_ext = os.path.splitext(atoms_file)[0]
 atomsio = aseio.read(atoms_file)
 wrap_atoms(atomsio)
 atomsio *= (14, 1, 1)
+print len(atomsio)
 
-# for i in range(3):
 # fq = wrap_fq(atomsio)
-    # grad = wrap_fq_grad_gpu(atomsio)
 grad = wrap_fq_grad_gpu(atomsio)
 # print grad

@@ -11,5 +11,5 @@ setup(
     author='christopher',
     author_email='wright1@email.sc.edu',
     description='Hamiltonion Monte Carlo based Diffraction Simulation',
-    requires=['numpy', 'python-ase', 'numba', 'nose']
+    requires=['numpy', 'python-ase', 'numba', 'nose', 'matplotlib']
 )

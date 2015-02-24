@@ -1,6 +1,7 @@
 __author__ = 'christopher'
 import math
 from numbapro import autojit
+from numba import *
 import mkl
 import numpy as np
 import xraylib
@@ -268,6 +269,36 @@ def get_rw(gobs, gcalc, weight=None):
     bottom = np.sum(weight[:] * gobs[:] ** 2)
     return np.sqrt(top / bottom).real, scale
 
+
+def get_chi_sq(gobs, gcalc):
+    """
+    Get the rw value for the PDF
+
+    Parameters
+    -----------
+    gobs: Nd array
+        The observed PDF
+    gcalc: Nd array
+        The model PDF
+    weight: Nd array, optional
+        The weight for the PDF
+
+    Returns
+    -------
+    float:
+        The rw
+    scale:
+        The scale factor in the rw calculation
+    """
+    # Note: The scale is set to 1, having a variable scale seems to create
+    # issues with the potential energy surface.
+    # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
+    scale = 1
+    return np.sum((gobs-gcalc)**2
+                  # /gobs
+    ).real, scale
+
+
 # Gradient test_kernels -----------------------------------------------------------
 @autojit(target=targ)
 def fq_grad_position(grad_p, d, r, scatter_array, qbin):
@@ -343,10 +374,50 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
-            part1 = np.sum((gobs[:] - gcalc[:])**2)
-            part2 = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])
-            grad_rw[tx, tz] = rw.real * part2.real / part1.real
+            '''
+            # Wolfram alpha
+            grad_rw[tx, tz] = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/(np.sum(gobs[:]**2) * rw)
+            grad_rw[tx, tz] = grad_rw[tx, tz].real
+            '''
+            # '''
+            # Sympy
+            grad_rw[tx, tz] = rw * np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/np.sum((gobs[:] - gcalc[:])**2)
+            # '''
+            '''
+            # Previous version
+            part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
+            part2 = np.sum(scale * grad_pdf[tx, tz, :])
+            grad_rw[tx, tz] = rw.real / part1.real * part2.real
+            '''
 
+
+def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs):
+    """
+    Get the gradient of the model PDF
+
+    Parameters
+    ------------
+    grad_rw: Nx3 array
+        Holds the gradient
+    grad_pdf: Nx3xR array
+        The gradient of the PDF
+    gcalc: Nd array
+        The calculated PDF
+    gobs: Nd array
+        The observed PDF
+    rw: float
+        The current Rw value
+    scale: float
+        The current scale
+    weight: nd array, optional
+        The PDF weights
+    """
+    n = len(grad_pdf)
+    for tx in range(n):
+        for tz in range(3):
+            grad_rw[tx, tz] = np.sum(-2 * (gobs - gcalc) * grad_pdf[tx, tz, :]
+                                     # /gobs
+            )
 # Misc. Kernels----------------------------------------------------------------
 
 @autojit(target=targ)

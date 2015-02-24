@@ -5,9 +5,10 @@ from copy import deepcopy as dc
 import numpy as np
 import ase.io as aseio
 from ase.neb import NEB
+from ase.optimize.bfgs import BFGS
 
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.calc.pdfcalc_gpu import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
 
 
@@ -32,7 +33,8 @@ rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=2.5, qbin=.1)
 
 
 calc = PDFCalc(gobs=pdf, qmin=2.5, conv=1, qbin=.1)
-atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3))/3/len(atoms))
+# atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3))/3/len(atoms))
+atoms.set_momenta(np.zeros((len(atoms), 3)))
 
 traj = [atomsio]
 traj += [atomsio.copy() for i in range(30)]
@@ -51,8 +53,7 @@ for image in neb.images:
     a_list2 += [image]
 
 
-# qn = BFGS(neb, trajectory=atoms_file_no_ext+'_gpu_neb_contract'+'.traj')
-# qn.run(fmax=0.05)
-
+qn = BFGS(neb, trajectory=atoms_file_no_ext+'_gpu_neb_contract'+'.traj')
+qn.run(fmax=0.05)
 # view(traj)
 # view(neb.images)

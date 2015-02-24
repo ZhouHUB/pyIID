@@ -2,7 +2,8 @@ __author__ = 'christopher'
 from numbapro import autojit
 
 from ase.atoms import Atoms
-
+from copy import deepcopy as dc
+import numpy as np
 
 atoms = Atoms
 
@@ -24,74 +25,30 @@ def leapfrog(atoms, step):
     ase.Atoms
         The new atomic positions and velocities
     """
-    f = atoms.get_forces()
-    # atoms.set_velocities(atoms.get_velocities() + 0.5 * step * f)
-    atoms.set_momenta(atoms.get_momenta() + 0.5 * step * f)
+    atoms.set_momenta(atoms.get_momenta() + 0.5 * step * atoms.get_forces())
 
-    new_pos = atoms.get_positions() + step * atoms.get_velocities()
-    atoms.set_positions(new_pos)
 
-    f = atoms.get_forces()
-    # atoms.set_velocities(atoms.get_velocities() + 0.5 * step * f)
-    atoms.set_momenta(atoms.get_momenta() + 0.5 * step * f)
+    # atoms.set_positions(atoms.get_positions() + step * atoms.get_velocities())
+
+    atoms.positions += step * atoms.get_velocities()
+
+    atoms.set_momenta(atoms.get_momenta() + 0.5 * step * atoms.get_forces())
     return atoms
 
 
-
-def hamil(atoms):
-    """
-    Calculate the Hamiltonian for the atomic configuration
-
-    Parameters
-    ----------
-    atoms: ase.Atoms
-        The atomic configuration
-
-    Return
-    ------
-    float
-        The energy of the system
-
-    """
-    return atoms.get_total_energy()
-    # print 'pot', atoms.get_potential_energy()
-    # print 'kin', kin_energy(atoms)
-    # return atoms.get_potential_energy() \
-    #        + kin_energy(atoms)
-
-
-def kin_energy(atoms):
-    """
-    Calculate the kinetic energy of the atoms
-
-    Parameters
-    -----------
-    atoms: ase.Atoms ase.Atoms
-        The atomic configuration
-    Returns
-    -------
-    float
-        The kinetic energy
-    """
-    v = atoms.get_velocities()
-    if v is None:
-        v = 0.0
-    # return np.sum(v ** 2) / 2.0
-    return atoms.get_kinetic_energy()
-
 def find_step_size(atoms):
-    step_size = .1
-    '''
+    step_size = 1.
+    # '''
     atoms.set_momenta(
         np.random.normal(0, 1, (len(atoms), 3)))
     old_atoms = dc(atoms)
-    h_old = hamil(old_atoms)
+    h_old = old_atoms.get_total_energy()
     leapfrog(atoms, step_size)
     a = 2 * (np.exp(-atoms.get_total_energy()+h_old) > 0.5) - 1
     while (np.exp(-atoms.get_total_energy() + h_old)) ** a > 2 ** -a:
         step_size *= 2 ** a
         leapfrog(atoms, step_size)
-        print np.exp(-atoms.get_total_energy() + h_old)
+        # print np.exp(-atoms.get_total_energy() + h_old)
         # '''
     return step_size
 
@@ -126,45 +83,45 @@ def nuts_da_hmc(atoms, accept_target, iterations, Emax):
                 v = bern(.5) * 2 - 1
 
                 if v == -1:
-                    atomsn, _, atoms1, n1, s1, a, na = buildtree(atomsn, u, v, j,
-                                                                 e,
-                                                                 Emax, atoms0)
+                    atomsn, _, atoms1, n1, s1, a, na = \
+                        buildtree(atomsn, u, v, j, e, Emax, atoms0)
                 else:
-                    _, atomsp, atoms1, n1, s1, a, na = buildtree(atomsp, u, v, j,
-                                                                 e,
-                                                                 Emax, atoms0)
+                    _, atomsp, atoms1, n1, s1, a, na = \
+                        buildtree(atomsp, u, v, j, e, Emax, atoms0)
 
                 if s1 == 1 and bern(min(1, n1 * 1. / n)):
+                    print 'accepted', atoms1.get_potential_energy()
                     atoms = atoms1
+                    traj += [atoms]
 
-                if atoms1.get_potential_energy() < atoms.get_potential_energy():
-                    atoms = atoms1
+                # if atoms1.get_potential_energy() < atoms.get_potential_energy():
+                #     atoms = atoms1
 
                 n = n + n1
 
                 span = atomsp.positions - atomsn.positions
                 span = span.flatten()
-                print 'emax criteria', s1
-                print 'negative u turn', span.dot(atomsn.get_velocities().flatten()) >= 0
-                print 'positive u turn', span.dot( atomsp.get_velocities().flatten()) >= 0
-                print 'mh critera', min(1, n1 * 1. / n)
-                print 'n prime', n1, 'n', n
+                # print 'emax criteria', s1
+                # print 'negative u turn', span.dot(atomsn.get_velocities().flatten()) >= 0
+                # print 'positive u turn', span.dot( atomsp.get_velocities().flatten()) >= 0
+                # print 'mh critera', min(1, n1 * 1. / n)
+                # print 'n prime', n1, 'n', n
 
-
-                s = s1 * (span.dot(atomsn.get_velocities().flatten()) >= 0) * (
-                    span.dot(atomsp.get_velocities().flatten()) >= 0)
-                j = j + 1
+                s = s1 * \
+                    (span.dot(atomsn.get_velocities().flatten()) >= 0) * \
+                    (span.dot(atomsp.get_velocities().flatten()) >= 0)
+                j += 1
 
             print 'm', m, 'j', j, 'e', e, 'nrg', atoms1.get_potential_energy()
 
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a * 1. / na)
 
-            step_size = np.exp(mu - ((m) ** .5 / gamma) * Hbar)
+            step_size = np.exp(mu - (m ** .5 / gamma) * Hbar)
 
             m += 1
             if atoms != traj[-1]:
-                traj += [atoms]
+            #     traj += [atoms]
                 print 'accepted', atoms.get_potential_energy()
             print '-------------'
     except KeyboardInterrupt:
@@ -174,39 +131,28 @@ def nuts_da_hmc(atoms, accept_target, iterations, Emax):
 @autojit(target='cpu')
 def buildtree(atoms, u, v, j, e, Emax, atoms0):
     if j == 0:
-        atoms1 = leapfrog(atoms, e)
-        E = hamil(atoms1)
-        E0 = hamil(atoms0)
+        atoms1 = leapfrog(atoms, v*e)
+        E = atoms1.get_total_energy()
+        E0 = atoms0.get_total_energy()
         # E = atoms1.get_potential_energy()
         # E0 = atoms0.get_potential_energy()
 
         dE = E - E0
 
         n1 = int(np.log(u) + dE <= 0)
-        print 'log(u) dE'
-        print np.log(u), dE
-        s1 = int(
-            np.log(u) +
-                 dE < Emax)
+        s1 = int(np.log(u) + dE < Emax)
         # print dE
         return atoms1, atoms1, atoms1, n1, s1, min(1, np.exp(-dE)), 1
     else:
-        atomsn, atomsp, atoms1, n1, s1, a1, na1 = buildtree(atoms, u, v, j - 1,
-                                                            e,
-                                                            Emax, atoms0)
+        atomsn, atomsp, atoms1, n1, s1, a1, na1 = \
+            buildtree(atoms, u, v, j - 1, e, Emax, atoms0)
         if s1 == 1:
             if v == -1:
-                atomsn, _, atoms11, n11, s11, a11, na11 = buildtree(atomsn, u,
-                                                                    v,
-                                                                    j - 1, e,
-                                                                    Emax,
-                                                                    atoms0)
+                atomsn, _, atoms11, n11, s11, a11, na11 = \
+                    buildtree(atomsn, u, v, j - 1, e, Emax, atoms0)
             else:
-                _, atomsp, atoms11, n11, s11, a11, na11 = buildtree(atomsp, u,
-                                                                    v,
-                                                                    j - 1, e,
-                                                                    Emax,
-                                                                    atoms0)
+                _, atomsp, atoms11, n11, s11, a11, na11 = \
+                    buildtree(atomsp, u, v, j - 1, e, Emax, atoms0)
 
             if bern(n11 * 1. / (max(n1 + n11, 1))):
                 atoms1 = atoms11
@@ -242,8 +188,8 @@ if __name__ == '__main__':
     atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
     atoms_file_no_ext = os.path.splitext(atoms_file)[0]
     atomsio = aseio.read(atoms_file)
-    images = PickleTrajectory('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55_gpu_neb_contract.traj', 'r')[:]
-    atomsio = images[-27]
+    # images = PickleTrajectory('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55_gpu_neb_contract.traj', 'r')[:]
+    # atomsio = images[-27]
     wrap_atoms(atomsio)
 
 
@@ -259,20 +205,14 @@ if __name__ == '__main__':
     pdf, fq = wrap_pdf(atoms, qmin=2.5, qbin=.1)
     # view(atoms)
     # atoms.positions *= 1.05
-    atoms.positions *= .99
-    # atoms.rattle(.1)
-    # images = PickleTrajectory('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55_gpu_neb_contract.traj', 'r')[:]
-    # atomsio = images[-32]
-    # wrap_atoms(atomsio)
+    atoms.positions *= .95
     atoms = dc(atomsio)
 
     calc = PDFCalc(gobs=pdf, qmin=2.5, conv=1, qbin=.1)
     atoms.set_calculator(calc)
     rwi = atoms.get_potential_energy()
-    # atoms.set_velocities(np.random.normal(0, 1, (len(atoms), 3)) / 3 / len(atoms))
-    # atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)) / 3 / len(atoms))
+    print rwi
     atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
-    # atoms.set_momenta(np.zeros((len(atoms), 3)))
 
     traj = nuts_da_hmc(atoms, .65, 500, 0.0)
 

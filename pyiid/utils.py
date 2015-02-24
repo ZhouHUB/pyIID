@@ -7,6 +7,8 @@ from ase.atoms import Atoms as AAtoms
 import ase.io as aseio
 import math
 import tkFileDialog
+from pyiid.kernels.serial_kernel import get_d_array
+from copy import deepcopy as dc
 
 
 def convert_atoms_to_stru(atoms):
@@ -98,3 +100,30 @@ def build_sphere_np(file, radius):
     return atoms
 
 
+def tag_surface_atoms(atoms, tag=1, tol=0):
+    """
+    Find which are the surface atoms in a nanoparticle.
+    ..note: We define the surface as a collection of atoms for which the
+    dot product between the displacement from the center of mass and all
+    the interatomic distances are negative.  Thus, all the interatomic
+    displacement vectors point inward or perpendicular.  This only works for
+    true crystals so we will include some tolerance to account for surface
+    disorder.
+    :param atoms:
+    :return:
+    """
+    n = len(atoms)
+    q = atoms.get_positions()
+    d_array = np.zeros((n, n, 3))
+    get_d_array(d_array, q)
+    com = atoms.get_center_of_mass()
+    for i in range(n):
+        pos = atoms[i].position
+        disp = pos - com
+        disp /= np.linalg.norm(disp)
+        dot = np.zeros((n))
+        for j in range(n):
+            if j != i:
+                dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))
+        if np.all(np.less_equal(dot, np.zeros(len(dot))+tol)):
+            atoms[i].tag = tag

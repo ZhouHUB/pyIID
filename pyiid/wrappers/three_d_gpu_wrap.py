@@ -3,7 +3,7 @@ import numpy as np
 
 from pyiid.kernels.three_d_cuda import *
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw,\
-    get_grad_rw
+    get_grad_rw, get_chi_sq, get_grad_chi_sq
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
@@ -68,18 +68,14 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
 
     get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
 
-
-
-    cuda.synchronize()
-
     get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin, dnorm)
-
-    cuda.synchronize()
-
     get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+    dnorm.to_host(stream2)
+
+
     cuda.synchronize()
 
-    dnorm.to_host(stream2)
+
 
     dfq.to_host(stream)
     fq = super_fq.sum(axis=(0, 1))
@@ -164,6 +160,44 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     return rw, scale, g_calc, fq
 
 
+def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+    """
+    Generate the Rw value
+
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+
+    rw: float
+        The Rw value in percent
+    scale: float
+        The scale factor between the observed and calculated PDF
+    pdf0:1darray
+        The atomic pair distributuion function
+    fq:1darray
+        The reduced structure function
+    """
+    g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
+    rw, scale = get_chi_sq(gobs, g_calc)
+    return rw, scale, g_calc, fq
+
+
 def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     #atoms info
     q = atoms.get_positions()
@@ -183,6 +217,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     #cuda info
     stream = cuda.stream()
     stream2 = cuda.stream()
+    stream3 = cuda.stream()
 
     # two kinds of test_kernels; NxN or NxNxQ
 
@@ -199,42 +234,46 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     bpg_l_3 = []
     for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
         bpg_l_3.append(int(math.ceil(float(e_dim) / tpb)))
-
-    # START CALCULATIONS
+    # print bpg_l_3, tpb_l_3
+# START CALCULATIONS-----------------------------------------------------------
     dscat = cuda.to_device(scatter_array, stream2)
     dnorm = cuda.to_device(norm_array, stream2)
-    get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
 
+    '--------------------------------------------------------------'
+    get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
+    '--------------------------------------------------------------'
     dd = cuda.to_device(d, stream)
-    dq = cuda.to_device(q, stream)
     dr = cuda.to_device(r, stream)
     dfq = cuda.to_device(super_fq, stream)
-
+    dq = cuda.to_device(q, stream)
 
 
     get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq)
-    cuda.synchronize()
+    # cuda.synchronize()
 
     get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
 
+    '--------------------------------------------------------------'
     get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin, dnorm)
+    '--------------------------------------------------------------'
     dcos_term = cuda.to_device(cos_term, stream2)
-    cuda.synchronize()
+    # cuda.synchronize()
 
 
     get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+    fq_grad_position3[bpg_l_3, tpb_l_3, stream3](dcos_term, dr,  qbin) #OK
     dgrad_p = cuda.to_device(grad_p, stream2)
-    cuda.synchronize()
+    # cuda.synchronize()
 
-    fq_grad_position3[bpg_l_3, tpb_l_3, stream](dcos_term, dr,  qbin) #OK
-    cuda.synchronize()
 
-    fq_grad_position_final1[bpg_l_3, tpb_l_3, stream2](dgrad_p, dd, dr) #OK
-    fq_grad_position5[bpg_l_3, tpb_l_3, stream](dcos_term, dnorm) #OK
-    cuda.synchronize()
+    # cuda.synchronize()
+
+    fq_grad_position_final1[bpg_l_3, tpb_l_3, stream](dgrad_p, dd, dr) #OK
+    fq_grad_position5[bpg_l_3, tpb_l_3, stream2](dcos_term, dnorm) #OK
+    # cuda.synchronize()
 
     fq_grad_position7[bpg_l_3, tpb_l_3, stream](dcos_term, dfq, dr) #OK
-    cuda.synchronize()
+    # cuda.synchronize()
 
     fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term) #Ok
     dnorm.to_host(stream2)
@@ -304,7 +343,51 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
     grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
-    # print 'scale:', scale
+    return grad_rw
+
+
+def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
+                 rw=None, gcalc=None, scale=None):
+    """
+    Generate the Rw value gradient
+
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+
+    grad_rw: float
+        The gradient of the Rw value with respect to the atomic positions,
+        in percent
+
+    """
+    if rw is None:
+        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
+                                       rstep)
+    fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
+    qmin_bin = int(qmin / qbin)
+    for tx in range(len(atoms)):
+        for tz in range(3):
+            fq_grad[tx, tz, :qmin_bin] = 0.
+    pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
+    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
+    grad_rw = np.zeros((len(atoms), 3))
+    get_grad_chi_sq(grad_rw, pdf_grad, gcalc, gobs)
     return grad_rw
 
 

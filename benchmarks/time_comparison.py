@@ -29,12 +29,13 @@ cpu = []
 pu = [
     'gpu_3_d',
     'gpu_2_d',
-    # 'cpu'
+    'cpu'
 ]
 super_results_d = OrderedDict()
 for i in range(1, 150, 10):
     atoms = dc(atoms2)
     atoms *= (i, 1, 1)
+    atoms.rattle()
     print i, len(atoms)
     results_d = {}
     for processor in pu:
@@ -57,6 +58,8 @@ for i in range(1, 150, 10):
 # pprint(super_results_d)
 
 sizes = []
+cpu_f = []
+cpu_e = []
 gpu3_d_f = []
 gpu3_d_e = []
 gpu2_d_f = []
@@ -64,12 +67,20 @@ gpu2_d_e = []
 
 for key, value in super_results_d.iteritems():
     sizes.append(key)
-    gpu3_d_f.append(value['gpu_3_d']['time for force'])
+    cpu_f.append(value['cpu']['time for force'])
+    cpu_e.append(value['cpu']['time for energy'])
+
     gpu3_d_e.append(value['gpu_3_d']['time for energy'])
+    gpu3_d_f.append(value['gpu_3_d']['time for force'])
+
     gpu2_d_f.append(value['gpu_2_d']['time for force'])
     gpu2_d_e.append(value['gpu_2_d']['time for energy'])
 
 # print sizes, gpu3_d_e
+
+plt.plot(sizes, cpu_f, 'bo', label='cpu energy')
+plt.plot(sizes, cpu_e, 'b-', label='cpu force')
+
 plt.plot(sizes, gpu3_d_e, 'ro', label='3D grid energy')
 plt.plot(sizes, gpu3_d_f, 'r-', label='3D grid force')
 
@@ -77,6 +88,6 @@ plt.plot(sizes, gpu2_d_e, 'ko', label='2D grid energy')
 plt.plot(sizes, gpu2_d_f, 'k-', label='2D grid force')
 plt.legend(loc=2)
 plt.xlabel('Number of atoms')
-plt.ylabel('time (lower is better)')
-plt.title('Scaling of algorithm over GPUs')
+plt.ylabel('time (s) [lower is better]')
+plt.title('Scaling of algorithm')
 plt.show()

@@ -11,7 +11,7 @@ class PDFCalc(Calculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, gobs=None, qmin=0.0, qmax=25.0, qbin=None,
-                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., processor='gpu_3_d', **kwargs):
+                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., processor='gpu_3_d', potential='chi_sq', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
@@ -32,14 +32,20 @@ class PDFCalc(Calculator):
             raise NotImplementedError('Need an experimental PDF')
 
         if processor == 'gpu_3_d':
-            from pyiid.wrappers.three_d_gpu_wrap import wrap_grad_rw, wrap_rw
+            from pyiid.wrappers.three_d_gpu_wrap import *
+            # from pyiid.wrappers.three_d_gpu_wrap import wrap_grad_rw, wrap_rw, wrap_chi_sq, wrap_grad_chi_sq
         elif processor == 'gpu_2_d':
-            from pyiid.wrappers.gpu_wrap import wrap_grad_rw, wrap_rw
+            # from pyiid.wrappers.gpu_wrap import wrap_grad_rw, wrap_rw
+            from pyiid.wrappers.gpu_wrap import *
         else:
-            from pyiid.wrappers.kernel_wrap import wrap_grad_rw, wrap_rw
+            from pyiid.wrappers.kernel_wrap import *
 
-        self.wrap_rw = wrap_rw
-        self.wrap_grad_rw = wrap_grad_rw
+        if potential == 'chi_sq':
+            self.potential = wrap_chi_sq
+            self.grad = wrap_grad_chi_sq
+        else:
+            self.potential = wrap_rw
+            self.grad = wrap_grad_rw
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
@@ -75,7 +81,15 @@ class PDFCalc(Calculator):
                     self.calculate_forces(self.atoms)
 
     def calculate_energy(self, atoms):
-        energy, scale, gcalc, fq = self.wrap_rw(atoms, self.gobs, self.qmax,
+        """
+        Calculate energy
+        :param atoms:
+        :return:
+        """
+        '''energy, scale, gcalc, fq = self.wrap_rw(atoms, self.gobs, self.qmax,
+                                           self.qmin, self.qbin, self.rmax,
+                                           self.rbin)'''
+        energy, scale, gcalc, fq = self.potential(atoms, self.gobs, self.qmax,
                                            self.qmin, self.qbin, self.rmax,
                                            self.rbin)
         self.energy_free = energy * self.rw_to_eV
@@ -84,37 +98,7 @@ class PDFCalc(Calculator):
 
     def calculate_forces(self, atoms):
         self.results['forces'] = np.zeros((len(atoms), 3))
-        forces = self.wrap_grad_rw(atoms, self.gobs, self.qmax, self.qmin, self.qbin,
+        forces = self.grad(atoms, self.gobs, self.qmax, self.qmin, self.qbin,
                               self.rmax, self.rbin) * self.rw_to_eV
+
         self.results['forces'] = forces
-
-
-if __name__ == '__main__':
-    import matplotlib.pyplot as plt
-    # cProfile.run('''
-    import ase.io as aseio
-    from copy import deepcopy as dc
-
-    atoms = aseio.read('/home/christopher/pdfgui_np_25_rattle1_cut.xyz')
-    pdf, FQ = wrap_pdf(atoms, qmin=2.5)
-    calc = PDFCalc(gobs=pdf, qmin=2.5)
-    atoms.set_calculator(calc)
-
-    # plt.show()
-    atoms2 = dc(atoms)
-    atoms2.rattle(stdev=.1)
-    pdf2, FQ2 = wrap_pdf(atoms2, qmin=2.5)
-    atoms2.set_calculator(calc)
-    # pdf2, FQ2 = wrap_pdf(atoms2)
-    print 'start energy'
-    # t0 = time.time()
-    print(atoms2.get_total_energy())
-    # t1 = time.time()
-    # print(atoms2.get_forces())
-    # t2 = time.time()
-    # ''', sort='tottime')
-    # print('energy', t1-t0, 'forces', t2-t1)
-    plt.plot(pdf)
-    plt.plot(pdf2)
-    # plt.plot(pdf-pdf2)
-    plt.show()
