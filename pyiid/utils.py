@@ -88,15 +88,22 @@ def convert_stru_to_atoms(stru):
 
 
 def build_sphere_np(file, radius):
+    """
+    Build a spherical nanoparticle
+    :param file: ASE loadable atomic positions
+    :param radius: Radius of particle in Angstroms
+    :return:
+    """
     atoms = aseio.read(file)
     cell_dist = atoms.get_cell()
-    multiple = np.ceil(2 * radius / cell_dist)
-    atoms.repeat((multiple[0,0], multiple[1,1], multiple[2,2]))
+    multiple = np.ceil(2 * radius / cell_dist).astype(int)
+    atoms = atoms.repeat((multiple[0,0], multiple[1,1], multiple[2,2]))
     com = atoms.get_center_of_mass()
     atoms.translate(-com)
-    del atoms[[atoms.index for atom in atoms
+    del atoms[[atom.index for atom in atoms
                if np.sqrt(np.dot(atom.position, atom.position)) >=
                np.sqrt(radius**2)]]
+    atoms.center()
     return atoms
 
 

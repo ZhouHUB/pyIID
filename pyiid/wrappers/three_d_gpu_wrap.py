@@ -85,6 +85,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / (n * na) * fq)
     np.seterr(**old_settings)
+    del dfq, dnorm, dscat, dd, dq, dr
     return fq
 
 
@@ -214,10 +215,17 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     grad_p = np.zeros((n, n, 3, qmax_bin), dtype=np.float32)
     cos_term = np.zeros((n, n, qmax_bin), dtype=np.float32)
 
+    arrays = [d, r, norm_array, super_fq, grad_p, cos_term, scatter_array, q]
+    print [ar.nbytes/1e9 for ar in arrays]
+    print sum([ar.nbytes for ar in arrays])/1e9
+
     #cuda info
+    ctx = cuda.current_context()
+    print ctx
+    print ctx.get_memory_info()
     stream = cuda.stream()
     stream2 = cuda.stream()
-    stream3 = cuda.stream()
+    print ctx.get_memory_info()[0]
 
     # two kinds of test_kernels; NxN or NxNxQ
 
@@ -234,11 +242,14 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     bpg_l_3 = []
     for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
         bpg_l_3.append(int(math.ceil(float(e_dim) / tpb)))
-    # print bpg_l_3, tpb_l_3
+
 # START CALCULATIONS-----------------------------------------------------------
+
+    print ctx.get_memory_info()[0]
     dscat = cuda.to_device(scatter_array, stream2)
     dnorm = cuda.to_device(norm_array, stream2)
-
+    print ctx.get_memory_info()[0] + scatter_array.nbytes + norm_array.nbytes
+    AAA
     '--------------------------------------------------------------'
     get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
     '--------------------------------------------------------------'
@@ -261,7 +272,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
 
 
     get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
-    fq_grad_position3[bpg_l_3, tpb_l_3, stream3](dcos_term, dr,  qbin) #OK
+    fq_grad_position3[bpg_l_3, tpb_l_3, stream](dcos_term, dr,  qbin) #OK
     dgrad_p = cuda.to_device(grad_p, stream2)
     # cuda.synchronize()
 
