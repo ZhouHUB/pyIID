@@ -16,12 +16,38 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
+    # Get gpu info
+    gpu_mem = []
+    gpus = cuda.gpus.lst
+    for gpu in gpus:
+        with gpu:
+            meminfo = cuda.current_context().get_memory_info()
+            gpu_mem.append(meminfo[0])
+            print("%s, free: %s bytes, total, %s bytes" % (gpu, meminfo[0], meminfo[1]))
+
     #build the empty arrays
 
     d = np.zeros((n, n, 3), dtype=np.float32)
     r = np.zeros((n, n), dtype=np.float32)
     super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
     norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
+
+    req_mem = q.nbytes + d.nbytes + r.nbytes + super_fq.nbytes + \
+              norm_array.nbytes + scatter_array.nbytes
+    if req_mem >= max(gpu_mem):
+        # Then we need to break up the data
+        if req_mem < sum(gpu_mem):
+            # This means that we need to partition the data
+        else:
+            # We need to partition the data to match the GPUs and hit them
+            # multiple times
+            gpu_data = []
+
+            # Break up data
+
+            pass
+
+
 
     #cuda kernel information
 
@@ -95,7 +121,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     Parameters
     -----------
     atoms: ase.Atoms
-        The atomic configuration
+        The atomic config   uration
     qmax: float
         The maximum scatter vector value
     qmin: float
@@ -213,6 +239,30 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
     grad_p = np.zeros((n, n, 3, qmax_bin), dtype=np.float32)
     cos_term = np.zeros((n, n, qmax_bin), dtype=np.float32)
+
+    gpu_mem = []
+    gpus = cuda.gpus.lst
+    for gpu in gpus:
+        with gpu:
+            meminfo = cuda.current_context().get_memory_info()
+            gpu_mem.append(meminfo[0])
+            print("%s, free: %s bytes, total, %s bytes" % (gpu, meminfo[0], meminfo[1]))
+
+
+    mem_req = d.nbytes + r.nbytes + norm_array.nbytes + super_fq.nbytes \
+              + grad_p.nbytes + cos_term.nbytes + scatter_array.nbytes \
+              + q.nbytes
+
+    if mem_req >= max(gpu_mem):
+        # Need to break up
+        if mem_req >= sum(gpu_mem):
+            # need to hit gpus multiple times
+            leftover_atoms = n
+            for gpu_id, gpu in enumerate(gpus):
+                # m is the atoms that are given to the gpu, partitioned
+                m = math.floor((-4*qmax_bin*n - 12*n + gpu_mem[gpu_id])\
+                    /(8*n*(3*qmax_bin+2)))
+
 
     #cuda info
     stream = cuda.stream()
