@@ -16,7 +16,6 @@ install:
   - conda update conda --yes
   - conda create -n testenv --yes pip nose python=$TRAVIS_PYTHON_VERSION xraylib numpy scipy six numba mkl matplotlib
   - source activate testenv
-  - conda update conda
   - conda install numbapro
   - python setup.py install
   - pip install coveralls
