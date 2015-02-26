@@ -123,7 +123,7 @@ def hmc_move(atoms, stepsize, n_steps, T):
 
 def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             avg_acceptance_rate, target_acceptance_rate, stepsize_inc,
-            stepsize_dec, stepsize_min, stepsize_max, T=1):
+            stepsize_dec, stepsize_min, stepsize_max, T=1, wtraj = None):
     """
     Wrapper for running Hamiltonian (Hybrid) Monte Carlo refinements,
     using a dynamic step size refinement, based on whether moves are
@@ -174,6 +174,8 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             # print '--------------------------------'
             if accept is True:
                 traj += [atoms]
+                if wtraj is not None:
+                    wtraj.write(atoms)
             accept_list.append(accept)
             avg_acceptance_rate = avg_acceptance_slowness \
                                   * avg_acceptance_rate \

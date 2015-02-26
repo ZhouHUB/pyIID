@@ -17,7 +17,9 @@ from pyiid.utils import tag_surface_atoms, load_gr_file, build_sphere_np
 
 # Load experimental Data
 r, gr = load_gr_file('SnO2_300K-sum_00608_637_sqmsklargemsk.gr')
-plt.plot(r, gr)
+# plt.plot(r, gr)
+r = r[:-1]
+gr = gr[:-1]
 
 # Build NP
 unit = aseio.read('1000062.cif')
@@ -34,18 +36,24 @@ qmax_bin = int(qmax / qbin)
 
 n = len(atomsio)
 atoms = dc(atomsio)
+atoms.rattle(.15)
+
 # Starting PDF
 pdf, fq = wrap_pdf(atoms, qmin=qmin, qbin=qbin)
+scale = np.dot(np.dot(1. / (np.dot(pdf.T, pdf)), pdf.T), gr)
+print 1/scale
+gr /= scale
 
 '''
-plt.plot(r[:-1], gr[:-1], label='ideal')
-plt.plot(r[:-1], pdf*.25, label='start')
+plt.plot(r, gr, label='ideal')
+plt.plot(r, pdf, label='start')
 plt.legend()
 plt.show()
+AAA
 '''
 
-# calc = PDFCalc(gobs=pdf, qmin=0, conv=1, qbin=.1, potential='rw')
-calc = PDFCalc(gobs=gr[:-1]*4, qmin=qmin, conv=1, qbin=.1)
+calc = PDFCalc(gobs=gr, qmin=qmin, conv=1000, qbin=.1, potential='rw')
+# calc = PDFCalc(gobs=gr, qmin=qmin, conv=1, qbin=.1)
 atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
 print(rwi)
@@ -53,8 +61,8 @@ atoms.set_momenta(np.zeros((len(atoms), 3)))
 # atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3))*10)
 # print atoms.get_kinetic_energy()
 
-# traj = simulate_dynamics(atoms, 1e-2, 60)
-traj = simulate_dynamics(atoms, .5e-3, 60)
+traj = simulate_dynamics(atoms, .8e-3, 100)
+# traj = simulate_dynamics(atoms, 1e-3, 30)
 
 pe_list = []
 
@@ -78,8 +86,8 @@ for atoms in traj:
 '''
 
 view(traj)
-r = np.arange(0, 40, .01)
-plt.plot(r, pdf, label='ideal')
+# r = np.arange(0, 40, .01)
+plt.plot(r, gr, label='ideal')
 plt.plot(r, wrap_pdf(traj[0], qmin=qmin)[0], label='start')
 plt.plot(r, wrap_pdf(traj[min_pe], qmin=qmin)[0], label='best:' + str(min_pe))
 plt.legend()

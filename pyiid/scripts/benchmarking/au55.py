@@ -28,14 +28,14 @@ n = len(atomsio)
 qmax_bin = int(qmax / qbin)
 
 atoms = dc(atomsio)
-# atoms.rattle(.1)
-# '''
+atoms.rattle(.1)
+'''
 tag_surface_atoms(atoms)
 for atom in atoms:
     if atom.tag == 1:
         atom.position *= 1.05
 fixindices = [atom.index for atom in atoms if atom.tag != 1]
-# '''
+'''
 pdf, fq = wrap_pdf(atoms, qmin=0, qbin=.1)
 # atoms.positions *= .95
 
@@ -58,7 +58,7 @@ atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
 
 pe_list = []
-atoms.set_constraint(FixAtoms(indices=fixindices))
+# atoms.set_constraint(FixAtoms(indices=fixindices))
 traj, accept_list = run_hmc(atoms, 100, 1e-3, 40, 0.9, 0, .9,
                                        1.02, .98, .000001, .65, 1)
 # traj, accept_list = run_hmc(atoms, 100, 1e-3, 30, 0.9, 0, .9,

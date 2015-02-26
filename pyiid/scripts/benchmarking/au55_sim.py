@@ -32,13 +32,13 @@ qmax_bin = int(qmax / qbin)
 atoms = dc(atomsio)
 # view(atoms)
 # atoms.rattle(.1)
-# '''
+'''
 tag_surface_atoms(atoms)
 for atom in atoms:
     if atom.tag == 1:
         atom.position *= 1.05
-# '''
-fixindices = [atom.index for atom in atoms if atom.tag != 1]
+'''
+# fixindices = [atom.index for atom in atoms if atom.tag != 1]
 pdf, fq = wrap_pdf(atoms, qmin=qmin, qbin=.1)
 # view(atoms)
 # atoms.positions *= 1.1
@@ -46,6 +46,7 @@ pdf, fq = wrap_pdf(atoms, qmin=qmin, qbin=.1)
 # atoms[51].position += [1,0,0]
 
 atoms = dc(atomsio)
+atoms.positions *= 1.05
 rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=qmin, qbin=.1)
 
 calc = PDFCalc(gobs=pdf, qmin=qmin, conv=.1, qbin=.1)
@@ -53,7 +54,7 @@ calc = PDFCalc(gobs=pdf, qmin=qmin, conv=.1, qbin=.1)
 atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
 print(rwi)
-atoms.set_constraint(FixAtoms(indices=fixindices))
+# atoms.set_constraint(FixAtoms(indices=fixindices))
 atoms.set_momenta(np.zeros((len(atoms), 3)))
 # atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3))*10)
 # print atoms.get_kinetic_energy()
