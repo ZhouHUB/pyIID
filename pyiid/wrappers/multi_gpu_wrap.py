@@ -16,15 +16,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    # Get gpu info
-    gpu_mem = []
-    gpus = cuda.gpus.lst
-    for gpu in gpus:
-        with gpu:
-            meminfo = cuda.current_context().get_memory_info()
-            gpu_mem.append(meminfo[0])
-            print("%s, free: %s bytes, total, %s bytes" % (gpu, meminfo[0], meminfo[1]))
-
     #build the empty arrays
 
     d = np.zeros((n, n, 3), dtype=np.float32)
@@ -32,20 +23,56 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
     norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
 
-    req_mem = q.nbytes + d.nbytes + r.nbytes + super_fq.nbytes + \
-              norm_array.nbytes + scatter_array.nbytes
-    if req_mem >= max(gpu_mem):
-        # Then we need to break up the data
-        if req_mem < sum(gpu_mem):
-            # This means that we need to partition the data
-        else:
-            # We need to partition the data to match the GPUs and hit them
-            # multiple times
-            gpu_data = []
+    data_arrays = [d, r, norm_array, super_fq]
+    req_mem = sum([ar.nbytes for ar in data_arrays])
+    gpus = cuda.gpus.lst
+    mem_list = []
+    for gpu in gpus:
+        with gpu:
+            meminfo = cuda.current_context().get_memory_info()
+        mem_list.append(meminfo[0])
 
-            # Break up data
+    sort_gpus = [x for (y,x) in sorted(zip(mem_list,gpus))]
+    sort_gmem = [y for (y,x) in sorted(zip(mem_list,gpus))]
+    n_cov = 0
+    while n_cov < n:
+        for gpu, mem in zip(sort_gpus, sort_gmem):
+            # If gpu not busy
 
-            pass
+            # Build Data for gpu
+            m = math.floor(float((-n*qmax_bin - 3*n + mem))
+                                                   /(2*n*(qmax_bin +2)))
+            data = [array[n_cov:m] for array in data_arrays]
+            # Kernel
+            n_cov += n
+    fq_list = list(zip(data[-1]))
+
+
+
+
+
+    if req_mem > max(mem_list):
+        used_gpu_mem = 0
+        list_gpu_dict = []
+
+        gpu_iterations = []
+        while used_gpu_mem < req_mem:
+            for i in range(len(gpus)):
+                gpu_dict = list_gpu_dict[i]
+                if gpu_dict.has_key('iterations') is False:
+                    gpu_dict['iterations'] = 1
+                else:
+                    gpu_dict['iterations'] += 1
+                used_gpu_mem += sort_gmem[i]
+                if used_gpu_mem > req_mem:
+                    break
+        n_cov = 0
+        while n > n_cov:
+            for gpu_dict in list_gpu_dict:
+                gpu_dict['num atoms'] = math.floor(float(
+                    (-n*qmax_bin - 3*n + gpu_dict['free_mem']))
+                                                   /(2*n*(qmax_bin +2)))
+
 
 
 
