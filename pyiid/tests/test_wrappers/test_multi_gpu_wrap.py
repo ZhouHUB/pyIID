@@ -17,7 +17,7 @@ from pyiid.wrappers.multi_gpu_wrap import wrap_grad_rw as gpu_grad_rw
 
 from ase.atoms import Atoms
 from pyiid.wrappers.kernel_wrap import wrap_atoms, grad_pdf
-
+n = 3000
 
 def test_fq():
     
@@ -175,6 +175,4 @@ def test_grad_pdf1():
 
 if __name__ == '__main__':
     import nose
-
-    n = 3000
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
