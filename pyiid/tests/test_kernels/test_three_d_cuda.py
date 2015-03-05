@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 
 from pyiid.kernels.three_d_cuda import *
-
+n = 600
 
 def set_up_gpu(n, qmax_bin=None):
     stream = cuda.stream()
@@ -70,7 +70,7 @@ def test_get_r_array():
     """
     from pyiid.kernels.serial_kernel import get_r_array as comp
     # prep data
-    n = 60
+
     d = np.random.random((n, n, 3)).astype(np.float32)
     cr = np.zeros((n, n), dtype=np.float32)
     k_r = dc(cr)
@@ -84,6 +84,7 @@ def test_get_r_array():
     d_in = cuda.to_device(d, stream)
     get_r_array[bpg, tpb, stream](d_out, d_in)
     d_out.to_host(stream)
+    print d
 
     assert_allclose(cr, k_r)
 
