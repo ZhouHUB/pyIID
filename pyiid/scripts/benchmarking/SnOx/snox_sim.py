@@ -13,54 +13,56 @@ from pyiid.sim.dynamics import simulate_dynamics
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.wrappers.kernel_wrap import wrap_atoms
-from pyiid.utils import tag_surface_atoms
+from pyiid.utils import tag_surface_atoms, load_gr_file, build_sphere_np
 
-atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/' \
-             'Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
-atoms_file_no_ext = os.path.splitext(atoms_file)[0]
-atomsio = aseio.read(atoms_file)
+# Load experimental Data
+r, gr = load_gr_file('SnO2_300K-sum_00608_637_sqmsklargemsk.gr')
+# plt.plot(r, gr)
+r = r[:-1]
+gr = gr[:-1]
+
+# Build NP
+unit = aseio.read('1000062.cif')
+atomsio = build_sphere_np('1000062.cif', 23./2)
+# view(atomsio)
 wrap_atoms(atomsio)
 
+# Experimental Parameters
 qmax = 25
-# qmin = 2.5
-qmin = 0.
 qbin = .1
-n = len(atomsio)
+qmin = 0.666667
 
 qmax_bin = int(qmax / qbin)
 
+n = len(atomsio)
 atoms = dc(atomsio)
-# view(atoms)
-# atoms.rattle(.1)
-'''
-tag_surface_atoms(atoms)
-for atom in atoms:
-    if atom.tag == 1:
-        atom.position *= 1.05
-'''
-# fixindices = [atom.index for atom in atoms if atom.tag != 1]
-pdf, fq = wrap_pdf(atoms, qmin=qmin, qbin=.1)
-# view(atoms)
-# atoms.positions *= 1.1
-# atoms.rattle(.1)
-# atoms[51].position += [1,0,0]
+atoms.rattle(.15)
 
-atoms = dc(atomsio)
-atoms.positions *= 1.05
-rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=qmin, qbin=.1)
+# Starting PDF
+pdf, fq = wrap_pdf(atoms, qmin=qmin, qbin=qbin)
+scale = np.dot(np.dot(1. / (np.dot(pdf.T, pdf)), pdf.T), gr)
+print 1/scale
+gr /= scale
 
-calc = PDFCalc(gobs=pdf, qmin=qmin, conv=.1, qbin=.1)
-# calc = PDFCalc(gobs=pdf, qmin=qmin, conv=1, qbin=.1, potential='rw')
+'''
+plt.plot(r, gr, label='ideal')
+plt.plot(r, pdf, label='start')
+plt.legend()
+plt.show()
+AAA
+'''
+
+calc = PDFCalc(gobs=gr, qmin=qmin, conv=1000, qbin=.1, potential='rw')
+# calc = PDFCalc(gobs=gr, qmin=qmin, conv=1, qbin=.1)
 atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
 print(rwi)
-# atoms.set_constraint(FixAtoms(indices=fixindices))
 atoms.set_momenta(np.zeros((len(atoms), 3)))
 # atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3))*10)
 # print atoms.get_kinetic_energy()
 
-# traj = simulate_dynamics(atoms, 1e-2, 60)
-traj = simulate_dynamics(atoms, .5e-3, 120)
+traj = simulate_dynamics(atoms, .8e-3, 100)
+# traj = simulate_dynamics(atoms, 1e-3, 30)
 
 pe_list = []
 
@@ -84,8 +86,8 @@ for atoms in traj:
 '''
 
 view(traj)
-r = np.arange(0, 40, .01)
-plt.plot(r, pdf, label='ideal')
+# r = np.arange(0, 40, .01)
+plt.plot(r, gr, label='ideal')
 plt.plot(r, wrap_pdf(traj[0], qmin=qmin)[0], label='start')
 plt.plot(r, wrap_pdf(traj[min_pe], qmin=qmin)[0], label='best:' + str(min_pe))
 plt.legend()

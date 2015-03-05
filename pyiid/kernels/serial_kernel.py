@@ -8,7 +8,7 @@ import xraylib
 
 targ = 'cpu'
 
-# F(Q) test_kernels ---------------------------------------------------------------
+# F(Q) test_kernels -----------------------------------------------------------
 
 @autojit(target=targ)
 def get_d_array(d, q):
@@ -126,7 +126,7 @@ def get_normalization_array(norm_array, scatter_array):
                 norm_array[tx, ty, kq] = (
                     scatter_array[tx, kq] * scatter_array[ty, kq])
 
-# PDF test_kernels ----------------------------------------------------------------
+# PDF test_kernels ------------------------------------------------------------
 
 @autojit(target=targ)
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid):
@@ -299,7 +299,7 @@ def get_chi_sq(gobs, gcalc):
     ).real, scale
 
 
-# Gradient test_kernels -----------------------------------------------------------
+# Gradient test_kernels -------------------------------------------------------
 @autojit(target=targ)
 def fq_grad_position(grad_p, d, r, scatter_array, qbin):
     """
