@@ -27,7 +27,7 @@ def test_fq():
     wrap_atoms(atoms)
 
     sfq_ave = np.zeros(250)
-    gfq_ave= np.zeros(250)
+    gfq_ave = np.zeros(250)
     for m in range(10):
         sfq_ave += serial_fq(atoms)
         gfq_ave += gpu_fq(atoms)
@@ -178,25 +178,5 @@ def test_grad_pdf1():
 if __name__ == '__main__':
     import nose
 
-    n = 100
-    # test_fq()
-
-    '''
-    import matplotlib.pyplot as plt
-    pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au'+str(n), pos)
-
-    wrap_atoms(atoms)
-
-    sfq_ave = np.zeros(250)
-    gfq_ave= np.zeros(250)
-    for m in range(100):
-        sfq_ave += serial_fq(atoms)
-        gfq_ave += gpu_fq(atoms)
-    sfq_ave /= m
-    gfq_ave /= m
-    plt.plot(sfq_ave - gfq_ave)
-    plt.show()
-    '''
+    n = 3000
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
-    # '''

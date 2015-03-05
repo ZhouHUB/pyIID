@@ -175,5 +175,4 @@ def test_grad_pdf1():
 
 if __name__ == '__main__':
     import nose
-    # nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
-    test_fq()
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
