@@ -3,6 +3,18 @@ import numpy as np
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 from utils import convert_atoms_to_stru
 import scipy.optimize as op
+import numpy as np
+import matplotlib.pyplot as plt
+
+# A least squares fitting algorithm from scipy
+from scipy.optimize.minpack import leastsq
+
+# DiffPy-CMI modules for building a fitting recipe
+from diffpy.Structure import loadStructure
+from diffpy.srfit.pdf import PDFContribution
+from diffpy.srfit.fitbase import FitRecipe, FitResults
+
+import os
 
 
 def scale_to_rw_min(scale, calc, exp):
@@ -38,7 +50,7 @@ def pdf_U(atoms, exp_data, bin_size=.01, rmax=40.):
     #return chi_squared or Rw for exp vs. predicted
 
 
-def Debye_srreal_U(atoms, exp_data):
+def Debye_srreal_U(atoms, exp_data, rmax=40.01, rmin=0.00):
     """
     Calculates the rw value using srreal for a set of atoms and experimental
     data
@@ -58,8 +70,8 @@ def Debye_srreal_U(atoms, exp_data):
     stru = convert_atoms_to_stru(atoms)
     dpc = DebyePDFCalculator()
     dpc.qmax = 25
-    dpc.rmin = 0.00
-    dpc.rmax = 40.01
+    dpc.rmin = rmin
+    dpc.rmax = rmax
     r0, g0 = dpc(stru, qmin=2.5)
     #scale data to minimize rw
     res = op.minimize_scalar(scale_to_rw_min, bounds = (0, 5), args = (g0,
@@ -156,3 +168,26 @@ def pdf_calc_U(atoms, exp_data, pdf_U_scale):
     pdf_nrg = pdfu*pdf_U_scale
     calc_nrg = atoms.get_potential_energy()
     return pdf_nrg+calc_nrg
+
+
+def Debye_srfit_U(fit):
+    """
+    Calculates the rw value using srfit for a set of atoms and experimental
+    data
+
+    Parameters:
+    -----------
+    atoms: ase.Atoms object
+        The atomic configuration
+    exp_data: ndarray
+        The experimental PDF
+
+    Returns:
+    --------
+    float:
+        The Rw value
+    """
+
+    leastsq(fit.residual, fit.values)
+    results = FitResults(fit)
+    return results.rw

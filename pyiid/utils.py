@@ -4,6 +4,11 @@ import numpy as np
 from diffpy.Structure.structure import Structure
 from diffpy.Structure.atom import Atom as dAtom
 from ase.atoms import Atoms as AAtoms
+import ase.io as aseio
+import math
+import tkFileDialog
+from pyiid.kernels.serial_kernel import get_d_array
+from copy import deepcopy as dc
 
 
 def convert_atoms_to_stru(atoms):
@@ -65,3 +70,67 @@ def load_gr_file(gr_file=None, skiplines=None):
                     break
     data = np.loadtxt(gr_file, skiprows=skiplines)
     return data[:, 0], data[:, 1]
+
+
+def convert_stru_to_atoms(stru):
+    symbols = []
+    xyz = []
+    tags = []
+    for d_atom in stru:
+        symbols.append(d_atom.element)
+        xyz.append(d_atom.xyz)
+        tags.append(d_atom.label)
+    # print symbols
+    # print np.array(xyz)
+    # print tags
+    atoms = AAtoms(symbols, np.array(xyz), tags=tags)
+    return atoms
+
+
+def build_sphere_np(file, radius):
+    """
+    Build a spherical nanoparticle
+    :param file: ASE loadable atomic positions
+    :param radius: Radius of particle in Angstroms
+    :return:
+    """
+    atoms = aseio.read(file)
+    cell_dist = atoms.get_cell()
+    multiple = np.ceil(2 * radius / cell_dist).astype(int)
+    atoms = atoms.repeat((multiple[0,0], multiple[1,1], multiple[2,2]))
+    com = atoms.get_center_of_mass()
+    atoms.translate(-com)
+    del atoms[[atom.index for atom in atoms
+               if np.sqrt(np.dot(atom.position, atom.position)) >=
+               np.sqrt(radius**2)]]
+    atoms.center()
+    return atoms
+
+
+def tag_surface_atoms(atoms, tag=1, tol=0):
+    """
+    Find which are the surface atoms in a nanoparticle.
+    ..note: We define the surface as a collection of atoms for which the
+    dot product between the displacement from the center of mass and all
+    the interatomic distances are negative.  Thus, all the interatomic
+    displacement vectors point inward or perpendicular.  This only works for
+    true crystals so we will include some tolerance to account for surface
+    disorder.
+    :param atoms:
+    :return:
+    """
+    n = len(atoms)
+    q = atoms.get_positions()
+    d_array = np.zeros((n, n, 3))
+    get_d_array(d_array, q)
+    com = atoms.get_center_of_mass()
+    for i in range(n):
+        pos = atoms[i].position
+        disp = pos - com
+        disp /= np.linalg.norm(disp)
+        dot = np.zeros((n))
+        for j in range(n):
+            if j != i:
+                dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))
+        if np.all(np.less_equal(dot, np.zeros(len(dot))+tol)):
+            atoms[i].tag = tag

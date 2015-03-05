@@ -71,3 +71,6 @@ docs/_build/
 *.tif
 *.dat
 *.DAT
+.idea
+pyiid/grad_test.txt
+*.coverage
