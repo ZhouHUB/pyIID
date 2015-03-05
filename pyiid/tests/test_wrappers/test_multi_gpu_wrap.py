@@ -17,7 +17,7 @@ from pyiid.wrappers.multi_gpu_wrap import wrap_grad_rw as gpu_grad_rw
 
 from ase.atoms import Atoms
 from pyiid.wrappers.kernel_wrap import wrap_atoms, grad_pdf
-n = 3000
+n = 300
 
 def test_fq():
     
