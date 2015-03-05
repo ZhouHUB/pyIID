@@ -46,8 +46,8 @@ gcalc = Function('gcalc')(x, r)
 Qmin, Qmax = symbols('Qmin Qmax')
 RW = symbols('RW')
 al = symbols('alpha')
-# Rw = sqrt(summation((gob(r)-al*gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2,
-#           (r, rmin, rmax)))
+Rw = sqrt(summation((gob(r)-al(r)*gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2,
+          (r, rmin, rmax)))
 # Rw = sqrt(summation((gob(r)-gcalc)**2, (r, rmin, rmax))/summation(gob(r)**2,
 #           (r, rmin, rmax)))
 # Rw = sqrt(summation((gob(r)-gcalc)**2/gob(r)**2,
