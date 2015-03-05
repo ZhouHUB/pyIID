@@ -4,7 +4,7 @@ import time
 import numpy as np
 import ase.io as aseio
 
-from pyiid.old_hmc.potential_core import Debye_srreal_U
+from old_files.old_hmc.potential_core import Debye_srreal_U
 import copy.deepcopy as dc
 from pyiid.utils import load_gr_file
 

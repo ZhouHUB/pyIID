@@ -7,6 +7,7 @@ from copy import deepcopy as dc
 from pyiid.kernels.three_d_cuda import *
 n = 600
 
+
 def set_up_gpu(n, qmax_bin=None):
     stream = cuda.stream()
     # two kinds of test_kernels; NxN or NxNxQ

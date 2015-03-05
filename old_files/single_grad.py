@@ -7,7 +7,7 @@ import numpy as np
 
 from pyiid.grad import mc_grad
 from pyiid.utils import load_gr_file
-from pyiid.old_hmc.potential_core import Debye_srreal_U
+from old_files.old_hmc.potential_core import Debye_srreal_U
 
 
 r, gr = load_gr_file('/home/christopher/shared/PDFdata/July/X17A/1/FinalSum_1v2.gr')

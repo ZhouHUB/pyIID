@@ -10,7 +10,7 @@ from diffpy.srreal.pdfcalculator import DebyePDFCalculator
 from pyiid.grad import mc_grad
 from pyiid.utils import load_gr_file
 from pyiid.old_hmc.potential_core import Debye_srreal_U
-from pyiid.old_hmc.alg import HMC
+from old_files.old_hmc.alg import HMC
 from pyiid.utils import convert_atoms_to_stru
 
 #load up pdf data
