@@ -166,7 +166,6 @@ def buildtree(atoms, u, v, j, e, Emax, atoms0):
                 span.dot(atomsp.get_velocities().flatten()) >= 0)
             n1 = n1 + n11
         return atomsn, atomsp, atoms1, n1, s1, a1, na1
-    return
 
 
 if __name__ == '__main__':

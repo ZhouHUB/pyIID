@@ -129,7 +129,7 @@ def tag_surface_atoms(atoms, tag=1, tol=0):
         pos = atoms[i].position
         disp = pos - com
         disp /= np.linalg.norm(disp)
-        dot = np.zeros((n))
+        dot = np.zeros(n)
         for j in range(n):
             if j != i:
                 dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))

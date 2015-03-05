@@ -142,7 +142,6 @@ def test_grad_pdf1():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
-    gobs = serial_pdf(atoms)[0]
     atoms.rattle(.1)
 
     qmin = 2.5

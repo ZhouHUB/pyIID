@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 __author__ = 'christopher'
 import numpy as np
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-from pyiid.kernels.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
+from pyiid.kernels.serial_kernel import get_d_array, get_r_array, \
+    get_scatter_array, \
     get_fq_array, get_normalization_array, get_pdf_at_qmin
 from ase import Atoms
+
 dpc = DebyePDFCalculator()
 
-atoms = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0)])
+atoms = Atoms('Au4', [(0, 0, 0), (3, 0, 0), (0, 3, 0), (3, 3, 0)])
 q = atoms.get_positions()
 symbols = atoms.get_chemical_symbols()
 
@@ -18,15 +20,15 @@ Qmax = 25.
 rmax = 40
 # Qmin = 2.5
 Qmin = 0.0
-Qbin = np.pi/(rmax+6*2*np.pi/25)
+Qbin = np.pi / (rmax + 6 * 2 * np.pi / 25)
 qmin_bin = int(Qmin / Qbin)
 Qmax_bin = int(Qmax / Qbin)
 Q = np.arange(Qmin, Qmax, Qbin)
 rstep = .01
 
-#initialize constants
+# initialize constants
 N = len(q)
-#print N
+# print N
 d = np.zeros((N, N, 3))
 n_range = range(N)
 range_3 = range(3)
@@ -119,6 +121,7 @@ total_FQ = np.zeros((N, 3, len(Q)))
 # plt.plot(total_FQ[2,2,:]-start_FQ)
 # plt.show()
 import math
+
 tx = 2
 tz = 1
 grad_p = np.zeros((N, 3, len(Q)))
@@ -132,12 +135,12 @@ for tx in range(N):
                         scatter_array[ty, kq] * \
                         d[tx, ty, tz] * \
                         (
-                         (kq*Qbin) *
-                         r[tx, ty] *
-                         math.cos(kq*Qbin * r[tx, ty]) -
-                         math.sin(kq*Qbin * r[tx, ty])
-                        )\
-                        /(r[tx, ty]**3)
+                            (kq * Qbin) *
+                            r[tx, ty] *
+                            math.cos(kq * Qbin * r[tx, ty]) -
+                            math.sin(kq * Qbin * r[tx, ty])
+                        ) \
+                        / (r[tx, ty] ** 3)
                     grad_p[tx, tz, kq] += sub_grad_p
         old_settings = np.seterr(all='ignore')
         grad_p[tx, tz] = np.nan_to_num(1 / (N * norm_array) * grad_p[tx, tz])

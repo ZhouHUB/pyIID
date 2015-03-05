@@ -2,12 +2,12 @@ __author__ = 'christopher'
 import numpy as np
 
 from pyiid.kernels.numbapro_cuda_kernels import *
-from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, get_grad_rw
+from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
+    get_grad_rw
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
-
-    #get information for FQ transformation
+    # get information for FQ transformation
 
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -15,7 +15,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    #build the empty arrays
+    # build the empty arrays
 
     d = np.zeros((n, n, 3), dtype=np.float32)
     r = np.zeros((n, n), dtype=np.float32)
@@ -49,7 +49,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dfq, dr, qbin)
     cuda.synchronize()
 
-
     get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq)
     cuda.synchronize()
     dnorm.to_host()
@@ -68,6 +67,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     fq = np.nan_to_num(1 / (n * na) * fq)
     np.seterr(**old_settings)
     return fq
+
 
 def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     """
@@ -142,18 +142,17 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
 
 
 def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
-    #atoms info
+    # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    #build empty arrays
+    # build empty arrays
     d = np.zeros((n, n, 3), dtype=np.float32)
     r = np.zeros((n, n), dtype=np.float32)
     norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
-    tzr = np.zeros((n, n, qmax_bin), dtype=np.float32)
     super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
 
     #cuda info
@@ -204,40 +203,40 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     dgrad_p = cuda.to_device(grad_p, stream)
     dkqr = cuda.to_device(kqr, stream)
 
-
     get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dkqr, dr, qbin)
     cuda.synchronize()
 
-    fq_grad_position1[(bpg, bpg), (tpb, tpb), stream](dq_over_r, dr, qbin) #OK
+    fq_grad_position1[(bpg, bpg), (tpb, tpb), stream](dq_over_r, dr, qbin)  #OK
     cuda.synchronize()
 
-
-
-    fq_grad_position0[(bpg, bpg), (tpb, tpb), stream](drgrad, dd, dr) #OK
-    fq_grad_position3[(bpg, bpg), (tpb, tpb), stream](dcos_term, dkqr) #OK
+    fq_grad_position0[(bpg, bpg), (tpb, tpb), stream](drgrad, dd, dr)  #OK
+    fq_grad_position3[(bpg, bpg), (tpb, tpb), stream](dcos_term, dkqr)  #OK
     cuda.synchronize()
 
-    fq_grad_position4[(bpg, bpg), (tpb, tpb), stream](dcos_term, dq_over_r) #OK
+    fq_grad_position4[(bpg, bpg), (tpb, tpb), stream](dcos_term,
+                                                      dq_over_r)  #OK
     cuda.synchronize()
 
-    fq_grad_position5[(bpg, bpg), (tpb, tpb), stream](dcos_term, dnorm) #OK
+    fq_grad_position5[(bpg, bpg), (tpb, tpb), stream](dcos_term, dnorm)  #OK
     cuda.synchronize()
 
-    fq_grad_position6[(bpg, bpg), (tpb, tpb), stream](dfq, dr) #OK
+    fq_grad_position6[(bpg, bpg), (tpb, tpb), stream](dfq, dr)  #OK
     cuda.synchronize()
 
-    fq_grad_position7[(bpg, bpg), (tpb, tpb), stream](dcos_term, dfq) #OK
+    fq_grad_position7[(bpg, bpg), (tpb, tpb), stream](dcos_term, dfq)  #OK
     cuda.synchronize()
 
-    fq_grad_position_final1[(bpg, bpg), (tpb, tpb), stream](dgrad_p, drgrad) #OK
+    fq_grad_position_final1[(bpg, bpg), (tpb, tpb), stream](dgrad_p,
+                                                            drgrad)  #OK
     cuda.synchronize()
 
-    fq_grad_position_final2[(bpg, bpg), (tpb, tpb), stream](dgrad_p, dcos_term) #ok
+    fq_grad_position_final2[(bpg, bpg), (tpb, tpb), stream](dgrad_p,
+                                                            dcos_term)  #ok
     dgrad_p.to_host(stream)
 
 
     #sum down to 1D array
-    grad_p=grad_p.sum(axis=(1))
+    grad_p = grad_p.sum(axis=1)
     # print grad_p
     dnorm.to_host(stream)
 
@@ -248,10 +247,10 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     old_settings = np.seterr(all='ignore')
     # print na
     for tx in range(n):
-            for tz in range(3):
-                # grad_p[tx, tz, :qmin_bin] = 0.0
-                grad_p[tx, tz] = np.nan_to_num(
-                    1 / (n * na) * grad_p[tx, tz])
+        for tz in range(3):
+            # grad_p[tx, tz, :qmin_bin] = 0.0
+            grad_p[tx, tz] = np.nan_to_num(
+                1 / (n * na) * grad_p[tx, tz])
     np.seterr(**old_settings)
     return grad_p
 
@@ -319,5 +318,5 @@ if __name__ == '__main__':
     fq = wrap_fq(atomsio)
     plt.plot(fq), plt.show()
     # for i in range(10):
-    #     gfq = wrap_fq_grad_gpu(atomsio)
+    # gfq = wrap_fq_grad_gpu(atomsio)
     # ''', sort='tottime')

@@ -51,7 +51,7 @@ traj, accept_list, move_list = run_hmc(atoms, 100, .1, 10, 0.9, 0, .9,
 
 for atoms in traj:
     pe_list.append(atoms.get_potential_energy())
-print((rwi - traj[-1].get_potential_energy()))
+print(rwi - traj[-1].get_potential_energy())
 
 wtraj = PickleTrajectory(atoms_file_no_ext+'_cpu_hmc_dilate'+'.traj', 'w')
 for atoms in traj:

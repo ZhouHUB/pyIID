@@ -25,7 +25,6 @@ def leapfrog(atoms, step):
     atoms.set_momenta(atoms.get_momenta() + step * f)
     new_pos = atoms.get_positions() + step * atoms.get_momenta()
     atoms.set_positions(new_pos)
-    return atoms
 
 
 def simulate_dynamics(atoms, stepsize, n_steps):
@@ -55,7 +54,7 @@ def simulate_dynamics(atoms, stepsize, n_steps):
 
     #do n leapfrog steps
     for n in range(n_steps):
-        prop_move = leapfrog(atoms, stepsize)
+        leapfrog(atoms, stepsize)
 
     atoms.set_velocities(
         atoms.get_velocities() + 0.5 * stepsize * atoms.get_forces())

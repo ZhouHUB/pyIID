@@ -68,7 +68,7 @@ def get_scatter_array(scatter_array, numbers, qbin):
             # note xraylib uses q = sin(th/2)
             # as opposed to our q = 4pi sin(th/2)
             scatter_array[tx, kq] = xraylib.FF_Rayl(numbers[tx],
-                                                    kq * qbin / 4 /np.pi)
+                                                    kq * qbin / 4 / np.pi)
 
 
 @autojit(target=targ)
@@ -125,6 +125,7 @@ def get_normalization_array(norm_array, scatter_array):
             for ty in range(n):
                 norm_array[tx, ty, kq] = (
                     scatter_array[tx, kq] * scatter_array[ty, kq])
+
 
 # PDF test_kernels ------------------------------------------------------------
 
@@ -294,7 +295,7 @@ def get_chi_sq(gobs, gcalc):
     # issues with the potential energy surface.
     # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
     scale = 1
-    return np.sum((gobs-gcalc)**2
+    return np.sum((gobs - gcalc) ** 2
                   # /gobs
     ).real, scale
 
@@ -381,7 +382,9 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
             '''
             # '''
             # Sympy
-            grad_rw[tx, tz] = rw * np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/np.sum((gobs[:] - gcalc[:])**2)
+            grad_rw[tx, tz] = rw * np.sum(
+                (gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :]) / np.sum(
+                (gobs[:] - gcalc[:]) ** 2)
             # '''
             '''
             # Previous version
@@ -418,6 +421,8 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs):
             grad_rw[tx, tz] = np.sum(-2 * (gobs - gcalc) * grad_pdf[tx, tz, :]
                                      # /gobs
             )
+
+
 # Misc. Kernels----------------------------------------------------------------
 
 @autojit(target=targ)

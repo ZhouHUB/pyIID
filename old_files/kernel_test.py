@@ -3,7 +3,8 @@ import matplotlib.pyplot as plt
 __author__ = 'christopher'
 import numpy as np
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-from pyiid.kernels.serial_kernel import get_d_array, get_r_array, get_scatter_array, \
+from pyiid.kernels.serial_kernel import get_d_array, get_r_array, \
+    get_scatter_array, \
     get_fq_array, get_normalization_array, get_pdf_at_qmin, fq_grad_position
 from ase import Atoms
 
@@ -28,7 +29,7 @@ dpc = DebyePDFCalculator()
 # plt.show()
 
 def get_pdf(atoms):
-    #extract data from atoms
+    # extract data from atoms
     q = atoms.get_positions()
     symbols = atoms.get_chemical_symbols()
 
@@ -37,7 +38,7 @@ def get_pdf(atoms):
     rmax = 40
     # Qmin = 2.5
     Qmin = 0.0
-    Qbin = np.pi/(rmax+6*2*np.pi/Qmax)
+    Qbin = np.pi / (rmax + 6 * 2 * np.pi / Qmax)
     qmin_bin = int(Qmin / Qbin)
     Qmax_bin = int(Qmax / Qbin)
     Q = np.arange(Qmin, Qmax, Qbin)
@@ -45,7 +46,7 @@ def get_pdf(atoms):
     rstep = .01
 
 
-    #initialize constants
+    # initialize constants
     N = len(q)
     print N
     d = np.zeros((N, N, 3))
@@ -58,25 +59,25 @@ def get_pdf(atoms):
     print 'd'
     print d
 
-    #Get pair distance array
+    # Get pair distance array
     r = np.zeros((N, N))
     get_r_array(r, d)
     print 'r'
     print r
 
-    #get scatter array
+    # get scatter array
     scatter_array = np.zeros((N, len(Q)))
     get_scatter_array(scatter_array, symbols, Qbin)
     print 'sa'
     print scatter_array
-    #remove self_scattering
+    # remove self_scattering
     # np.fill_diagonal(scatter_array, 0)
 
-    #get non-normalized FQ
+    # get non-normalized FQ
     fq = np.zeros(len(Q))
     get_fq_array(fq, r, scatter_array, Qbin)
 
-    #Normalize FQ
+    # Normalize FQ
     norm_array = np.zeros(len(Q))
     get_normalization_array(norm_array, scatter_array)
     FQ = np.nan_to_num(1 / (N * norm_array) * fq)
@@ -117,6 +118,8 @@ def get_pdf(atoms):
     # print FQ
     # plt.plot(Q, FQ)
     # plt.show()
+
+
 def get_FQ(atoms):
     q = atoms.get_positions()
     symbols = atoms.get_chemical_symbols()
@@ -126,7 +129,7 @@ def get_FQ(atoms):
     rmax = 40
     # Qmin = 2.5
     Qmin = 0.0
-    Qbin = np.pi/(rmax+6*2*np.pi/25)
+    Qbin = np.pi / (rmax + 6 * 2 * np.pi / 25)
     qmin_bin = int(Qmin / Qbin)
     Qmax_bin = int(Qmax / Qbin)
     Q = np.arange(Qmin, Qmax, Qbin)
@@ -134,7 +137,7 @@ def get_FQ(atoms):
     rstep = .01
 
 
-    #initialize constants
+    # initialize constants
     N = len(q)
     print N
     d = np.zeros((N, N, 3))
@@ -147,29 +150,30 @@ def get_FQ(atoms):
     print 'd'
     print d
 
-    #Get pair distance array
+    # Get pair distance array
     r = np.zeros((N, N))
     get_r_array(r, d)
     print 'r'
     print r
 
-    #get scatter array
+    # get scatter array
     scatter_array = np.zeros((N, len(Q)))
     get_scatter_array(scatter_array, symbols, Qbin)
     print 'sa'
     print scatter_array
-    #remove self_scattering
+    # remove self_scattering
     # np.fill_diagonal(scatter_array, 0)
 
-    #get non-normalized FQ
+    # get non-normalized FQ
     fq = np.zeros(len(Q))
     get_fq_array(fq, r, scatter_array, Qbin)
 
-    #Normalize FQ
+    # Normalize FQ
     norm_array = np.zeros(len(Q))
     get_normalization_array(norm_array, scatter_array)
     FQ = np.nan_to_num(1 / (N * norm_array) * fq)
     return Q, FQ
+
 
 def get_FQ_dir(atoms):
     q = atoms.get_positions()
@@ -180,7 +184,7 @@ def get_FQ_dir(atoms):
     rmax = 40
     # Qmin = 2.5
     Qmin = 0.0
-    Qbin = np.pi/(rmax+6*2*np.pi/25)
+    Qbin = np.pi / (rmax + 6 * 2 * np.pi / 25)
     qmin_bin = int(Qmin / Qbin)
     Qmax_bin = int(Qmax / Qbin)
     Q = np.arange(Qmin, Qmax, Qbin)
@@ -188,7 +192,7 @@ def get_FQ_dir(atoms):
     rstep = .01
 
 
-    #initialize constants
+    # initialize constants
     N = len(q)
     print N
     d = np.zeros((N, N, 3))
@@ -201,25 +205,25 @@ def get_FQ_dir(atoms):
     print 'd'
     print d
 
-    #Get pair distance array
+    # Get pair distance array
     r = np.zeros((N, N))
     get_r_array(r, d)
     print 'r'
     print r
 
-    #get scatter array
+    # get scatter array
     scatter_array = np.zeros((N, len(Q)))
     get_scatter_array(scatter_array, symbols, Qbin)
     print 'sa'
     print scatter_array
-    #remove self_scattering
+    # remove self_scattering
     # np.fill_diagonal(scatter_array, 0)
 
-    #get non-normalized FQ
+    # get non-normalized FQ
     fq = np.zeros(len(Q))
     get_fq_array(fq, r, scatter_array, Qbin)
 
-    #Normalize FQ
+    # Normalize FQ
     norm_array = np.zeros(len(Q))
     get_normalization_array(norm_array, scatter_array)
     FQ = np.nan_to_num(1 / (N * norm_array) * fq)
@@ -227,10 +231,11 @@ def get_FQ_dir(atoms):
     fq_grad_position(grad_p, d, r, scatter_array, Qbin)
     return grad_p
 
-atoms = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0)])
+
+atoms = Atoms('Au4', [(0, 0, 0), (3, 0, 0), (0, 3, 0), (3, 3, 0)])
 Q, FQ1 = get_FQ(atoms)
 a = .00001
-atoms2 = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0+a)])
+atoms2 = Atoms('Au4', [(0, 0, 0), (3, 0, 0), (0, 3, 0), (3, 3, 0 + a)])
 Q, FQ2 = get_FQ(atoms2)
 # plt.plot(FQ2-FQ1)
 # plt.show()
@@ -239,19 +244,19 @@ Q, FQ2 = get_FQ(atoms2)
 # plt.plot(grad[2,1,:])
 # plt.show()
 # plt.plot(Q, (FQ2-FQ1)/a,
-         # Q, grad[2,1,:]
+# Q, grad[2,1,:]
 # )
 # plt.show()
 # plt.plot(Q, FQ2-FQ1, Q, grad[2,2,:])
 # plt.show()
-atoms = Atoms('Au4', [(0,0,0), (3,0,0), (0,3,0), (3,3,0)])
+atoms = Atoms('Au4', [(0, 0, 0), (3, 0, 0), (0, 3, 0), (3, 3, 0)])
 Q, FQ1 = get_pdf(atoms)
 a = .00001
 plt.plot(Q, FQ1)
 plt.show()
-atoms2 = Atoms('Au4', [(0,0,0), (3,0,0), (0,3+a,0), (3,3,0)])
+atoms2 = Atoms('Au4', [(0, 0, 0), (3, 0, 0), (0, 3 + a, 0), (3, 3, 0)])
 Q, FQ2 = get_pdf(atoms2)
-plt.plot(Q, (FQ2-FQ1)/a,
+plt.plot(Q, (FQ2 - FQ1) / a,
          # Q, grad[2,1,:]
 )
 plt.show()

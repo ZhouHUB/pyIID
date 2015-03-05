@@ -115,7 +115,7 @@ dgrad_p.to_host(stream)
 
 
 #sum down to 1D array
-grad_p=grad_p.sum(axis=(1))
+grad_p=grad_p.sum(axis=1)
 
 dnorm.to_host(stream)
 

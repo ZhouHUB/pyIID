@@ -19,7 +19,7 @@ def get_d_array(d, q, offset):
         The atomic positions
     """
     tx, ty = cuda.grid(2)
-    
+
     m = d.shape[0]
     n = d.shape[1]
     if tx >= m or ty >= n:
@@ -43,7 +43,6 @@ def get_r_array(r, d):
         Range of atomic numbers
     """
     tx, ty = cuda.grid(2)
-    
 
     m = r.shape[0]
     n = r.shape[1]
@@ -70,7 +69,6 @@ def get_fq_p0_1_2(fq, r, qbin):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
 
     m = fq.shape[0]
     n = fq.shape[1]
@@ -97,7 +95,7 @@ def get_fq_p3(fq, norm_array):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
+
     m = fq.shape[0]
     n = fq.shape[1]
     qmax_bin = fq.shape[2]
@@ -131,6 +129,7 @@ def get_normalization_array(norm_array, scat, offset):
         return
     norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
 
+
 # Gradient kernels -----------------------------------------------------------
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
@@ -148,7 +147,6 @@ def fq_grad_position3(cos_term, r, qbin):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
 
     m = cos_term.shape[0]
     n = cos_term.shape[1]
@@ -157,7 +155,8 @@ def fq_grad_position3(cos_term, r, qbin):
         return
     if tx == ty:
         return
-    cos_term[tx, ty, kq] = math.cos(kq * qbin * r[tx, ty]) * kq * qbin / r[tx, ty]
+    cos_term[tx, ty, kq] = math.cos(kq * qbin * r[tx, ty]) * kq * qbin / r[
+        tx, ty]
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])
@@ -174,7 +173,6 @@ def fq_grad_position5(cos_term, norm):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
 
     m = cos_term.shape[0]
     n = cos_term.shape[1]
@@ -184,6 +182,7 @@ def fq_grad_position5(cos_term, norm):
     if tx == ty:
         return
     cos_term[tx, ty, kq] *= norm[tx, ty, kq]
+
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
 def fq_grad_position7(cos_term, fq, r):
@@ -198,7 +197,6 @@ def fq_grad_position7(cos_term, fq, r):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
 
     m = cos_term.shape[0]
     n = cos_term.shape[1]
@@ -223,7 +221,6 @@ def fq_grad_position_final1(grad_p, d, r):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
 
     m = grad_p.shape[0]
     n = grad_p.shape[1]
@@ -249,7 +246,6 @@ def fq_grad_position_final2(grad_p, cos_term):
     """
 
     tx, ty, kq = cuda.grid(3)
-    
 
     m = grad_p.shape[0]
     n = grad_p.shape[1]

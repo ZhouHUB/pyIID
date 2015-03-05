@@ -4,7 +4,8 @@ from pyiid.kernels.serial_kernel import *
 
 def wrap_atoms(atoms, qmax=25., qbin=.1):
     """
-    Call this function before applying calculator, it will generate static arrays for the scattering, preventing recalculation
+    Call this function before applying calculator, it will generate static
+    arrays for the scattering, preventing recalculation
     :param atoms:
     :param qmax:
     :param qbin:
@@ -169,10 +170,8 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
         The reduced structure function gradient
     """
     q = atoms.get_positions()
-    symbols = atoms.get_chemical_symbols()
 
     # define scatter_q information and initialize constants
-    qmax_bin = int(qmax / qbin)
     scatter_q = np.arange(0, qmax, qbin)
     n = len(q)
 

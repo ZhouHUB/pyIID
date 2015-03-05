@@ -10,7 +10,7 @@ atomsio = aseio.read(
     '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/C60.xyz')
 atoms = dc(atomsio)
 # for i in range(10):
-#     atoms += atomsio
+# atoms += atomsio
 q = atoms.get_positions()
 qmin = .25
 qmax = 25
@@ -27,7 +27,8 @@ qmax_bin = int(qmax / qbin)
 # scatter_array = np.ones((n, qmax_bin), dtype=np.float32) * 2
 # print len(scatter_array)
 # get_scatter_array(scatter_array, atoms.get_chemical_symbols(), dpc, n, qmax_bin, qbin)
-scatter_array = np.loadtxt('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/c60_scat.txt')
+scatter_array = np.loadtxt(
+    '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/1-C60.d/c60_scat.txt')
 print scatter_array.shape
 scatter_array = np.asarray(scatter_array, dtype=np.float32)
 atoms.set_array('scatter', scatter_array)
@@ -44,7 +45,7 @@ tpb = 32
 bpg = int(math.ceil(float(n) / tpb))
 
 s = time()
-#push empty d, full q, and number n to GPU
+# push empty d, full q, and number n to GPU
 
 
 norm_array2 = np.zeros((n, n, qmax_bin), dtype=np.float32)
@@ -67,7 +68,6 @@ cuda.synchronize()
 dr.to_host(stream)
 get_fq_p0[(bpg, bpg), (tpb, tpb), stream](dfq, dr, qbin)
 cuda.synchronize()
-
 
 get_fq_p1[(bpg, bpg), (tpb, tpb), stream](dfq)
 cuda.synchronize()
@@ -100,7 +100,7 @@ na *= 1. / (scatter_array.shape[0] ** 2)
 old_settings = np.seterr(all='ignore')
 fq = np.nan_to_num(1 / (n * na) * fq)
 np.seterr(**old_settings)
-print(time()-s)
+print(time() - s)
 
 print fq
 

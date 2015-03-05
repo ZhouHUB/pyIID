@@ -42,8 +42,6 @@ traj += [atoms]
 
 neb = NEB(traj)
 neb.interpolate()
-i = 0
-
 pe_list = []
 a_list2 = []
 for image in neb.images:
