@@ -5,11 +5,12 @@ from diffpy.Structure.structure import Structure
 from diffpy.Structure.atom import Atom as dAtom
 from ase.atoms import Atoms as AAtoms
 import ase.io as aseio
+from ase.lattice.surface import add_adsorbate
+
 import math
 import tkFileDialog
 from pyiid.kernels.serial_kernel import get_d_array
 from copy import deepcopy as dc
-
 
 def convert_atoms_to_stru(atoms):
     """
@@ -127,3 +128,22 @@ def tag_surface_atoms(atoms, tag=1, tol=0):
                 dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))
         if np.all(np.less_equal(dot, np.zeros(len(dot))+tol)):
             atoms[i].tag = tag
+
+
+def add_ligands(ligand, surface, distance, coverage, head, tail):
+    atoms = dc(surface)
+    tag_surface_atoms(atoms)
+    for atom in atoms:
+        if atom.tag == 1 and np.random.random() < coverage:
+            pos = atom.position
+            com = surface.get_center_of_mass()
+            disp = pos-com
+            norm_disp = disp/np.sqrt(np.dot(disp, disp))
+            l_length = ligand[tail].position - ligand[head].position
+            norm_l_length = l_length/np.sqrt(np.dot(l_length, l_length))
+            ads = dc(ligand)
+            ads.rotate(norm_l_length, a=norm_disp)
+            ads.translate(-ads[head].position)
+            ads.translate(pos + distance * norm_disp)
+            atoms += ads
+    return atoms

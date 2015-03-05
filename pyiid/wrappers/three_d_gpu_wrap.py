@@ -73,7 +73,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     dnorm.to_host(stream2)
 
 
-    cuda.synchronize()
+    # cuda.synchronize()
 
 
 

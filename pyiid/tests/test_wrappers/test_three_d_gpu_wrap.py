@@ -20,7 +20,7 @@ from ase.atoms import Atoms
 from pyiid.wrappers.kernel_wrap import wrap_atoms, grad_pdf
 
 # n = 50
-n = 10
+n = 200
 
 def test_fq():
     
@@ -175,4 +175,5 @@ def test_grad_pdf1():
 
 if __name__ == '__main__':
     import nose
-    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    # nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    test_fq()

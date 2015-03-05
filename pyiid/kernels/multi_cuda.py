@@ -4,13 +4,10 @@ from numbapro import cuda
 import mkl
 import math
 
-# TODO: need more clever way to deal with this, including multiple GPUs
-# cuda.select_device(1)
-
 # F(Q) kernels ---------------------------------------------------------------
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
-def get_d_array(d, q):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], i4])
+def get_d_array(d, q, offset):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
 
@@ -22,11 +19,13 @@ def get_d_array(d, q):
         The atomic positions
     """
     tx, ty = cuda.grid(2)
-    n = len(d)
-    if tx >= n or ty >= n:
+    
+    m = d.shape[0]
+    n = d.shape[1]
+    if tx >= m or ty >= n:
         return
     for tz in range(3):
-        d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
+        d[tx, ty, tz] = q[ty, tz] - q[tx + offset, tz]
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
@@ -44,8 +43,12 @@ def get_r_array(r, d):
         Range of atomic numbers
     """
     tx, ty = cuda.grid(2)
-    n = len(d)
-    if tx >= n or ty >= n:
+    
+
+    m = r.shape[0]
+    n = r.shape[1]
+
+    if tx >= m or ty >= n:
         return
     r[tx, ty] = math.sqrt(
         d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
@@ -67,14 +70,16 @@ def get_fq_p0_1_2(fq, r, qbin):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(r)
+    
+
+    m = fq.shape[0]
+    n = fq.shape[1]
     qmax_bin = fq.shape[2]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     # r is zero for tx = ty, thus we don't calculate for it
     if tx == ty:
         return
-
     fq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[tx, ty]
 
 
@@ -92,19 +97,19 @@ def get_fq_p3(fq, norm_array):
     """
 
     tx, ty, kq = cuda.grid(3)
-
-    n = len(norm_array)
+    
+    m = fq.shape[0]
+    n = fq.shape[1]
     qmax_bin = fq.shape[2]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     if tx == ty:
         return
-
     fq[tx, ty, kq] *= norm_array[tx, ty, kq]
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
-def get_normalization_array(norm_array, scat):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], i4])
+def get_normalization_array(norm_array, scat, offset):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -117,12 +122,14 @@ def get_normalization_array(norm_array, scat):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(scat)
-    qmax_bin = scat.shape[1]
 
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    m = norm_array.shape[0]
+    n = norm_array.shape[1]
+    qmax_bin = norm_array.shape[2]
+
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
-    norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
+    norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
 
 # Gradient kernels -----------------------------------------------------------
 
@@ -141,9 +148,12 @@ def fq_grad_position3(cos_term, r, qbin):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(cos_term)
+    
+
+    m = cos_term.shape[0]
+    n = cos_term.shape[1]
     qmax_bin = cos_term.shape[2]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     if tx == ty:
         return
@@ -164,9 +174,12 @@ def fq_grad_position5(cos_term, norm):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(cos_term)
+    
+
+    m = cos_term.shape[0]
+    n = cos_term.shape[1]
     qmax_bin = cos_term.shape[2]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     if tx == ty:
         return
@@ -185,9 +198,12 @@ def fq_grad_position7(cos_term, fq, r):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(cos_term)
+    
+
+    m = cos_term.shape[0]
+    n = cos_term.shape[1]
     qmax_bin = cos_term.shape[2]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     if tx == ty:
         return
@@ -207,9 +223,12 @@ def fq_grad_position_final1(grad_p, d, r):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(grad_p)
+    
+
+    m = grad_p.shape[0]
+    n = grad_p.shape[1]
     qmax_bin = grad_p.shape[3]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     if tx == ty:
         return
@@ -230,9 +249,12 @@ def fq_grad_position_final2(grad_p, cos_term):
     """
 
     tx, ty, kq = cuda.grid(3)
-    n = len(grad_p)
+    
+
+    m = grad_p.shape[0]
+    n = grad_p.shape[1]
     qmax_bin = grad_p.shape[3]
-    if tx >= n or ty >= n or kq >= qmax_bin:
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     if tx == ty:
         return
