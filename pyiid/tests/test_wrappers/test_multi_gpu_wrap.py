@@ -33,7 +33,6 @@ def test_fq():
         gfq_ave += gpu_fq(atoms)
     sfq_ave /= m
     gfq_ave /= m
-    # assert_allclose(sfq, gfq)
     assert_allclose(sfq_ave, gfq_ave, rtol=1e-3)
 
     return
@@ -146,7 +145,6 @@ def test_grad_pdf1():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
-    gobs = serial_pdf(atoms)[0]
     atoms.rattle(.1)
 
     qmin = 2.5
