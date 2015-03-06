@@ -32,7 +32,7 @@ pu = [
     'cpu'
 ]
 super_results_d = OrderedDict()
-for i in range(10, 100, 10):
+for i in range(10, 60, 10):
     atoms = build_sphere_np('/mnt/work-data/dev/pyIID/running/10_nm/1100138.cif', float(i) / 2)
     wrap_atoms(atoms)
     atoms.rattle()
