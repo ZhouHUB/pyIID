@@ -58,7 +58,7 @@ def test_get_r_array():
 
 def test_get_scatter_array():
 
-    scatter_array = np.loadtxt('pyIId/pyiid/tests/test_kernels/c60_scat.txt', dtype=np.float32)
+    scatter_array = np.loadtxt('pyIID/pyiid/tests/test_kernels/c60_scat.txt', dtype=np.float32)
     ksa = np.zeros(scatter_array.shape)
     numbers = np.ones(len(ksa), dtype=np.int)*6
     qbin = .1
