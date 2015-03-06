@@ -77,12 +77,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    # build the empty arrays
-    d = np.zeros((n, n, 3), dtype=np.float32)
-    r = np.zeros((n, n), dtype=np.float32)
-    super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
-    norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
-
     gpus = cuda.gpus.lst
     mem_list = []
     for gpu in gpus:
@@ -341,14 +335,6 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     n = len(q)
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
-
-    # build empty arrays
-    d = np.zeros((n, n, 3), dtype=np.float32)
-    r = np.zeros((n, n), dtype=np.float32)
-    norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
-    super_fq = np.zeros((n, n, qmax_bin), dtype=np.float32)
-    grad_p = np.zeros((n, n, 3, qmax_bin), dtype=np.float32)
-    cos_term = np.zeros((n, n, qmax_bin), dtype=np.float32)
 
     gpus = cuda.gpus.lst
     mem_list = []
