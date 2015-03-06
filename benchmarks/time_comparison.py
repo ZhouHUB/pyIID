@@ -4,7 +4,8 @@ import ase.io as aseio
 
 from pyiid.wrappers.kernel_wrap import wrap_atoms
 from pyiid.calc.pdfcalc import PDFCalc
-from pyiid.wrappers.three_d_gpu_wrap import wrap_rw, wrap_pdf
+from pyiid.wrappers.multi_gpu_wrap import wrap_rw, wrap_pdf
+from pyiid.utils import build_sphere_np
 
 import matplotlib.pyplot as plt
 from pprint import pprint
@@ -27,20 +28,19 @@ gpu_2_d = []
 cpu = []
 
 pu = [
-    'gpu_3_d',
-    'gpu_2_d',
+    'multi_gpu',
     'cpu'
 ]
 super_results_d = OrderedDict()
-for i in range(1, 150, 10):
-    atoms = dc(atoms2)
-    atoms *= (i, 1, 1)
+for i in range(10, 100, 10):
+    atoms = build_sphere_np('/mnt/work-data/dev/pyIID/running/10_nm/1100138.cif', float(i) / 2)
+    wrap_atoms(atoms)
     atoms.rattle()
-    print i, len(atoms)
+    print len(atoms), i/10.
     results_d = {}
     for processor in pu:
         sub_d = {}
-        calc = PDFCalc(gobs=pdf, qmin=0.0, conv=1, qbin=.1, processor=processor)
+        calc = PDFCalc(gobs=pdf, qmin=0.0, conv=1, qbin=.1, processor=processor, potential='rw')
         atoms.set_calculator(calc)
         s = time.time()
         nrg = atoms.get_potential_energy()
@@ -60,34 +60,26 @@ for i in range(1, 150, 10):
 sizes = []
 cpu_f = []
 cpu_e = []
-gpu3_d_f = []
-gpu3_d_e = []
-gpu2_d_f = []
-gpu2_d_e = []
+multi_gpu_f = []
+multi_gpu_e = []
 
 for key, value in super_results_d.iteritems():
     sizes.append(key)
     cpu_f.append(value['cpu']['time for force'])
     cpu_e.append(value['cpu']['time for energy'])
 
-    gpu3_d_e.append(value['gpu_3_d']['time for energy'])
-    gpu3_d_f.append(value['gpu_3_d']['time for force'])
-
-    gpu2_d_f.append(value['gpu_2_d']['time for force'])
-    gpu2_d_e.append(value['gpu_2_d']['time for energy'])
+    multi_gpu_e.append(value['multi_gpu']['time for energy'])
+    multi_gpu_f.append(value['multi_gpu']['time for force'])
 
 # print sizes, gpu3_d_e
 
 plt.plot(sizes, cpu_f, 'bo', label='cpu energy')
 plt.plot(sizes, cpu_e, 'b-', label='cpu force')
 
-plt.plot(sizes, gpu3_d_e, 'ro', label='3D grid energy')
-plt.plot(sizes, gpu3_d_f, 'r-', label='3D grid force')
-
-plt.plot(sizes, gpu2_d_e, 'ko', label='2D grid energy')
-plt.plot(sizes, gpu2_d_f, 'k-', label='2D grid force')
+plt.plot(sizes, multi_gpu_e, 'ro', label='GPU energy')
+plt.plot(sizes, multi_gpu_f, 'r-', label='GPU force')
 plt.legend(loc=2)
-plt.xlabel('Number of atoms')
+plt.xlabel('NP size in Angstrom')
 plt.ylabel('time (s) [lower is better]')
 plt.title('Scaling of algorithm')
 plt.show()

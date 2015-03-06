@@ -97,20 +97,9 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
             if m > n - n_cov:
                 m = n - n_cov
 
-            if gpu not in p_dict.keys():
-                p = Thread(
-                    target=sub_fq, args=(
-                        gpu, q, scatter_array,
-                        fq_q, norm_q, qmax_bin, qbin, m, n_cov))
-                p_dict[gpu] = p
-                p.start()
-                n_cov += m
-                if n_cov == n:
+            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                if n_cov >= n:
                     break
-            if p_dict[gpu].is_alive():
-                pass
-
-            else:
                 p = Thread(
                     target=sub_fq, args=(
                         gpu, q, scatter_array,
@@ -118,7 +107,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                 p_dict[gpu] = p
                 p.start()
                 n_cov += m
-                if n_cov == n:
+                if n_cov >= n:
                     break
 
     for value in p_dict.values():
@@ -356,20 +345,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
                 8 * n * (3 * qmax_bin + 2))))
             if m > n - n_cov:
                 m = n - n_cov
-            if gpu not in p_dict.keys():
-                p = Thread(
-                    target=sub_grad, args=(
-                        gpu, q, scatter_array,
-                        grad_q, norm_q, qmax_bin, qbin, m, n_cov, index_list))
-                p_dict[gpu] = p
-                p.start()
-                n_cov += m
-                if n_cov == n:
-                    break
-            if p_dict[gpu].is_alive():
-                pass
-
-            else:
+            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 p = Thread(
                     target=sub_grad, args=(
                         gpu, q, scatter_array,

@@ -11,7 +11,7 @@ class PDFCalc(Calculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, gobs=None, qmin=0.0, qmax=25.0, qbin=None,
-                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., processor='gpu_3_d', potential='chi_sq', **kwargs):
+                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., processor='multi_gpu', potential='chi_sq', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
@@ -31,11 +31,11 @@ class PDFCalc(Calculator):
         else:
             raise NotImplementedError('Need an experimental PDF')
 
-        if processor == 'gpu_3_d':
+        if processor == 'multi_gpu':
+            from pyiid.wrappers.multi_gpu_wrap import *
+        elif processor == 'gpu_3_d':
             from pyiid.wrappers.three_d_gpu_wrap import *
-            # from pyiid.wrappers.three_d_gpu_wrap import wrap_grad_rw, wrap_rw, wrap_chi_sq, wrap_grad_chi_sq
         elif processor == 'gpu_2_d':
-            # from pyiid.wrappers.gpu_wrap import wrap_grad_rw, wrap_rw
             from pyiid.wrappers.gpu_wrap import *
         else:
             from pyiid.wrappers.kernel_wrap import *
