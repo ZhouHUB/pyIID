@@ -31,30 +31,34 @@ pu = [
     'multi_gpu',
     # 'cpu'
 ]
-super_results_d = OrderedDict()
-for i in range(10, 100, 5):
-    atoms = build_sphere_np('/mnt/work-data/dev/pyIID/running/10_nm/1100138.cif', float(i) / 2)
-    wrap_atoms(atoms)
-    atoms.rattle()
-    print len(atoms), i/10.
-    results_d = {}
-    for processor in pu:
-        sub_d = {}
-        calc = PDFCalc(gobs=pdf, qmin=0.0, conv=1, qbin=.1, processor=processor, potential='rw')
-        atoms.set_calculator(calc)
-        s = time.time()
-        nrg = atoms.get_potential_energy()
-        f = time.time()
-        sub_d['time for energy'] = f-s
-        sub_d['energy'] = nrg
-        s = time.time()
-        force = atoms.get_forces()
-        f = time.time()
-        sub_d['time for force'] = f-s
-        # sub_d['force'] = force
-        results_d[processor] = sub_d
-        atoms._del_calculator
-    super_results_d[i/10.] = results_d
+try:
+    super_results_d = OrderedDict()
+    for i in range(10, 100, 5):
+        atoms = build_sphere_np('/mnt/work-data/dev/pyIID/running/10_nm/1100138.cif', float(i) / 2)
+        wrap_atoms(atoms)
+        atoms.rattle()
+        print len(atoms), i/10.
+        results_d = {}
+        for processor in pu:
+            sub_d = {}
+            calc = PDFCalc(gobs=pdf, qmin=0.0, conv=1, qbin=.1, processor=processor, potential='rw')
+            atoms.set_calculator(calc)
+            s = time.time()
+            nrg = atoms.get_potential_energy()
+            f = time.time()
+            sub_d['time for energy'] = f-s
+            sub_d['energy'] = nrg
+            s = time.time()
+            force = atoms.get_forces()
+            f = time.time()
+            sub_d['time for force'] = f-s
+            # sub_d['force'] = force
+            results_d[processor] = sub_d
+            atoms._del_calculator
+        super_results_d[i/10.] = results_d
+except KeyboardInterrupt:
+    pass
+
 # pprint(super_results_d)
 
 

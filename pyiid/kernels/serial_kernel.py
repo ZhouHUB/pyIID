@@ -260,10 +260,9 @@ def get_rw(gobs, gcalc, weight=None):
     scale:
         The scale factor in the rw calculation
     """
-    # Note: The scale is set to 1, having a variable scale seems to create
-    # issues with the potential energy surface.
-    # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
-    scale = 1
+    scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
+    if scale <= 0:
+        scale = 1
     if weight is None:
         weight = np.ones(gcalc.shape)
     top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
@@ -294,8 +293,10 @@ def get_chi_sq(gobs, gcalc):
     # Note: The scale is set to 1, having a variable scale seems to create
     # issues with the potential energy surface.
     # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
-    scale = 1
-    return np.sum((gobs - gcalc) ** 2
+    scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
+    if scale <= 0:
+        scale = 1
+    return np.sum((gobs - scale * gcalc) ** 2
                   # /gobs
     ).real, scale
 
@@ -380,26 +381,40 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
             grad_rw[tx, tz] = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/(np.sum(gobs[:]**2) * rw)
             grad_rw[tx, tz] = grad_rw[tx, tz].real
             '''
-            # '''
+            '''
             # Sympy
             grad_rw[tx, tz] = rw * np.sum(
                 (gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :]) / np.sum(
                 (gobs[:] - gcalc[:]) ** 2)
-            # '''
+            '''
             '''
             # Previous version
             part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
             part2 = np.sum(scale * grad_pdf[tx, tz, :])
             grad_rw[tx, tz] = rw.real / part1.real * part2.real
             '''
+            # Sympy with scale
+            # grad scale
+            grad_a = 1. / np.dot(gcalc.T, gcalc) * (
+                -scale * 2 * np.dot(gcalc.T, grad_pdf[tx, tz, :]) + np.dot(
+                    gobs.T, grad_pdf[tx, tz, :]))
+            if scale <= 0:
+                grad_a = 0
+
+            grad_rw[tx, tz] = rw / np.sum(
+                (gobs[:] - scale * gcalc[:]) ** 2) * \
+                              np.sum(-(scale * grad_pdf[tx, tz, :]
+                                       + gcalc[:] * grad_a) *
+                                     (gobs[:] - scale * gcalc))
 
 
-def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs):
+def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
     """
     Get the gradient of the model PDF
 
     Parameters
     ------------
+    :param scale:
     grad_rw: Nx3 array
         Holds the gradient
     grad_pdf: Nx3xR array
@@ -418,9 +433,19 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs):
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
+            grad_a = 1. / np.dot(gcalc.T, gcalc) * (
+                -1 * scale * 2 * np.dot(gcalc.T, grad_pdf[tx, tz, :]) + np.dot(
+                    gobs.T, grad_pdf[tx, tz, :]))
+            if scale <= 0:
+                grad_a = 0
+            grad_rw[tx, tz] = np.sum((-2 * scale * grad_pdf[tx, tz, :] -
+                                      2 * gcalc * grad_a) *
+                                     (gobs - scale * gcalc))
+
+            '''
             grad_rw[tx, tz] = np.sum(-2 * (gobs - gcalc) * grad_pdf[tx, tz, :]
                                      # /gobs
-            )
+            )'''
 
 
 # Misc. Kernels----------------------------------------------------------------
