@@ -248,25 +248,3 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     return grad_rw
-
-
-if __name__ == '__main__':
-    # import cProfile
-    # cProfile.run('''
-    import ase.io as aseio
-    import os
-    from pyiid.wrappers.kernel_wrap import wrap_atoms
-    import matplotlib.pyplot as plt
-
-    atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
-    atoms_file_no_ext = os.path.splitext(atoms_file)[0]
-    atomsio = aseio.read(atoms_file)
-    wrap_atoms(atomsio)
-    plt.plot(atomsio.get_array('scatter')[0,:]), plt.show()
-    atomsio *= (10, 1, 1)
-
-    fq = wrap_fq(atomsio)
-    # for i in range(10):
-    #     gfq = wrap_fq_grad_gpu(atomsio)
-    plt.plot(fq), plt.show()
-    # ''', sort='tottime')

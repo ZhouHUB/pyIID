@@ -43,24 +43,24 @@ def test_get_r_array():
     kr = np.zeros((n, n), dtype=np.float32)
 
     # numpy version
-    a = d**2
+    a = d ** 2
     b = a.sum(axis=2)
     nr = np.sqrt(b)
 
     # kernel version
     get_r_array(kr, d)
     # print nr-kr
-    assert(type(kr) == type(nr))
+    assert (type(kr) == type(nr))
     assert_allclose(nr, kr, rtol=1e-6)
 
     return
 
 
 def test_get_scatter_array():
-
-    scatter_array = np.loadtxt('pyIID/pyiid/tests/test_kernels/c60_scat.txt', dtype=np.float32)
+    scatter_array = np.loadtxt('./pyiid/tests/test_kernels/c60_scat.txt',
+                               dtype=np.float32)
     ksa = np.zeros(scatter_array.shape)
-    numbers = np.ones(len(ksa), dtype=np.int)*6
+    numbers = np.ones(len(ksa), dtype=np.int) * 6
     qbin = .1
     get_scatter_array(ksa, numbers, qbin)
 
@@ -68,7 +68,6 @@ def test_get_scatter_array():
 
 
 def test_fq_array():
-
     n = 60
     scatter_array = np.random.random((n, 250))
     r = np.random.random((n, n))
@@ -91,4 +90,5 @@ def test_fq_array():
 
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)

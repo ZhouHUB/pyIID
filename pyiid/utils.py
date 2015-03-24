@@ -6,11 +6,16 @@ from diffpy.Structure.atom import Atom as dAtom
 from ase.atoms import Atoms as AAtoms
 import ase.io as aseio
 from ase.lattice.surface import add_adsorbate
+from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, GetLayerNumbers
+from itertools import combinations
 
 import math
 import tkFileDialog
 from pyiid.kernels.serial_kernel import get_d_array
 from copy import deepcopy as dc
+import time
+import datetime
+
 
 def convert_atoms_to_stru(atoms):
     """
@@ -97,8 +102,8 @@ def build_sphere_np(file, radius):
     """
     atoms = aseio.read(file)
     cell_dist = atoms.get_cell()
-    multiple = np.ceil(2 * radius / cell_dist).astype(int)
-    atoms = atoms.repeat((multiple[0,0], multiple[1,1], multiple[2,2]))
+    multiple = np.ceil(2 * radius / cell_dist.diagonal()).astype(int)
+    atoms = atoms.repeat(multiple)
     com = atoms.get_center_of_mass()
     atoms.translate(-com)
     del atoms[[atom.index for atom in atoms
@@ -108,7 +113,7 @@ def build_sphere_np(file, radius):
     return atoms
 
 
-def tag_surface_atoms(atoms, tag=1, tol=0):
+def tag_surface_atoms(atoms, rNearest, tag=1, tol=0):
     """
     Find which are the surface atoms in a nanoparticle.
     ..note: We define the surface as a collection of atoms for which the
@@ -120,6 +125,11 @@ def tag_surface_atoms(atoms, tag=1, tol=0):
     :param atoms:
     :return:
     """
+    s_idx = GetLayerNumbers(atoms, rNearest)
+    for i in range(len(atoms)):
+        if s_idx[i] == 1:
+            atoms[i].tag = tag
+    '''
     n = len(atoms)
     q = atoms.get_positions()
     d_array = np.zeros((n, n, 3))
@@ -135,6 +145,7 @@ def tag_surface_atoms(atoms, tag=1, tol=0):
                 dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))
         if np.all(np.less_equal(dot, np.zeros(len(dot))+tol)):
             atoms[i].tag = tag
+    '''
 
 
 def add_ligands(ligand, surface, distance, coverage, head, tail):
@@ -154,3 +165,63 @@ def add_ligands(ligand, surface, distance, coverage, head, tail):
             ads.translate(pos + distance * norm_disp)
             atoms += ads
     return atoms
+
+
+def get_angle_list(atoms, cutoff, element=None, tag = None):
+    """
+    Get all the angles in the NP
+    :param atoms:
+    :param cutoff:
+    :return:
+    """
+    n_list = list(FullNeighborList(cutoff, atoms))
+    angles = []
+    for i in range(len(atoms)):
+        z = list(combinations(n_list[i], 2))
+        for a in z:
+            if (element is not None and atoms[i].symbol != element) or\
+                    (tag is not None and atoms[i].tag != tag):
+                break
+            angles.append(np.rad2deg(atoms.get_angle([a[0], i, a[1]])))
+    return np.nan_to_num(np.asarray(angles))
+
+
+def time_est(atoms, HD_iter, HMC_iter):
+    """
+    Estimate the amount of time to complete a simulation
+    :param atoms:
+    :param HD_iter:
+    :param HMC_iter:
+    :return:
+    """
+    s = time.time()
+    nrg = atoms.get_potential_energy()
+    f = time.time()
+    nrg_t = f-s
+    s = time.time()
+    force = atoms.get_forces()
+    f = time.time()
+    ft = f-s
+    total = HD_iter*ft*HMC_iter + nrg_t*HMC_iter
+    print str(datetime.timedelta(seconds=math.ceil(total)))
+    return total
+
+
+def get_coord_list(atoms, cutoff, element=None, tag = None):
+    """
+    Get all the angles in the NP
+    :param atoms:
+    :param cutoff:
+    :return:
+    """
+    a = CoordinationNumbers(atoms, cutoff)
+    if element is not None and tag is not None:
+        return a[(np.asarray(atoms.get_chemical_symbols()) == element)
+                 & (atoms.get_tags() == tag)]
+    elif element is not None:
+        return a[np.asarray(atoms.get_chemical_symbols()) == element]
+    elif tag is not None:
+        return a[atoms.get_tags() == tag]
+    else:
+        return a
+

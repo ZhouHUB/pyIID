@@ -29,12 +29,12 @@ cpu = []
 
 pu = [
     'multi_gpu',
-    # 'cpu'
+    'cpu'
 ]
 try:
     super_results_d = OrderedDict()
-    for i in range(10, 100, 5):
-        atoms = build_sphere_np('/mnt/work-data/dev/pyIID/running/10_nm/1100138.cif', float(i) / 2)
+    for i in range(10, 50, 5):
+        atoms = build_sphere_np('/mnt/work-data/dev/pyIID/benchmarks/1100138.cif', float(i) / 2)
         wrap_atoms(atoms)
         atoms.rattle()
         print len(atoms), i/10.
@@ -71,16 +71,16 @@ multi_gpu_e = []
 
 for key, value in super_results_d.iteritems():
     sizes.append(key)
-    # cpu_f.append(value['cpu']['time for force'])
-    # cpu_e.append(value['cpu']['time for energy'])
+    cpu_f.append(value['cpu']['time for force'])
+    cpu_e.append(value['cpu']['time for energy'])
 
     multi_gpu_e.append(value['multi_gpu']['time for energy'])
     multi_gpu_f.append(value['multi_gpu']['time for force'])
 
 # print sizes, gpu3_d_e
 
-# plt.plot(sizes, cpu_f, 'bo', label='cpu energy')
-# plt.plot(sizes, cpu_e, 'b-', label='cpu force')
+plt.plot(sizes, cpu_f, 'bo', label='cpu energy')
+plt.plot(sizes, cpu_e, 'b-', label='cpu force')
 
 plt.plot(sizes, multi_gpu_e, 'ro', label='GPU energy')
 plt.plot(sizes, multi_gpu_f, 'r-', label='GPU force')
@@ -88,5 +88,5 @@ plt.legend(loc=2)
 plt.xlabel('NP size in nm')
 plt.ylabel('time (s) [lower is better]')
 plt.title('Scaling of algorithm')
-plt.savefig('speed.png', bbox_inches='tight', transparent=True)
+plt.savefig('speed.eps', bbox_inches='tight', transparent=True)
 plt.show()
