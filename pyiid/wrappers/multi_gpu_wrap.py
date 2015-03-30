@@ -10,7 +10,7 @@ from threading import Thread
 from Queue import Queue
 
 
-def sub_fq(gpu, q, scatter_array, fq_q, norm_q, qmax_bin, qbin, m, n_cov):
+def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     n = len(q)
     tups = [(m, n, 3), (m, n), (m, n, qmax_bin), (m, n, qmax_bin)]
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
@@ -61,11 +61,9 @@ def sub_fq(gpu, q, scatter_array, fq_q, norm_q, qmax_bin, qbin, m, n_cov):
         get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
         get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
         get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
-        dnorm.to_host(stream2)
         dfq.to_host(stream)
 
         fq_q.append(data[3].sum(axis=(0, 1)))
-        norm_q.append(data[2].sum(axis=(0, 1)))
         del data, dscat, dnorm, dd, dq, dr, dfq
 
 
@@ -87,7 +85,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
 
     fq_q = []
-    norm_q = []
     n_cov = 0
     p_dict = {}
     while n_cov < n:
@@ -103,7 +100,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                 p = Thread(
                     target=sub_fq, args=(
                         gpu, q, scatter_array,
-                        fq_q, norm_q, qmax_bin, qbin, m, n_cov))
+                        fq_q, qmax_bin, qbin, m, n_cov))
                 p_dict[gpu] = p
                 p.start()
                 n_cov += m
@@ -114,13 +111,11 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
         value.join()
 
     fq = np.zeros(qmax_bin)
-    na = np.zeros(qmax_bin)
-    for ele, ele2 in zip(fq_q, norm_q):
+    for ele in fq_q:
         fq[:] += ele
-        na[:] += ele2
-    na *= 1. / (scatter_array.shape[0] ** 2)
+    na = np.average(scatter_array, axis=0)**2 * n
     old_settings = np.seterr(all='ignore')
-    fq = np.nan_to_num(1 / (n * na) * fq)
+    fq = np.nan_to_num(1 / na * fq)
     np.seterr(**old_settings)
     return fq
 
@@ -235,7 +230,7 @@ def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     return rw, scale, g_calc, fq
 
 
-def sub_grad(gpu, q, scatter_array, grad_q, norm_q, qmax_bin, qbin, m, n_cov,
+def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
              index_list):
     # Build Data arrays
     n = len(q)
@@ -308,11 +303,9 @@ def sub_grad(gpu, q, scatter_array, grad_q, norm_q, qmax_bin, qbin, m, n_cov,
         # cuda.synchronize()
 
         fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
-        dnorm.to_host(stream2)
         dgrad_p.to_host(stream)
 
         grad_q.append(data[4].sum(axis=1))
-        norm_q.append(data[2].sum(axis=(0, 1)))
         index_list.append(n_cov)
         del data, dscat, dnorm, dd, dr, dfq, dcos_term, dgrad_p
 
@@ -335,7 +328,6 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
 
     grad_q = []
-    norm_q = []
     index_list = []
     p_dict = {}
     n_cov = 0
@@ -349,7 +341,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
                 p = Thread(
                     target=sub_grad, args=(
                         gpu, q, scatter_array,
-                        grad_q, norm_q, qmax_bin, qbin, m, n_cov, index_list))
+                        grad_q, qmax_bin, qbin, m, n_cov, index_list))
                 p_dict[gpu] = p
                 p.start()
                 n_cov += m
@@ -374,17 +366,14 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     grad_p = grad_p_final
 
     # sum reduce to 1D
-    na = np.zeros(qmax_bin)
-    for ele in norm_q:
-        na[:] += ele
-    na *= 1. / (scatter_array.shape[0] ** 2)
+    na = np.average(scatter_array, axis=0)**2 * n
 
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
             # grad_p[tx, tz, :qmin_bin] = 0.0
             grad_p[tx, tz] = np.nan_to_num(
-                1 / (n * na) * grad_p[tx, tz])
+                1 / na * grad_p[tx, tz])
     np.seterr(**old_settings)
     return grad_p
 
@@ -488,15 +477,17 @@ if __name__ == '__main__':
     from pyiid.wrappers.kernel_wrap import wrap_atoms
     import matplotlib.pyplot as plt
 
-    n = 4000
-    pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au' + str(n), pos)
+    # n = 400
+    # pos = np.random.random((n, 3)) * 10.
+    # atoms = Atoms('Au' + str(n), pos)
+    atoms = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
     wrap_atoms(atoms)
 
-    # fq = wrap_fq(atoms)
+    fq = wrap_fq(atoms)
+    pdf, fq = wrap_pdf(atoms)
     grad_fq = wrap_fq_grad_gpu(atoms)
     print grad_fq
-    # plt.plot(fq), plt.show()
+    plt.plot(pdf), plt.show()
     # for i in range(10):
     # gfq = wrap_fq_grad_gpu(atomsio)
     # ''', sort='tottime')
