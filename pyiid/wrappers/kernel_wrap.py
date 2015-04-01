@@ -110,7 +110,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     return pdf0, fq
 
 
-def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40., rstep=.01):
     """
     Generate the Rw value
 
@@ -144,6 +144,7 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
         The reduced structure function
     """
     g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
+    g_calc = g_calc[math.floor(rmin/rstep):]
     rw, scale = get_rw(gobs, g_calc, weight=None)
     return rw, scale, g_calc, fq
 

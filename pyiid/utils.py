@@ -206,6 +206,9 @@ def time_est(atoms, HD_iter, HMC_iter):
     ft = f-s
     total = HD_iter*ft*HMC_iter + nrg_t*HMC_iter
     print str(datetime.timedelta(seconds=math.ceil(total)))
+    print 'finished by' + \
+          str(datetime.datetime.today() +
+              datetime.timedelta(seconds=math.ceil(total)))
     return total
 
 

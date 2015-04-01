@@ -32,13 +32,17 @@ class PDFCalc(Calculator):
             raise NotImplementedError('Need an experimental PDF')
 
         if processor == 'multi_gpu':
-            from pyiid.wrappers.multi_gpu_wrap import *
+            # from pyiid.wrappers.multi_gpu_wrap import *
+            from pyiid.wrappers.multi_gpu_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
         elif processor == 'gpu_3_d':
-            from pyiid.wrappers.three_d_gpu_wrap import *
+            # from pyiid.wrappers.three_d_gpu_wrap import *
+            from pyiid.wrappers.three_d_gpu_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
         elif processor == 'gpu_2_d':
-            from pyiid.wrappers.gpu_wrap import *
+            # from pyiid.wrappers.gpu_wrap import *
+            from pyiid.wrappers.gpu_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
         else:
-            from pyiid.wrappers.kernel_wrap import *
+            # from pyiid.wrappers.kernel_wrap import *
+            from pyiid.wrappers.kernel_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
 
         if potential == 'chi_sq':
             self.potential = wrap_chi_sq
@@ -89,9 +93,10 @@ class PDFCalc(Calculator):
         '''energy, scale, gcalc, fq = self.wrap_rw(atoms, self.gobs, self.qmax,
                                            self.qmin, self.qbin, self.rmax,
                                            self.rbin)'''
-        energy, scale, gcalc, fq = self.potential(atoms, self.gobs, self.qmax,
-                                           self.qmin, self.qbin, self.rmax,
-                                           self.rbin)
+        energy, scale, gcalc, fq = self.potential(atoms, self.gobs,
+                                                  self.qmax, self.qmin,
+                                                  self.qbin, self.rmin,
+                                                  self.rmax, self.rbin)
         self.energy_free = energy * self.rw_to_eV
         self.energy_zero = energy * self.rw_to_eV
         self.results['energy'] = energy * self.rw_to_eV
@@ -99,6 +104,6 @@ class PDFCalc(Calculator):
     def calculate_forces(self, atoms):
         self.results['forces'] = np.zeros((len(atoms), 3))
         forces = self.grad(atoms, self.gobs, self.qmax, self.qmin, self.qbin,
-                              self.rmax, self.rbin) * self.rw_to_eV
+                              self.rmin, self.rmax, self.rbin) * self.rw_to_eV
 
         self.results['forces'] = forces
