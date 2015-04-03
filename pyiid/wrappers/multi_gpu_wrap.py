@@ -68,6 +68,7 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
+
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -75,6 +76,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
+    # get info on our gpu setup and memory requrements
     gpus = cuda.gpus.lst
     mem_list = []
     for gpu in gpus:
@@ -83,17 +85,20 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
         mem_list.append(meminfo[0])
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
+    gpu_total_mem = sum(sort_gmem)
+    total_req_mem = (2*qmax_bin*n*n+qmax_bin*n+4*n*n+3*n)*4
 
+    # starting buffers
     fq_q = []
     n_cov = 0
     p_dict = {}
-    while n_cov < n:
-        for gpu, mem in zip(sort_gpus, sort_gmem):
-            m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                8 * n * (qmax_bin + 2))))
-            if m > n - n_cov:
-                m = n - n_cov
 
+    if total_req_mem < gpu_total_mem:
+        # Then the total gpu space is larger than our problem, we should give
+        # out atoms by the size of the free memory, giving each gpu some work
+        # to do based on its capacity.
+        gpu_m = [int(round(n*float(g_mem)/gpu_total_mem)) for g_mem in sort_gmem]
+        for gpu, m in zip(sort_gpus, gpu_m):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 if n_cov >= n:
                     break
@@ -106,6 +111,30 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                 n_cov += m
                 if n_cov >= n:
                     break
+        assert n_cov == n
+    else:
+        # The total amount of work is greater than the sum of our GPUs, no
+        # special distribution needed, just keep putting problems on GPUs until
+        # finished.
+        while n_cov < n:
+            for gpu, mem in zip(sort_gpus, sort_gmem):
+                m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
+                    8 * n * (qmax_bin + 2))))
+                if m > n - n_cov:
+                    m = n - n_cov
+
+                if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                    if n_cov >= n:
+                        break
+                    p = Thread(
+                        target=sub_fq, args=(
+                            gpu, q, scatter_array,
+                            fq_q, qmax_bin, qbin, m, n_cov))
+                    p_dict[gpu] = p
+                    p.start()
+                    n_cov += m
+                    if n_cov >= n:
+                        break
 
     for value in p_dict.values():
         value.join()
@@ -195,7 +224,7 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     return rw, scale, g_calc, fq
 
 
-def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40., rstep=.01):
     """
     Generate the Rw value
 
@@ -229,6 +258,7 @@ def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
         The reduced structure function
     """
     g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
+    g_calc = g_calc[math.floor(rmin/rstep):]
     rw, scale = get_chi_sq(gobs, g_calc)
     return rw, scale, g_calc, fq
 
@@ -329,17 +359,19 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
         mem_list.append(meminfo[0])
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
+    gpu_total_mem = sum(sort_gmem)
+    total_req_mem = 6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n
 
     grad_q = []
     index_list = []
     p_dict = {}
     n_cov = 0
-    while n_cov < n:
-        for gpu, mem in zip(sort_gpus, sort_gmem):
-            m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                8 * n * (3 * qmax_bin + 2))))
-            if m > n - n_cov:
-                m = n - n_cov
+    if total_req_mem < gpu_total_mem:
+        # Then the total gpu space is larger than our problem, we should give
+        # out atoms by the size of the free memory, giving each gpu some work
+        # to do based on its capacity.
+        gpu_m = [int(round(n*float(g_mem)/gpu_total_mem)) for g_mem in sort_gmem]
+        for gpu, m in zip(sort_gpus, gpu_m):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 p = Thread(
                     target=sub_grad, args=(
@@ -350,6 +382,24 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
                 n_cov += m
                 if n_cov == n:
                     break
+        assert n_cov == n
+    else:
+        while n_cov < n:
+            for gpu, mem in zip(sort_gpus, sort_gmem):
+                m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
+                    8 * n * (3 * qmax_bin + 2))))
+                if m > n - n_cov:
+                    m = n - n_cov
+                if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                    p = Thread(
+                        target=sub_grad, args=(
+                            gpu, q, scatter_array,
+                            grad_q, qmax_bin, qbin, m, n_cov, index_list))
+                    p_dict[gpu] = p
+                    p.start()
+                    n_cov += m
+                    if n_cov == n:
+                        break
     for value in p_dict.values():
         value.join()
     # Sort grads to make certain indices are in order
@@ -428,7 +478,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     return grad_rw
 
 
-def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40.,
+def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
                      rstep=.01,
                      rw=None, gcalc=None, scale=None):
     """
@@ -469,6 +519,7 @@ def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40.,
             fq_grad[tx, tz, :qmin_bin] = 0.
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
     grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
+    pdf_grad = pdf_grad[:,:,math.floor(rmin/rstep):]
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_chi_sq(grad_rw, pdf_grad, gcalc, gobs, scale)
     return grad_rw

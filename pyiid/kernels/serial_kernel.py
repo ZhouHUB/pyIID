@@ -395,6 +395,7 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
             '''
             # Sympy with scale
             # grad scale
+            # '''
             grad_a = 1. / np.dot(gcalc.T, gcalc) * (
                 -scale * 2 * np.dot(gcalc.T, grad_pdf[tx, tz, :]) + np.dot(
                     gobs.T, grad_pdf[tx, tz, :]))
@@ -406,7 +407,7 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
                               np.sum(-(scale * grad_pdf[tx, tz, :]
                                        + gcalc[:] * grad_a) *
                                      (gobs[:] - scale * gcalc))
-
+            # '''
 
 def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
     """

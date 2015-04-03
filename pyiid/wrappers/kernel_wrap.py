@@ -206,8 +206,8 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     return dfq_dq
 
 
-def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
-                 rw=None, gcalc=None, scale=None):
+def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1,rmin=0.0,
+                 rmax=40., rstep=.01, rw=None, gcalc=None, scale=None):
     """
     Generate the Rw value gradient
 

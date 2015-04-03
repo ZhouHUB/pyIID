@@ -164,6 +164,7 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     # initialize lists for holding interesting variables
     traj = [atoms]
     accept_list = []
+    accept_num = []
 
     i = 0
     try:
@@ -173,6 +174,7 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             # print '--------------------------------'
             if accept is True:
                 traj += [atoms]
+                accept_num.append(i)
                 if wtraj is not None:
                     wtraj.write(atoms)
             accept_list.append(accept)
@@ -192,4 +194,4 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             i += 1
     except KeyboardInterrupt:
         pass
-    return traj, accept_list
+    return traj, accept_list, accept_num
