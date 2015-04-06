@@ -1,81 +1,18 @@
 __author__ = 'christopher'
 import numpy as np
-
+import inspect
 from numba import cuda
 import math
-from mpi4py import MPI
-from threading import Thread
-
+import sys
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
-
-
-
-
-
-
-
-
-def sub_fq(gpu, q, scatter_array, fq_q, norm_q, qmax_bin, qbin, m, n_cov):
-    n = len(q)
-    tups = [(m, n, 3), (m, n), (m, n, qmax_bin), (m, n, qmax_bin)]
-    data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
-    # Kernel
-    # cuda kernel information
-    with gpu:
-        from pyiid.kernels.multi_cuda import get_d_array, \
-            get_normalization_array, get_r_array, get_fq_p0_1_2, get_fq_p3
-
-        stream = cuda.stream()
-        stream2 = cuda.stream()
-
-        # two kinds of test_kernels; NxN or NxNxQ
-        # NXN
-        elements_per_dim_2 = [m, n]
-        tpb_l_2 = [32, 32]
-        bpg_l_2 = []
-        for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg_l_2.append(bpg)
-
-        # NxNxQ
-        elements_per_dim_3 = [m, n, qmax_bin]
-        tpb_l_3 = [16, 16, 4]
-        bpg_l_3 = []
-        for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg_l_3.append(bpg)
-
-        # start calculations
-
-        dscat = cuda.to_device(scatter_array, stream2)
-        dnorm = cuda.to_device(data[2], stream2)
-        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
-
-        dd = cuda.to_device(data[0], stream)
-        dq = cuda.to_device(q, stream)
-        dr = cuda.to_device(data[1], stream)
-        dfq = cuda.to_device(data[3], stream)
-
-        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
-        get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
-        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
-        dnorm.to_host(stream2)
-        dfq.to_host(stream)
-
-        fq_q.append(data[3].sum(axis=(0, 1)))
-        norm_q.append(data[2].sum(axis=(0, 1)))
-        del data, dscat, dnorm, dd, dq, dr, dfq
+from mpi4py import MPI
+import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
+import pyiid.wrappers.mpi.mpi_worker as mpi_worker
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
+
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -83,50 +20,70 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    gpus = cuda.gpus.lst
+    # get info on our gpu setup and memory requrements
+    avail_loc = inspect.getfile(mpi_gpu_avail)
+    comm = MPI.COMM_WORLD.Spawn(sys.executable,
+        args=[avail_loc],
+        maxprocs=n_nodes
+    )
+    reports = comm.gather(root=MPI.ROOT)
+    comm.Disconnect()
+    ranks = []
     mem_list = []
-    for gpu in gpus:
-        with gpu:
-            meminfo = cuda.current_context().get_memory_info()
-        mem_list.append(meminfo[0])
+    gpus=[]
+    for i in range(n_nodes):
+        ranks.append(reports[i][0])
+        mem_list.append(reports[i][1])
+        gpus.append(reports[i][2])
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
+    gpu_total_mem = sum(sort_gmem)
+    total_req_mem = (2*qmax_bin*n*n+qmax_bin*n+4*n*n+3*n)*4
 
+    # starting buffers
     fq_q = []
-    norm_q = []
     n_cov = 0
-    p_dict = {}
+
+
+    m_list = []
     while n_cov < n:
-        for gpu, mem in zip(sort_gpus, sort_gmem):
+        for mem in mem_list:
             m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                8 * n * (qmax_bin + 2))))
+                    8 * n * (qmax_bin + 2))))
             if m > n - n_cov:
                 m = n - n_cov
+            m_list.append(m)
+            if n_cov >= n:
+                break
+            n_cov += m
+            if n_cov >= n:
+                break
+    assert sum(m_list) == n
+    # The total amount of work is greater than the sum of our GPUs, no
+    # special distribution needed, just keep putting problems on GPUs until
+    # finished.
+    kernel_loc = inspect.getfile(mpi_worker)
+    comm = MPI.COMM_WORLD.Spawn(
+        sys.executable,
+        args=[kernel_loc],
+        maxprocs=n_nodes
+    )
+    n_cov = 0
+    status = MPI.Status()
+    m_list += ([StopIteration] * n_nodes)
+    for m in m_list:
+        msg = (q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov)
+        comm.recv(source=MPI.ANY_SOURCE, status=status)
+        comm.send(obj=msg, dest=status.Get_source())
 
-            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                if n_cov >= n:
-                    break
-                p = Thread(
-                    target=sub_fq, args=(
-                        gpu, q, scatter_array,
-                        fq_q, norm_q, qmax_bin, qbin, m, n_cov))
-                p_dict[gpu] = p
-                p.start()
-                n_cov += m
-                if n_cov >= n:
-                    break
-
-    for value in p_dict.values():
-        value.join()
+    reports = comm.gather(root=MPI.ROOT)
 
     fq = np.zeros(qmax_bin)
-    na = np.zeros(qmax_bin)
-    for ele, ele2 in zip(fq_q, norm_q):
+    for ele in reports:
         fq[:] += ele
-        na[:] += ele2
-    na *= 1. / (scatter_array.shape[0] ** 2)
+    na = np.average(scatter_array, axis=0)**2 * n
     old_settings = np.seterr(all='ignore')
-    fq = np.nan_to_num(1 / (n * na) * fq)
+    fq = np.nan_to_num(1 / na * fq)
     np.seterr(**old_settings)
     return fq
 
@@ -165,12 +122,14 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     return pdf0, fq
 
 
-def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
+            rstep=.01):
     """
     Generate the Rw value
 
     Parameters
     -----------
+    :param rmin:
     atoms: ase.Atoms
         The atomic configuration
     gobs: 1darray
@@ -199,11 +158,12 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
         The reduced structure function
     """
     g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
+    g_calc = g_calc[math.floor(rmin/rstep):]
     rw, scale = get_rw(gobs, g_calc, weight=None)
     return rw, scale, g_calc, fq
 
 
-def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40., rstep=.01):
     """
     Generate the Rw value
 
@@ -237,11 +197,12 @@ def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
         The reduced structure function
     """
     g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmax, rstep)
+    g_calc = g_calc[math.floor(rmin/rstep):]
     rw, scale = get_chi_sq(gobs, g_calc)
     return rw, scale, g_calc, fq
 
 
-def sub_grad(gpu, q, scatter_array, grad_q, norm_q, qmax_bin, qbin, m, n_cov,
+def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
              index_list):
     # Build Data arrays
     n = len(q)
@@ -314,11 +275,9 @@ def sub_grad(gpu, q, scatter_array, grad_q, norm_q, qmax_bin, qbin, m, n_cov,
         # cuda.synchronize()
 
         fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
-        dnorm.to_host(stream2)
         dgrad_p.to_host(stream)
 
         grad_q.append(data[4].sum(axis=1))
-        norm_q.append(data[2].sum(axis=(0, 1)))
         index_list.append(n_cov)
         del data, dscat, dnorm, dd, dr, dfq, dcos_term, dgrad_p
 
@@ -339,28 +298,50 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
         mem_list.append(meminfo[0])
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
+    gpu_total_mem = sum(sort_gmem)
+    total_req_mem = 6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n
 
     grad_q = []
-    norm_q = []
     index_list = []
     p_dict = {}
     n_cov = 0
-    while n_cov < n:
-        for gpu, mem in zip(sort_gpus, sort_gmem):
-            m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                8 * n * (3 * qmax_bin + 2))))
-            if m > n - n_cov:
-                m = n - n_cov
+
+
+    # if total_req_mem < gpu_total_mem:
+    if False:
+        # Then the total gpu space is larger than our problem, we should give
+        # out atoms by the size of the free memory, giving each gpu some work
+        # to do based on its capacity.
+        gpu_m = [int(round(n*float(g_mem)/gpu_total_mem)) for g_mem in sort_gmem]
+        for gpu, m in zip(sort_gpus, gpu_m):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 p = Thread(
                     target=sub_grad, args=(
                         gpu, q, scatter_array,
-                        grad_q, norm_q, qmax_bin, qbin, m, n_cov, index_list))
+                        grad_q, qmax_bin, qbin, m, n_cov, index_list))
                 p_dict[gpu] = p
                 p.start()
                 n_cov += m
                 if n_cov == n:
                     break
+        assert n_cov == n
+    else:
+        while n_cov < n:
+            for gpu, mem in zip(sort_gpus, sort_gmem):
+                m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
+                    8 * n * (3 * qmax_bin + 2))))
+                if m > n - n_cov:
+                    m = n - n_cov
+                if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                    p = Thread(
+                        target=sub_grad, args=(
+                            gpu, q, scatter_array,
+                            grad_q, qmax_bin, qbin, m, n_cov, index_list))
+                    p_dict[gpu] = p
+                    p.start()
+                    n_cov += m
+                    if n_cov == n:
+                        break
     for value in p_dict.values():
         value.join()
     # Sort grads to make certain indices are in order
@@ -380,28 +361,26 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     grad_p = grad_p_final
 
     # sum reduce to 1D
-    na = np.zeros(qmax_bin)
-    for ele in norm_q:
-        na[:] += ele
-    na *= 1. / (scatter_array.shape[0] ** 2)
+    na = np.average(scatter_array, axis=0)**2 * n
 
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
             # grad_p[tx, tz, :qmin_bin] = 0.0
             grad_p[tx, tz] = np.nan_to_num(
-                1 / (n * na) * grad_p[tx, tz])
+                1 / na * grad_p[tx, tz])
     np.seterr(**old_settings)
     return grad_p
 
 
-def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
-                 rw=None, gcalc=None, scale=None):
+def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
+                 rstep=.01, rw=None, gcalc=None, scale=None):
     """
     Generate the Rw value gradient
 
     Parameters
     -----------
+    :param rmin:
     atoms: ase.Atoms
         The atomic configuration
     gobs: 1darray
@@ -426,8 +405,8 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
 
     """
     if rw is None:
-        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
-                                       rstep)
+        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin,
+                                       rmin = rmin, rmax=rmax, rstep=rstep)
     fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):
@@ -435,12 +414,13 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
             fq_grad[tx, tz, :qmin_bin] = 0.
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
     grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
+    pdf_grad = pdf_grad[:,:,math.floor(rmin/rstep):]
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     return grad_rw
 
 
-def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40.,
+def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
                      rstep=.01,
                      rw=None, gcalc=None, scale=None):
     """
@@ -472,8 +452,8 @@ def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40.,
 
     """
     if rw is None:
-        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
-                                       rstep)
+        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin,
+                                       rmax=rmax, rstep=rstep)
     fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):
@@ -481,6 +461,7 @@ def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40.,
             fq_grad[tx, tz, :qmin_bin] = 0.
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
     grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
+    pdf_grad = pdf_grad[:,:,math.floor(rmin/rstep):]
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_chi_sq(grad_rw, pdf_grad, gcalc, gobs, scale)
     return grad_rw
@@ -494,15 +475,17 @@ if __name__ == '__main__':
     from pyiid.wrappers.kernel_wrap import wrap_atoms
     import matplotlib.pyplot as plt
 
-    n = 4000
-    pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au' + str(n), pos)
+    # n = 400
+    # pos = np.random.random((n, 3)) * 10.
+    # atoms = Atoms('Au' + str(n), pos)
+    atoms = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
     wrap_atoms(atoms)
 
-    # fq = wrap_fq(atoms)
+    fq = wrap_fq(atoms)
+    pdf, fq = wrap_pdf(atoms)
     grad_fq = wrap_fq_grad_gpu(atoms)
     print grad_fq
-    # plt.plot(fq), plt.show()
+    plt.plot(pdf), plt.show()
     # for i in range(10):
     # gfq = wrap_fq_grad_gpu(atomsio)
     # ''', sort='tottime')

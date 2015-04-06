@@ -15,9 +15,9 @@ class Spring(Calculator):
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
 
-        from pyiid.kernels.serial_kernel import get_d_array, get_r_array
-        self.get_d_array = get_d_array
-        self.get_r_array = get_r_array
+        from pyiid.wrappers.kernel_wrap import spring_nrg, spring_force
+        self.nrg_func = spring_nrg
+        self.f_func = spring_force
         self.k = k
         self.rt = rt
 
@@ -60,21 +60,7 @@ class Spring(Calculator):
         :param atoms:
         :return:
         """
-        q = atoms.positions
-        n = len(atoms)
-        d = np.zeros((n, n, 3))
-        self.get_d_array(d, q)
-        r = np.zeros((n, n))
-        self.get_r_array(r, d)
-
-        thresh = np.less(r, self.rt)
-        for i in range(len(thresh)):
-            thresh[i,i] = False
-
-        mag = np.zeros(r.shape)
-        mag[thresh] = self.k * (r[thresh]-self.rt)
-
-        energy = np.sum(mag[thresh]/2.*(r[thresh]-self.rt))
+        energy = self.nrg_func(atoms, self.k, self.rt)
 
         self.energy_free = energy
         self.energy_zero = energy
@@ -83,27 +69,7 @@ class Spring(Calculator):
     def calculate_forces(self, atoms):
         self.results['forces'] = np.zeros((len(atoms), 3))
 
-        q = atoms.positions
-        n = len(atoms)
-        d = np.zeros((n, n, 3))
-        self.get_d_array(d, q)
-        r = np.zeros((n, n))
-        self.get_r_array(r, d)
-
-        thresh = np.less(r, self.rt)
-        for i in range(len(thresh)):
-            thresh[i,i] = False
-
-
-        mag = np.zeros(r.shape)
-        mag[thresh] = self.k * (r[thresh]-self.rt)
-        # print mag
-        direction = np.zeros(q.shape)
-        for i in range(len(q)):
-            for j in range(len(q)):
-                if i != j:
-                    direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]
-        forces = direction
+        forces = self.f_func(atoms, self.k, self.rt)
 
         self.results['forces'] = forces
 

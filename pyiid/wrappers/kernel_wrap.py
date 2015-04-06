@@ -1,5 +1,6 @@
 __author__ = 'christopher'
 from pyiid.kernels.serial_kernel import *
+import numpy
 
 
 def wrap_atoms(atoms, qmax=25., qbin=.1):
@@ -249,3 +250,45 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1,rmin=0.0,
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
     return grad_rw
+
+@autojit
+def spring_nrg(atoms, k, rt):
+    q = atoms.positions
+    n = len(atoms)
+    d = numpy.zeros((n, n, 3))
+    get_d_array(d, q)
+    r = numpy.zeros((n, n))
+    get_r_array(r, d)
+
+    thresh = numpy.less(r, rt)
+    for i in range(len(thresh)):
+        thresh[i,i] = False
+
+    mag = numpy.zeros(r.shape)
+    mag[thresh] = k * (r[thresh]-rt)
+
+    energy = numpy.sum(mag[thresh]/2.*(r[thresh]-rt))
+    return energy
+
+@autojit
+def spring_force(atoms, k, rt):
+    q = atoms.positions
+    n = len(atoms)
+    d = numpy.zeros((n, n, 3))
+    get_d_array(d, q)
+    r = numpy.zeros((n, n))
+    get_r_array(r, d)
+
+    thresh = numpy.less(r, rt)
+    for i in range(len(thresh)):
+        thresh[i,i] = False
+
+    mag = numpy.zeros(r.shape)
+    mag[thresh] = k * (r[thresh]-rt)
+    # print mag
+    direction = numpy.zeros(q.shape)
+    for i in range(len(q)):
+        for j in range(len(q)):
+            if i != j:
+                direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]
+    return direction
