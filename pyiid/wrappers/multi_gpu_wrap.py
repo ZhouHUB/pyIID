@@ -93,7 +93,9 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     n_cov = 0
     p_dict = {}
 
-    if total_req_mem < gpu_total_mem:
+    # TODO: NEEDS WORK GIVES BAD RESULTS WITH EQUAL WEIGHTING
+    # if total_req_mem < gpu_total_mem:
+    if False:
         # Then the total gpu space is larger than our problem, we should give
         # out atoms by the size of the free memory, giving each gpu some work
         # to do based on its capacity.
@@ -366,7 +368,10 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     index_list = []
     p_dict = {}
     n_cov = 0
-    if total_req_mem < gpu_total_mem:
+
+
+    # if total_req_mem < gpu_total_mem:
+    if False:
         # Then the total gpu space is larger than our problem, we should give
         # out atoms by the size of the free memory, giving each gpu some work
         # to do based on its capacity.

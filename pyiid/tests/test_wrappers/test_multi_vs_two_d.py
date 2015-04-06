@@ -3,11 +3,11 @@ __author__ = 'christopher'
 import numpy as np
 from numpy.testing import assert_allclose
 
-from pyiid.wrappers.kernel_wrap import wrap_fq as serial_fq
-from pyiid.wrappers.kernel_wrap import wrap_pdf as serial_pdf
-from pyiid.wrappers.kernel_wrap import wrap_rw as serial_rw
-from pyiid.wrappers.kernel_wrap import wrap_fq_grad as serial_grad_fq
-from pyiid.wrappers.kernel_wrap import wrap_grad_rw as serial_grad_rw
+from pyiid.wrappers.gpu_wrap import wrap_fq as serial_fq
+from pyiid.wrappers.gpu_wrap import wrap_pdf as serial_pdf
+from pyiid.wrappers.gpu_wrap import wrap_rw as serial_rw
+from pyiid.wrappers.gpu_wrap import wrap_fq_grad_gpu as serial_grad_fq
+from pyiid.wrappers.gpu_wrap import wrap_grad_rw as serial_grad_rw
 
 from pyiid.wrappers.multi_gpu_wrap import wrap_fq as gpu_fq
 from pyiid.wrappers.multi_gpu_wrap import wrap_pdf as gpu_pdf
@@ -17,7 +17,7 @@ from pyiid.wrappers.multi_gpu_wrap import wrap_grad_rw as gpu_grad_rw
 
 from ase.atoms import Atoms
 from pyiid.wrappers.kernel_wrap import wrap_atoms, grad_pdf
-n = 4
+n = 600
 
 
 def test_fq():
@@ -32,6 +32,7 @@ def test_fq():
     for m in range(10):
         sfq_ave += serial_fq(atoms)
         gfq_ave += gpu_fq(atoms)
+
     sfq_ave /= m
     gfq_ave /= m
     assert_allclose(sfq_ave, gfq_ave, rtol=1e-3)
@@ -191,9 +192,8 @@ if __name__ == '__main__':
         gfq_ave += gpu_fq(atoms)
     sfq_ave /= m
     gfq_ave /= m
-    plt.plot(sfq_ave, label='cpu')
-    plt.plot(gfq_ave, label='gpu')
-    # plt.plot(np.abs(sfq_ave - gfq_ave)/(gfq_ave+sfq_ave)/2, label='diff')
-    plt.plot(np.abs(sfq_ave - gfq_ave), label='diff')
+    # plt.plot(sfq_ave, label='cpu')
+    # plt.plot(gfq_ave, label='gpu')
+    plt.plot(np.abs(sfq_ave - gfq_ave)/gfq_ave, label='diff')
     plt.legend()
     plt.show()

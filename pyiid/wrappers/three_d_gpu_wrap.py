@@ -121,7 +121,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     return pdf0, fq
 
 
-def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
+def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40., rstep=.01):
     """
     Generate the Rw value
 
@@ -298,7 +298,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     return grad_p
 
 
-def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
+def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40., rstep=.01,
                  rw=None, gcalc=None, scale=None):
     """
     Generate the Rw value gradient
@@ -329,7 +329,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01,
 
     """
     if rw is None:
-        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
+        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmin, rmax,
                                        rstep)
     fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)

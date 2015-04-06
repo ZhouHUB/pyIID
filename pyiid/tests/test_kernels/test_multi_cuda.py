@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 
-from pyiid.kernels.three_d_cuda import *
+from pyiid.kernels.multi_cuda import *
 n = 600
 
 
@@ -57,7 +57,7 @@ def test_get_d_array():
 
     dd = cuda.to_device(kd, stream)
     dq = cuda.to_device(q, stream)
-    get_d_array[bpg, tpb, stream](dd, dq)
+    get_d_array[bpg, tpb, stream](dd, dq, 0)
     dd.to_host(stream)
 
     assert_allclose(cd, kd)
@@ -106,10 +106,11 @@ def test_get_normalization_array():
     stream, bpg, tpb = set_up_gpu(n, 250)
     dnorm = cuda.to_device(k_norm)
     dscat = cuda.to_device(scat)
-    get_normalization_array[bpg, tpb, stream](dnorm, dscat)
+    get_normalization_array[bpg, tpb, stream](dnorm, dscat, 0)
     dnorm.to_host(stream)
 
     assert_allclose(c_norm, k_norm)
+
 
 
 if __name__ == '__main__':

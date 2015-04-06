@@ -3,11 +3,11 @@ __author__ = 'christopher'
 import numpy as np
 from numpy.testing import assert_allclose
 
-from pyiid.wrappers.kernel_wrap import wrap_fq as serial_fq
-from pyiid.wrappers.kernel_wrap import wrap_pdf as serial_pdf
-from pyiid.wrappers.kernel_wrap import wrap_rw as serial_rw
-from pyiid.wrappers.kernel_wrap import wrap_fq_grad as serial_grad_fq
-from pyiid.wrappers.kernel_wrap import wrap_grad_rw as serial_grad_rw
+from pyiid.wrappers.three_d_gpu_wrap import wrap_fq as serial_fq
+from pyiid.wrappers.three_d_gpu_wrap import wrap_pdf as serial_pdf
+from pyiid.wrappers.three_d_gpu_wrap import wrap_rw as serial_rw
+from pyiid.wrappers.three_d_gpu_wrap import wrap_fq_grad_gpu as serial_grad_fq
+from pyiid.wrappers.three_d_gpu_wrap import wrap_grad_rw as serial_grad_rw
 
 from pyiid.wrappers.multi_gpu_wrap import wrap_fq as gpu_fq
 from pyiid.wrappers.multi_gpu_wrap import wrap_pdf as gpu_pdf
@@ -17,11 +17,11 @@ from pyiid.wrappers.multi_gpu_wrap import wrap_grad_rw as gpu_grad_rw
 
 from ase.atoms import Atoms
 from pyiid.wrappers.kernel_wrap import wrap_atoms, grad_pdf
-n = 4
+n = 600
 
 
 def test_fq():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -34,13 +34,13 @@ def test_fq():
         gfq_ave += gpu_fq(atoms)
     sfq_ave /= m
     gfq_ave /= m
-    assert_allclose(sfq_ave, gfq_ave, rtol=1e-3)
+    assert_allclose(sfq_ave.astype(np.float32), gfq_ave.astype(np.float32), rtol=1e-3)
 
     return
 
 
 def test_pdf0():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -54,7 +54,7 @@ def test_pdf0():
 
 
 def test_pdf1():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -68,7 +68,7 @@ def test_pdf1():
 
 
 def test_rw0():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -83,7 +83,7 @@ def test_rw0():
 
 
 def test_rw1():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -98,7 +98,7 @@ def test_rw1():
 
 
 def test_grad_fq():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
@@ -112,7 +112,7 @@ def test_grad_fq():
 
 
 def test_grad_rw0():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -127,7 +127,7 @@ def test_grad_rw0():
 
 
 def test_grad_rw1():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -142,7 +142,7 @@ def test_grad_rw1():
 
 
 def test_grad_pdf1():
-    
+
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
     wrap_atoms(atoms)
@@ -175,8 +175,8 @@ def test_grad_pdf1():
     return
 
 if __name__ == '__main__':
-    # import nose
-    # nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    import nose
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
 
     import matplotlib.pyplot as plt
     pos = np.random.random((n, 3)) * 10.
@@ -193,7 +193,6 @@ if __name__ == '__main__':
     gfq_ave /= m
     plt.plot(sfq_ave, label='cpu')
     plt.plot(gfq_ave, label='gpu')
-    # plt.plot(np.abs(sfq_ave - gfq_ave)/(gfq_ave+sfq_ave)/2, label='diff')
     plt.plot(np.abs(sfq_ave - gfq_ave), label='diff')
     plt.legend()
     plt.show()

@@ -237,7 +237,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1,rmin=0.0,
     
     """
     if rw is None:
-        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax,
+        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmin, rmax,
                                        rstep)
     fq_grad = wrap_fq_grad(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)

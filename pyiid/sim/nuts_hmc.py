@@ -73,7 +73,7 @@ def nuts_da_hmc(atoms, accept_target, iterations, Emax):
         while m <= iterations:
             e = step_size
 
-            u = np.random.uniform(0, np.exp(atoms.get_total_energy()))
+            u = np.random.uniform(0, np.exp(-atoms.get_total_energy()))
             # u = np.random.random()
             n, s, j = 1, 1, 0
             atoms0 = dc(atoms)
@@ -169,69 +169,62 @@ def buildtree(atoms, u, v, j, e, Emax, atoms0):
 
 
 if __name__ == '__main__':
-    import numpy as np
-    import matplotlib.pyplot as plt
-
     import os
     from copy import deepcopy as dc
-
+    import numpy as np
+    import matplotlib.pyplot as plt
     from ase.visualize import view
     from ase.io.trajectory import PickleTrajectory
     import ase.io as aseio
+    import time
+    import datetime
+    import math
+    from ase.atoms import Atoms
 
-    from pyiid.wrappers.gpu_wrap import wrap_pdf
-    from pyiid.calc.pdfcalc_gpu import PDFCalc
+    from pyiid.sim.hmc import run_hmc
+    from pyiid.wrappers.multi_gpu_wrap import wrap_rw, wrap_pdf
+    from pyiid.calc.pdfcalc import PDFCalc
     from pyiid.wrappers.kernel_wrap import wrap_atoms
+    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, time_est
 
+    ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    # start_atoms = Atoms('Au4', [[-1, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    start_atoms = dc(ideal_atoms)
+    start_atoms.positions *= 1.05
 
-    atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'
-    atoms_file_no_ext = os.path.splitext(atoms_file)[0]
-    atomsio = aseio.read(atoms_file)
-    # images = PickleTrajectory('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55_gpu_neb_contract.traj', 'r')[:]
-    # atomsio = images[-27]
-    wrap_atoms(atomsio)
+    wrap_atoms(ideal_atoms)
+    wrap_atoms(start_atoms)
 
+    gobs, fq = wrap_pdf(ideal_atoms, qbin=.1)
 
+    calc = PDFCalc(gobs=gobs, conv=100, potential='rw', qbin=.1)
+    # calc = PDFCalc(gobs=gobs, conv=1000, qbin=.1)
+    start_atoms.set_calculator(calc)
+    print start_atoms.get_potential_energy()
 
-    qmax = 25
-    qbin = .1
-    n = len(atomsio)
+    e = .8e-2
+    M = 10
 
-    qmax_bin = int(qmax / qbin)
-    # atomsio.set_array('scatter', scatter_array)
+    traj, C_list = nuts(start_atoms, e, M)
+    for c in C_list:
+        for atoms in c:
+            f = atoms.get_forces()
+            f2 = f*2
+        view(c)
 
-    atoms = dc(atomsio)
-    pdf, fq = wrap_pdf(atoms, qmin=2.5, qbin=.1)
-    # view(atoms)
-    # atoms.positions *= 1.05
-    atoms.positions *= .95
-    atoms = dc(atomsio)
-
-    calc = PDFCalc(gobs=pdf, qmin=2.5, conv=1, qbin=.1)
-    atoms.set_calculator(calc)
-    rwi = atoms.get_potential_energy()
-    print rwi
-    atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
-
-    traj = nuts_da_hmc(atoms, .65, 500, 0.0)
-
+    # raw_input('')
     pe_list = []
-    chi_list = []
-    for a in traj:
-        pe_list.append(a.get_potential_energy())
-        # chi_list.append(np.sum((pdf-wrap_pdf(a, qmin= 2.5)[0])**2))
-        f = a.get_forces()
+    for atoms in traj:
+        pe_list.append(atoms.get_potential_energy())
+        f = atoms.get_forces()
         f2 = f*2
-    min = np.argmin(pe_list)
-    print 'start rw', rwi, 'end rw', pe_list[min], 'rw change', pe_list[min]-rwi
+    min_pe = np.argmin(pe_list)
     view(traj)
-
+    rw, scale, _, _ = wrap_rw(traj[-1], gobs)
+    print rw, scale
     r = np.arange(0, 40, .01)
-    # plt.plot(chi_list), plt.show()
-    plt.plot(r, pdf, label='ideal')
-    # for num, a in enumerate(traj):
-    #     plt.plot(wrap_pdf(a, qmin= 2.5)[0], label=str(num))
-    plt.plot(r, wrap_pdf(traj[min], qmin= 2.5)[0], label='best: '+str(min)+' out of '+str(len(traj)))
-    plt.plot(r, wrap_pdf(traj[0], qmin= 2.5)[0], 'k', label='start')
+    plt.plot(r, gobs, label='gobs')
+    plt.plot(r, wrap_pdf(traj[0], qbin=.1)[0]*wrap_rw(traj[0],gobs, qbin=.1)[1], label='ginitial')
+    plt.plot(r, wrap_pdf(traj[min_pe], qbin=.1)[0]*wrap_rw(traj[min_pe],gobs, qbin=.1)[1], label='gfinal')
     plt.legend()
     plt.show()
