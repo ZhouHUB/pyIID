@@ -490,7 +490,7 @@ if __name__ == '__main__':
     pdf, fq = wrap_pdf(atoms)
     grad_fq = wrap_fq_grad_gpu(atoms)
     print grad_fq
-    plt.plot(pdf), plt.show()
+    # plt.plot(pdf), plt.show()
     # for i in range(10):
     # gfq = wrap_fq_grad_gpu(atomsio)
     # ''', sort='tottime')
