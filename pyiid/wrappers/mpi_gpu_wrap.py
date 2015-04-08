@@ -4,11 +4,14 @@ import inspect
 from numba import cuda
 import math
 import sys
+import os
+
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
 from mpi4py import MPI
 import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
-import pyiid.wrappers.mpi.mpi_worker as mpi_worker
+import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
+import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
@@ -19,6 +22,9 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     n = len(q)
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
+
+    #get nodes used
+    n_nodes = os.getenv('NODECOUNT', 1)
 
     # get info on our gpu setup and memory requrements
     avail_loc = inspect.getfile(mpi_gpu_avail)
@@ -62,7 +68,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     # The total amount of work is greater than the sum of our GPUs, no
     # special distribution needed, just keep putting problems on GPUs until
     # finished.
-    kernel_loc = inspect.getfile(mpi_worker)
+    kernel_loc = inspect.getfile(mpi_fq_worker)
     comm = MPI.COMM_WORLD.Spawn(
         sys.executable,
         args=[kernel_loc],
@@ -163,7 +169,8 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     return rw, scale, g_calc, fq
 
 
-def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40., rstep=.01):
+def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
+                rmax=40., rstep=.01):
     """
     Generate the Rw value
 
@@ -290,12 +297,22 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    gpus = cuda.gpus.lst
+    n_nodes = os.getenv('NODECOUNT', 1)
+
+    avail_loc = inspect.getfile(mpi_gpu_avail)
+    comm = MPI.COMM_WORLD.Spawn(sys.executable,
+        args=[avail_loc],
+        maxprocs=n_nodes
+    )
+    reports = comm.gather(root=MPI.ROOT)
+    comm.Disconnect()
+    ranks = []
     mem_list = []
-    for gpu in gpus:
-        with gpu:
-            meminfo = cuda.current_context().get_memory_info()
-        mem_list.append(meminfo[0])
+    gpus=[]
+    for i in range(n_nodes):
+        ranks.append(reports[i][0])
+        mem_list.append(reports[i][1])
+        gpus.append(reports[i][2])
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     gpu_total_mem = sum(sort_gmem)
@@ -303,59 +320,48 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
 
     grad_q = []
     index_list = []
-    p_dict = {}
     n_cov = 0
-
-
-    # if total_req_mem < gpu_total_mem:
-    if False:
-        # Then the total gpu space is larger than our problem, we should give
-        # out atoms by the size of the free memory, giving each gpu some work
-        # to do based on its capacity.
-        gpu_m = [int(round(n*float(g_mem)/gpu_total_mem)) for g_mem in sort_gmem]
-        for gpu, m in zip(sort_gpus, gpu_m):
-            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                p = Thread(
-                    target=sub_grad, args=(
-                        gpu, q, scatter_array,
-                        grad_q, qmax_bin, qbin, m, n_cov, index_list))
-                p_dict[gpu] = p
-                p.start()
-                n_cov += m
-                if n_cov == n:
-                    break
-        assert n_cov == n
-    else:
-        while n_cov < n:
-            for gpu, mem in zip(sort_gpus, sort_gmem):
-                m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
+    m_list = []
+    while n_cov < n:
+        for mem in mem_list:
+            m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
                     8 * n * (3 * qmax_bin + 2))))
-                if m > n - n_cov:
-                    m = n - n_cov
-                if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                    p = Thread(
-                        target=sub_grad, args=(
-                            gpu, q, scatter_array,
-                            grad_q, qmax_bin, qbin, m, n_cov, index_list))
-                    p_dict[gpu] = p
-                    p.start()
-                    n_cov += m
-                    if n_cov == n:
-                        break
-    for value in p_dict.values():
-        value.join()
+            if m > n - n_cov:
+                m = n - n_cov
+            m_list.append(m)
+            if n_cov >= n:
+                break
+            n_cov += m
+            if n_cov >= n:
+                break
+    assert sum(m_list) == n
+
+    kernel_loc = inspect.getfile(mpi_grad_worker)
+    comm = MPI.COMM_WORLD.Spawn(
+        sys.executable,
+        args=[kernel_loc],
+        maxprocs=n_nodes
+    )
+    n_cov = 0
+    status = MPI.Status()
+    m_list += ([StopIteration] * n_nodes)
+    for m in m_list:
+        msg = (q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov)
+        comm.recv(source=MPI.ANY_SOURCE, status=status)
+        comm.send(obj=msg, dest=status.Get_source())
+
+    reports = comm.gather(root=MPI.ROOT)
+
     # Sort grads to make certain indices are in order
-    sort_grads = [x for (y, x) in sorted(zip(index_list, grad_q))]
+    sort_grads = [x for (y, x) in sorted(reports)]
 
     len(sort_grads)
-    # sorted_sum_grads = [x.sum(axis=(1)) for x in sort_grads]
 
     # Stitch arrays together
     if len(sort_grads) > 1:
         grad_p_final = np.concatenate(sort_grads, axis=0)
     else:
         grad_p_final = sort_grads[0]
-
 
     # sum down to 1D array
     grad_p = grad_p_final
@@ -420,9 +426,8 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     return grad_rw
 
 
-def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
-                     rstep=.01,
-                     rw=None, gcalc=None, scale=None):
+def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
+                     rmax=40., rstep=.01, rw=None, gcalc=None, scale=None):
     """
     Generate the Rw value gradient
 

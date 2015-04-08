@@ -19,6 +19,6 @@ setup(
     license='',
     author='christopher',
     author_email='wright1@email.sc.edu',
-    description='Hamiltonion Monte Carlo based Diffraction Simulation',
+    description='Hamiltonian Monte Carlo based Diffraction Simulation',
     requires=['numpy', 'ase', 'numba', 'nose', 'matplotlib', 'six', 'mpi4py']
 )
