@@ -5,6 +5,7 @@ from numba import cuda
 import math
 import sys
 import os
+sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
@@ -25,6 +26,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
 
     #get nodes used
     n_nodes = os.getenv('NODECOUNT', 1)
+    print 'nodes', n_nodes
 
     # get info on our gpu setup and memory requrements
     avail_loc = inspect.getfile(mpi_gpu_avail)
@@ -32,24 +34,22 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
         args=[avail_loc],
         maxprocs=n_nodes
     )
-    reports = comm.gather(root=MPI.ROOT)
+    # reports = comm.gather(root=MPI.ROOT)
+    ranks =  comm.gather(root=MPI.ROOT)
+    print ranks
+    mem_list = comm.gather(root=MPI.ROOT)
+    print mem_list
     comm.Disconnect()
-    ranks = []
-    mem_list = []
-    gpus=[]
-    for i in range(n_nodes):
-        ranks.append(reports[i][0])
-        mem_list.append(reports[i][1])
-        gpus.append(reports[i][2])
-    sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    gpu_total_mem = sum(sort_gmem)
+    gpu_total_mem = 0
+    for i in range(ranks[-1]+1):
+        print mem_list[i]
+        gpu_total_mem += mem_list[i]
+    print gpu_total_mem
     total_req_mem = (2*qmax_bin*n*n+qmax_bin*n+4*n*n+3*n)*4
 
     # starting buffers
     fq_q = []
     n_cov = 0
-
 
     m_list = []
     while n_cov < n:
@@ -78,11 +78,15 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     status = MPI.Status()
     m_list += ([StopIteration] * n_nodes)
     for m in m_list:
-        msg = (q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov)
+        if m is StopIteration:
+            msg = m
+        else:
+            msg = (q, scatter_array, qmax_bin, qbin, m, n_cov)
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
-
+    print 'done master'
     reports = comm.gather(root=MPI.ROOT)
+    print reports
 
     fq = np.zeros(qmax_bin)
     for ele in reports:
@@ -304,18 +308,16 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
         args=[avail_loc],
         maxprocs=n_nodes
     )
-    reports = comm.gather(root=MPI.ROOT)
+    ranks =  comm.gather(root=MPI.ROOT)
+    print ranks
+    mem_list = comm.gather(root=MPI.ROOT)
+    print mem_list
     comm.Disconnect()
-    ranks = []
-    mem_list = []
-    gpus=[]
-    for i in range(n_nodes):
-        ranks.append(reports[i][0])
-        mem_list.append(reports[i][1])
-        gpus.append(reports[i][2])
-    sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    gpu_total_mem = sum(sort_gmem)
+    gpu_total_mem = 0
+    for i in range(ranks[-1]+1):
+        print mem_list[i]
+        gpu_total_mem += mem_list[i]
+    print gpu_total_mem
     total_req_mem = 6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n
 
     grad_q = []
@@ -346,7 +348,10 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     status = MPI.Status()
     m_list += ([StopIteration] * n_nodes)
     for m in m_list:
-        msg = (q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov)
+        if m is StopIteration:
+            msg = m
+        else:
+            msg = (q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov)
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
 
@@ -479,6 +484,8 @@ if __name__ == '__main__':
     import os
     from pyiid.wrappers.kernel_wrap import wrap_atoms
     import matplotlib.pyplot as plt
+    import sys
+    sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
     # n = 400
     # pos = np.random.random((n, 3)) * 10.
@@ -486,11 +493,12 @@ if __name__ == '__main__':
     atoms = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
     wrap_atoms(atoms)
 
-    fq = wrap_fq(atoms)
+    # fq = wrap_fq(atoms)
+    # print fq
     pdf, fq = wrap_pdf(atoms)
     grad_fq = wrap_fq_grad_gpu(atoms)
     print grad_fq
-    # plt.plot(pdf), plt.show()
+    plt.plot(pdf), plt.show()
     # for i in range(10):
     # gfq = wrap_fq_grad_gpu(atomsio)
     # ''', sort='tottime')

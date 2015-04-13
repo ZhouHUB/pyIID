@@ -17,6 +17,8 @@ class MultiCalc(Calculator):
                             label, atoms, **kwargs)
 
         self.calc_list = calc_list
+        self.list_atoms = []
+
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
@@ -57,12 +59,17 @@ class MultiCalc(Calculator):
         :param atoms:
         :return:
         """
-        energy_list = []
-        for calculator in self.calc_list:
-            atoms.set_calculator(calculator)
-            energy_list.append(atoms.get_potential_energy())
-
-        energy = sum(energy_list)
+        if not self.list_atoms:
+            self.list_atoms = [dc(atoms) for i in self.calc_list]
+            for ele, calc in zip(self.list_atoms, self.calc_list):
+                ele.set_calculator(calc)
+        else:
+            for ele in self.list_atoms:
+                ele.positions = atoms.positions
+        energy=0
+        for ele in self.list_atoms:
+            energy += ele.get_potential_energy()
+        # energy = sum([ele.get_potential_energy() for ele in self.atoms_list])
         self.energy_free = energy
         self.energy_zero = energy
         self.results['energy'] = energy
@@ -71,22 +78,16 @@ class MultiCalc(Calculator):
         self.results['forces'] = np.zeros((len(atoms), 3))
         forces = np.zeros((len(atoms), 3))
 
-        for calculator in self.calc_list:
-            atoms.set_calculator(calculator)
-            forces[:,:] += atoms.get_forces()
-            # atoms._del_calculator
+        if not self.list_atoms:
+            self.list_atoms = [dc(atoms) for i in self.calc_list]
+            for ele, calc in zip(self.list_atoms, self.calc_list):
+                ele.set_calculator(calc)
+        else:
+            for ele in self.list_atoms:
+                ele.positions = atoms.positions
+        for ele in self.list_atoms:
+            forces[:,:] += ele.get_forces()
 
-        '''
-        for calculator in self.calc_list:
-
-        # for calc, kwargs in self.calc_list:
-        #     calculator = calc(**kwargs)
-
-            temp_atoms = dc(atoms)
-            temp_atoms.set_calculator(calculator)
-            forces[:,:] += temp_atoms.get_forces()
-            # atoms._del_calculator
-        '''
         self.results['forces'] = forces
 
 
@@ -107,28 +108,17 @@ if __name__ == '__main__':
     gobs = wrap_pdf(ideal_atoms)[0]
 
     calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw', processor='cpu')
-    # calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw')
-    calc2 = EMT()
+    calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=100, potential='rw', processor='cpu')
     calc_list=[calc1, calc2]
     calc = MultiCalc(calc_list=calc_list)
     start_atoms.set_calculator(calc)
-    f = start_atoms.get_forces()
-    print f
     e = start_atoms.get_total_energy()
     print e
+    f = start_atoms.get_forces()
+    print f
+
     start_atoms.positions *= 1.5
-    print start_atoms.get_potential_energy()
-
-    from copy import deepcopy as dc
-    atoms2 = start_atoms.copy()
-    # atoms2.set_calculator(calc_list[1])
-    print(atoms2.get_forces())
-    print(atoms2.get_total_energy())
-
-    atoms2.positions *= 1.5
-    print(atoms2.get_total_energy())
-    print(atoms2.get_forces())
-
-    from pyiid.sim.naive_nuts import nuts
-
-    # nuts(start)
+    e = start_atoms.get_total_energy()
+    print e
+    f = start_atoms.get_forces()
+    print f

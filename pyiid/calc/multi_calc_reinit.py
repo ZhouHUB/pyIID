@@ -58,10 +58,11 @@ class MultiCalc(Calculator):
         :return:
         """
         energy_list = []
-        for calculator in self.calc_list:
-            atoms.set_calculator(calculator)
-            energy_list.append(atoms.get_potential_energy())
-
+        for calc, kwargs in self.calc_list:
+            calculator = calc(**kwargs)
+            temp_atoms = dc(atoms)
+            temp_atoms.set_calculator(calculator)
+            energy_list.append(temp_atoms.get_potential_energy())
         energy = sum(energy_list)
         self.energy_free = energy
         self.energy_zero = energy
@@ -71,22 +72,12 @@ class MultiCalc(Calculator):
         self.results['forces'] = np.zeros((len(atoms), 3))
         forces = np.zeros((len(atoms), 3))
 
-        for calculator in self.calc_list:
-            atoms.set_calculator(calculator)
-            forces[:,:] += atoms.get_forces()
-            # atoms._del_calculator
-
-        '''
-        for calculator in self.calc_list:
-
-        # for calc, kwargs in self.calc_list:
-        #     calculator = calc(**kwargs)
+        for calc, kwargs in self.calc_list:
+            calculator = calc(**kwargs)
 
             temp_atoms = dc(atoms)
             temp_atoms.set_calculator(calculator)
-            forces[:,:] += temp_atoms.get_forces()
-            # atoms._del_calculator
-        '''
+            forces[:, :] += temp_atoms.get_forces()
         self.results['forces'] = forces
 
 

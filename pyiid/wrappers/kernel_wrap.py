@@ -1,6 +1,7 @@
 __author__ = 'christopher'
 from pyiid.kernels.serial_kernel import *
 import numpy
+from numbapro import autojit
 
 
 def wrap_atoms(atoms, qmax=25., qbin=.1):
@@ -287,8 +288,5 @@ def spring_force(atoms, k, rt):
     mag[thresh] = k * (r[thresh]-rt)
     # print mag
     direction = numpy.zeros(q.shape)
-    for i in range(len(q)):
-        for j in range(len(q)):
-            if i != j:
-                direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]
+    spring_force_kernel(direction, d, r, mag)
     return direction

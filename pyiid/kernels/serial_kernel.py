@@ -497,3 +497,11 @@ def simple_grad(grad_p, d, r):
             if tx != ty:
                 for tz in range(3):
                     grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
+
+@autojit(target=targ)
+def spring_force_kernel(direction, d, r, mag):
+    n = len(r)
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]

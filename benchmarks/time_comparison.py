@@ -61,8 +61,6 @@ except KeyboardInterrupt:
 
 # pprint(super_results_d)
 
-
-
 sizes = []
 cpu_f = []
 cpu_e = []
@@ -80,10 +78,10 @@ for key, value in super_results_d.iteritems():
 # print sizes, gpu3_d_e
 
 plt.plot(sizes, cpu_f, 'bo', label='cpu energy')
-plt.plot(sizes, cpu_e, 'b-', label='cpu force')
+plt.plot(sizes, cpu_e, 'bs', label='cpu force')
 
 plt.plot(sizes, multi_gpu_e, 'ro', label='GPU energy')
-plt.plot(sizes, multi_gpu_f, 'r-', label='GPU force')
+plt.plot(sizes, multi_gpu_f, 'rs', label='GPU force')
 plt.legend(loc=2)
 plt.xlabel('NP size in nm')
 plt.ylabel('time (s) [lower is better]')
