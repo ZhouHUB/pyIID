@@ -38,7 +38,7 @@ def leapfrog(atoms, step):
 def find_step_size(input_atoms):
     atoms = dc(input_atoms)
     step_size = .8e-2
-    '''
+    # '''
     atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
     atoms_prime = leapfrog(atoms, step_size)
@@ -47,7 +47,7 @@ def find_step_size(input_atoms):
     while (np.exp(-1*atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
         step_size *= 2 ** a
         atoms_prime = leapfrog(atoms, step_size)
-    '''
+    # '''
     print step_size
     return step_size
 
@@ -93,8 +93,8 @@ def nuts(atoms, accept_target, iterations, wtraj=None):
                 span = pos_atoms.positions - neg_atoms.positions
                 span = span.flatten()
                 s = s_prime * (span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (span.dot(pos_atoms.get_velocities().flatten()) >= 0)
+                print 'iteration', m, 'depth', j, 'samples', 2**j
                 j += 1
-            print 'iteration', m, 'depth', j, 'samples', 2**j
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 

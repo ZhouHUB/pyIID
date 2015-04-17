@@ -12,6 +12,7 @@ from pprint import pprint
 import time
 from copy import deepcopy as dc
 from collections import OrderedDict
+import pickle
 
 atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
 
@@ -33,7 +34,7 @@ pu = [
 ]
 try:
     super_results_d = OrderedDict()
-    for i in range(10, 50, 5):
+    for i in range(10, 100, 5):
         atoms = build_sphere_np('/mnt/work-data/dev/pyIID/benchmarks/1100138.cif', float(i) / 2)
         wrap_atoms(atoms)
         atoms.rattle()
@@ -56,7 +57,7 @@ try:
             results_d[processor] = sub_d
             atoms._del_calculator
         super_results_d[i/10.] = results_d
-except KeyboardInterrupt:
+except :
     pass
 
 # pprint(super_results_d)
@@ -75,13 +76,16 @@ for key, value in super_results_d.iteritems():
     multi_gpu_e.append(value['multi_gpu']['time for energy'])
     multi_gpu_f.append(value['multi_gpu']['time for force'])
 
-# print sizes, gpu3_d_e
+f_name_list = [('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f), ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)]
+for f_str, lst in f_name_list:
+    with open(f_str, 'w') as f:
+        pickle.dump(lst, f)
 
 plt.plot(sizes, cpu_f, 'bo', label='cpu energy')
-plt.plot(sizes, cpu_e, 'bs', label='cpu force')
+# plt.plot(sizes, cpu_e, 'bs', label='cpu force')
 
 plt.plot(sizes, multi_gpu_e, 'ro', label='GPU energy')
-plt.plot(sizes, multi_gpu_f, 'rs', label='GPU force')
+# plt.plot(sizes, multi_gpu_f, 'rs', label='GPU force')
 plt.legend(loc=2)
 plt.xlabel('NP size in nm')
 plt.ylabel('time (s) [lower is better]')
