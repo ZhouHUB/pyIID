@@ -96,7 +96,7 @@ if __name__ == '__main__':
     from pyiid.calc.pdfcalc import PDFCalc
     from pyiid.calc.spring_calc import Spring
     from pyiid.wrappers.multi_gpu_wrap import wrap_pdf
-    from pyiid.wrappers.kernel_wrap import wrap_atoms
+    from pyiid.wrappers.cpu_wrap import wrap_atoms
     from ase.cluster.octahedron import Octahedron
     from ase.calculators.lammpslib import LAMMPSlib
     import numpy as np

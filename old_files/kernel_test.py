@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 __author__ = 'christopher'
 import numpy as np
 from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-from pyiid.kernels.serial_kernel import get_d_array, get_r_array, \
+from pyiid.kernels.cpu_kernel import get_d_array, get_r_array, \
     get_scatter_array, \
     get_fq_array, get_normalization_array, get_pdf_at_qmin, fq_grad_position
 from ase import Atoms

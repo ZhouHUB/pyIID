@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
-from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
+from pyiid.kernels.cpu_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
 from mpi4py import MPI
 import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
@@ -482,7 +482,7 @@ if __name__ == '__main__':
     # cProfile.run('''
     from ase.atoms import Atoms
     import os
-    from pyiid.wrappers.kernel_wrap import wrap_atoms
+    from pyiid.wrappers.cpu_wrap import wrap_atoms
     import matplotlib.pyplot as plt
     import sys
     sys.path.extend(['/mnt/work-data/dev/pyIID'])

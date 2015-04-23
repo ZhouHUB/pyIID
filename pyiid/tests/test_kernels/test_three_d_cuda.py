@@ -1,10 +1,12 @@
 __author__ = 'christopher'
 
-import numpy as np
-from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 
-from pyiid.kernels.three_d_cuda import *
+import numpy as np
+from numpy.testing import assert_allclose
+
+from old_files.three_d_cuda import *
+
 n = 600
 
 
@@ -42,7 +44,7 @@ def test_get_d_array():
     """
     Test of get_d_array
     """
-    from pyiid.kernels.serial_kernel import get_d_array as serial_get_d_array
+    from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
     n = 60
     q = np.random.random((n, 3)).astype(np.float32)
@@ -69,7 +71,7 @@ def test_get_r_array():
     """
     Test of get_d_array
     """
-    from pyiid.kernels.serial_kernel import get_r_array as comp
+    from pyiid.kernels.cpu_kernel import get_r_array as comp
     # prep data
 
     d = np.random.random((n, n, 3)).astype(np.float32)
@@ -93,7 +95,7 @@ def test_get_r_array():
 
 
 def test_get_normalization_array():
-    from pyiid.kernels.serial_kernel import get_normalization_array as comp
+    from pyiid.kernels.cpu_kernel import get_normalization_array as comp
     Q = 250
     scat = np.random.random((n, Q)).astype(np.float32)
     c_norm = np.zeros((n, n, Q), dtype=np.float32)

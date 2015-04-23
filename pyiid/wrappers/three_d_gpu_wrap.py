@@ -1,8 +1,8 @@
 __author__ = 'christopher'
 import numpy as np
 
-from pyiid.kernels.three_d_cuda import *
-from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
+from old_files.three_d_cuda import *
+from pyiid.kernels.cpu_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
 
 
@@ -394,7 +394,7 @@ if __name__ == '__main__':
     # cProfile.run('''
     import ase.io as aseio
     import os
-    from pyiid.wrappers.kernel_wrap import wrap_atoms
+    from pyiid.wrappers.cpu_wrap import wrap_atoms
     import matplotlib.pyplot as plt
 
     atoms_file = '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.xyz'

@@ -7,7 +7,7 @@ setup(
               'pyiid.tests.test_kernels', 'pyiid.tests.test_wrappers',
               'pyiid.kernels', 'pyiid.scripts', 'pyiid.scripts.benchmarking',
               'pyiid.testing', 'pyiid.wrappers', 'pyiid.wrappers.mpi',
-              'running', 'old_files', 'old_files.old_hmc', 'benchmarks',
+              'running', 'benchmarks',
               'benchmarks.speed'],
     url='',
     license='',

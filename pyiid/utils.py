@@ -11,7 +11,7 @@ from itertools import combinations
 
 import math
 import tkFileDialog
-from pyiid.kernels.serial_kernel import get_d_array
+from pyiid.kernels.cpu_kernel import get_d_array
 from copy import deepcopy as dc
 import time
 import datetime

@@ -9,49 +9,12 @@ import xraylib
 targ = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
-
-@autojit(target=targ)
-def get_d_array(d, q):
-    """
-    Generate the NxNx3 array which holds the coordinate pair distances
-
-    Parameters
-    ----------
-    d: NxNx3 array
-    q: Nx3 array
-        The atomic positions
-    """
-    n = len(q)
-    for tx in range(n):
-        for ty in range(n):
-            for tz in range(3):
-                d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
-
-
-@autojit(target=targ)
-def get_r_array(r, d):
-    """
-    Generate the Nx3 array which holds the pair distances
-
-    Parameters
-    ----------
-    r: Nx3 array
-    d: NxNx3 array
-        The coordinate pair distances
-    """
-    n = len(r)
-    for tx in range(n):
-        for ty in range(n):
-            r[tx, ty] = math.sqrt(
-                d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
-
-
 @autojit(target=targ)
 def get_scatter_array(scatter_array, numbers, qbin):
     """
     Generate the scattering array, which holds all the Q dependant scatter
     factors
-    
+
     Parameters:
     ---------
     scatter_array: NxQ array
@@ -70,64 +33,6 @@ def get_scatter_array(scatter_array, numbers, qbin):
             scatter_array[tx, kq] = xraylib.FF_Rayl(numbers[tx],
                                                     kq * qbin / 4 / np.pi)
 
-
-@autojit(target=targ)
-def get_fq_array(fq, r, scatter_array, qbin):
-    """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    qbin: float
-        The qbin size
-    """
-    sum_scale = 1
-    n = len(r)
-    qmax_bin = len(fq)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for kq in range(0, qmax_bin):
-                    debye_waller_scale = 1
-                    # TODO: debye_waller_scale = math.exp(
-                    # -.5 * dw_signal_sqrd * (kq*Qbin)**2)
-                    fq[kq] += sum_scale * \
-                              debye_waller_scale * \
-                              scatter_array[tx, kq] * \
-                              scatter_array[ty, kq] / \
-                              r[tx, ty] * \
-                              math.sin(kq * qbin * r[tx, ty])
-
-
-@autojit(target=targ)
-def get_normalization_array(norm_array, scatter_array):
-    """
-    Generate the Q dependant normalization factors for the F(Q) array
-
-    Parameters:
-    -----------
-    norm_array: NxNxQ array
-        Normalization array
-    scatter_array: NxQ array
-        The scatter factor array
-    """
-    n = len(norm_array)
-    qmax_bin = norm_array.shape[2]
-
-    for kq in range(0, qmax_bin):
-        for tx in range(n):
-            for ty in range(n):
-                norm_array[tx, ty, kq] = (
-                    scatter_array[tx, kq] * scatter_array[ty, kq])
-
-
-# PDF test_kernels ------------------------------------------------------------
 
 @autojit(target=targ)
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid):
@@ -264,7 +169,6 @@ def get_rw(gobs, gcalc, weight=None):
         weight = np.ones(gcalc.shape)
     scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
     if scale <= 0:
-        scale = 1
         return 1, -1
     else:
         top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
@@ -304,45 +208,6 @@ def get_chi_sq(gobs, gcalc):
 
 
 # Gradient test_kernels -------------------------------------------------------
-@autojit(target=targ)
-def fq_grad_position(grad_p, d, r, scatter_array, qbin):
-    """
-    Generate the gradient F(Q) for an atomic configuration
-
-    Parameters
-    ------------
-    grad_p: Nx3xQ numpy array
-        The array which will store the FQ gradient
-    d: NxNx3 array
-        The distance array for the configuration
-    r: NxN array
-        The inter-atomic distances
-    scatter_array: NxQ array
-        The scatter factor array
-    qbin: float
-        The size of the Q bins
-    """
-    n = len(r)
-    qmax_bin = grad_p.shape[2]
-    for tx in range(n):
-        for tz in range(3):
-            for ty in range(n):
-                if tx != ty:
-                    for kq in range(0, qmax_bin):
-                        sub_grad_p = \
-                            scatter_array[tx, kq] * \
-                            scatter_array[ty, kq] * \
-                            d[tx, ty, tz] * \
-                            (
-                                (kq * qbin) *
-                                r[tx, ty] *
-                                math.cos(kq * qbin * r[tx, ty]) -
-                                math.sin(kq * qbin * r[tx, ty])
-                            ) \
-                            / (r[tx, ty] ** 3)
-                        grad_p[tx, tz, kq] += sub_grad_p
-
-
 @autojit(target=targ)
 def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid):
     n = len(grad_fq)
@@ -410,6 +275,7 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
                                        + gcalc[:] * grad_a) *
                                      (gobs[:] - scale * gcalc))
             # '''
+
 
 def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
     """
