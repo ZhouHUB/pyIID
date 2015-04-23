@@ -113,6 +113,6 @@ if __name__ == '__main__':
     calc1 = PDFCalc(gobs=gobs, qbin=.1, potential='rw', conv=.001)
     ideal_atoms.set_calculator(calc1)
     traj = []
-    ideal_atoms.positions *=1.5
+    ideal_atoms.positions *= 1.5
     print ideal_atoms.get_potential_energy()
     print ideal_atoms.get_forces()

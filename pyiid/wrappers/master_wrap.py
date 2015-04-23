@@ -309,7 +309,6 @@ if __name__ == '__main__':
     from ase.atoms import Atoms
     import os
     import matplotlib.pyplot as plt
-
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms)
 
