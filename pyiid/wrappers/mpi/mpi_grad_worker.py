@@ -12,7 +12,7 @@ if __name__ == '__main__':
     n_cov_list = []
     for task in iter(lambda: comm.sendrecv(dest=0), StopIteration):
 
-        q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov = task
+        q, scatter_array, qmax_bin, qbin, m, n_cov = task
         gpus = cuda.gpus.lst
         gpu = gpus[0]
         # Build Data arrays

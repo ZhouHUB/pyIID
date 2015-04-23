@@ -10,9 +10,7 @@ sys.path.extend(['/mnt/work-data/dev/pyIID'])
 from pyiid.kernels.cpu_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
 from mpi4py import MPI
-import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
-import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
-import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
+from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
@@ -29,17 +27,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     print 'nodes', n_nodes
 
     # get info on our gpu setup and memory requrements
-    avail_loc = inspect.getfile(mpi_gpu_avail)
-    comm = MPI.COMM_WORLD.Spawn(sys.executable,
-        args=[avail_loc],
-        maxprocs=n_nodes
-    )
-    # reports = comm.gather(root=MPI.ROOT)
-    ranks =  comm.gather(root=MPI.ROOT)
-    print ranks
-    mem_list = comm.gather(root=MPI.ROOT)
-    print mem_list
-    comm.Disconnect()
+    ranks, mem_list = gpu_avail(n_nodes)
     gpu_total_mem = 0
     for i in range(ranks[-1]+1):
         print mem_list[i]
@@ -68,26 +56,8 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     # The total amount of work is greater than the sum of our GPUs, no
     # special distribution needed, just keep putting problems on GPUs until
     # finished.
-    kernel_loc = inspect.getfile(mpi_fq_worker)
-    comm = MPI.COMM_WORLD.Spawn(
-        sys.executable,
-        args=[kernel_loc],
-        maxprocs=n_nodes
-    )
-    n_cov = 0
-    status = MPI.Status()
-    m_list += ([StopIteration] * n_nodes)
-    for m in m_list:
-        if m is StopIteration:
-            msg = m
-        else:
-            msg = (q, scatter_array, qmax_bin, qbin, m, n_cov)
-        comm.recv(source=MPI.ANY_SOURCE, status=status)
-        comm.send(obj=msg, dest=status.Get_source())
-    print 'done master'
-    reports = comm.gather(root=MPI.ROOT)
+    reports = mpi_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin)
     print reports
-
     fq = np.zeros(qmax_bin)
     for ele in reports:
         fq[:] += ele
@@ -303,16 +273,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
 
     n_nodes = os.getenv('NODECOUNT', 1)
 
-    avail_loc = inspect.getfile(mpi_gpu_avail)
-    comm = MPI.COMM_WORLD.Spawn(sys.executable,
-        args=[avail_loc],
-        maxprocs=n_nodes
-    )
-    ranks =  comm.gather(root=MPI.ROOT)
-    print ranks
-    mem_list = comm.gather(root=MPI.ROOT)
-    print mem_list
-    comm.Disconnect()
+    ranks, mem_list = gpu_avail(n_nodes)
     gpu_total_mem = 0
     for i in range(ranks[-1]+1):
         print mem_list[i]
@@ -338,24 +299,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
                 break
     assert sum(m_list) == n
 
-    kernel_loc = inspect.getfile(mpi_grad_worker)
-    comm = MPI.COMM_WORLD.Spawn(
-        sys.executable,
-        args=[kernel_loc],
-        maxprocs=n_nodes
-    )
-    n_cov = 0
-    status = MPI.Status()
-    m_list += ([StopIteration] * n_nodes)
-    for m in m_list:
-        if m is StopIteration:
-            msg = m
-        else:
-            msg = (q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov)
-        comm.recv(source=MPI.ANY_SOURCE, status=status)
-        comm.send(obj=msg, dest=status.Get_source())
-
-    reports = comm.gather(root=MPI.ROOT)
+    reports = mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin)
 
     # Sort grads to make certain indices are in order
     sort_grads = [x for (y, x) in sorted(reports)]
@@ -482,7 +426,7 @@ if __name__ == '__main__':
     # cProfile.run('''
     from ase.atoms import Atoms
     import os
-    from pyiid.wrappers.cpu_wrap import wrap_atoms
+    from pyiid.wrappers.master_wrap import wrap_atoms
     import matplotlib.pyplot as plt
     import sys
     sys.path.extend(['/mnt/work-data/dev/pyIID'])
