@@ -25,7 +25,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     scatter_array = atoms.get_array('scatter')
 
     #get nodes used
-    n_nodes = os.getenv('NODECOUNT', 1)
+    n_nodes = os.getenv('NODECOUNT', 1) #PBS_NP
     print 'nodes', n_nodes
 
     # get info on our gpu setup and memory requrements
@@ -318,7 +318,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
         print mem_list[i]
         gpu_total_mem += mem_list[i]
     print gpu_total_mem
-    total_req_mem = 6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n
+    total_req_mem = (6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n)*4
 
     grad_q = []
     index_list = []

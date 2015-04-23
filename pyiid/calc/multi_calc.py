@@ -105,6 +105,7 @@ if __name__ == '__main__':
     # ideal_atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0, 3, 0], [3,3,0]])
     # start_atoms = Atoms('Au4', [[0,0,0], [.9,0,0], [0, .9, 0], [.9,.9,0]])
     ideal_atoms = Octahedron('Au', 2)
+    ideal_atoms.pbc = False
     wrap_atoms(ideal_atoms)
     # view(ideal_atoms)
 
@@ -124,7 +125,7 @@ if __name__ == '__main__':
 
     calc2 = LAMMPSlib(lmpcmds = cmds, logfile='test.log')
 
-    for j in np.logspace(-1, 2, 4):
+    for j in np.linspace(40, 110, 3):
         print j
         calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=j, potential='rw',
                         # processor='cpu'

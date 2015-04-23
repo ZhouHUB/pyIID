@@ -76,6 +76,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / (n * norm_array) * fq)
     np.seterr(**old_settings)
+    del norm_array, r, d, q, scatter_array
     return fq
 
 
@@ -205,6 +206,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
             dfq_dq[tx, tz] = np.nan_to_num(
                 1 / (n * norm_array) * dfq_dq[tx, tz])
     np.seterr(**old_settings)
+    del q, d, r, scatter_array, norm_array
     return dfq_dq
 
 

@@ -260,14 +260,16 @@ def get_rw(gobs, gcalc, weight=None):
     scale:
         The scale factor in the rw calculation
     """
+    if weight is None:
+        weight = np.ones(gcalc.shape)
     scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
     if scale <= 0:
         scale = 1
-    if weight is None:
-        weight = np.ones(gcalc.shape)
-    top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
-    bottom = np.sum(weight[:] * gobs[:] ** 2)
-    return np.sqrt(top / bottom).real, scale
+        return 1, -1
+    else:
+        top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
+        bottom = np.sum(weight[:] * gobs[:] ** 2)
+        return np.sqrt(top / bottom).real, scale
 
 
 def get_chi_sq(gobs, gcalc):

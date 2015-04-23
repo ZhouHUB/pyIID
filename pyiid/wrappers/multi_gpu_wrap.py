@@ -5,9 +5,9 @@ from numba import cuda
 import math
 from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
-# from multiprocessing import Process, Queue
+# from multiprocessing import Process
 from threading import Thread
-from Queue import Queue
+# from Queue import Queue
 
 
 def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
@@ -135,6 +135,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                     p_dict[gpu] = p
                     p.start()
                     n_cov += m
+                    # print float(n_cov)/n * 100, '% finished'
                     if n_cov >= n:
                         break
 
@@ -470,6 +471,8 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     if rw is None:
         rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin,
                                        rmin = rmin, rmax=rmax, rstep=rstep)
+    if scale <= 0:
+        return np.zeros((len(atoms), 3))
     fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):

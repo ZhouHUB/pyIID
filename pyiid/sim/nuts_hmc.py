@@ -52,7 +52,7 @@ def find_step_size(input_atoms):
     return step_size
 
 
-def nuts(atoms, accept_target, iterations, wtraj=None):
+def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     traj = [atoms]
 
     atoms0 = dc(atoms)
@@ -69,7 +69,7 @@ def nuts(atoms, accept_target, iterations, wtraj=None):
     try:
         while m <= iterations:
             print 'step', step_size
-            rand_momenta = np.random.normal(0, 1, (len(atoms), 3))
+            rand_momenta = np.random.normal(0, p_scale, (len(atoms), 3))
             atoms.set_momenta(rand_momenta)
             u = np.random.uniform(0, np.exp(-1.*traj[-1].get_total_energy()))
 
@@ -93,13 +93,13 @@ def nuts(atoms, accept_target, iterations, wtraj=None):
                 span = pos_atoms.positions - neg_atoms.positions
                 span = span.flatten()
                 s = s_prime * (span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (span.dot(pos_atoms.get_velocities().flatten()) >= 0)
-                print 'iteration', m, 'depth', j, 'samples', 2**j
+                # print 'iteration', m, 'depth', j, 'samples', 2**j
                 j += 1
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 
             step_size = np.exp(mu - (m ** .5 / gamma) * Hbar)
-
+            print 'iteration', m, 'depth', j, 'samples', 2**j
             m += 1
     except KeyboardInterrupt:
         pass
