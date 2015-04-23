@@ -107,8 +107,10 @@ if __name__ == '__main__':
 
     gobs = wrap_pdf(ideal_atoms)[0]
 
-    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw', processor='cpu')
-    calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=100, potential='rw', processor='cpu')
+    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw',
+                    processor='cpu')
+    calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=100, potential='rw',
+                    processor='cpu')
     calc_list=[calc1, calc2]
     calc = MultiCalc(calc_list=calc_list)
     start_atoms.set_calculator(calc)

@@ -17,6 +17,7 @@ def set_processor(processor=None):
             wrap_fq as low_wrap_fq
         from pyiid.wrappers.mpi_gpu_wrap import \
             wrap_fq_grad as low_wrap_fq_grad
+
         return processor, low_wrap_fq, low_wrap_fq_grad
 
     elif processor == 'Multi-GPU':
@@ -25,6 +26,7 @@ def set_processor(processor=None):
             wrap_fq as low_wrap_fq
         from pyiid.wrappers.multi_gpu_wrap import \
             wrap_fq_grad as low_wrap_fq_grad
+
         return processor, low_wrap_fq, low_wrap_fq_grad
 
         cuda.close()
@@ -33,6 +35,7 @@ def set_processor(processor=None):
         from pyiid.wrappers.cpu_wrap import wrap_fq as low_wrap_fq
         from pyiid.wrappers.cpu_wrap import \
             wrap_fq_grad as low_wrap_fq_grad
+
         return processor, low_wrap_fq, low_wrap_fq_grad
     else:
         # Test which kernel to use: MPI, Single Node-MultiGPU, Serial CPU
@@ -162,9 +165,9 @@ def wrap_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     fq:1darray
         The reduced structure function
     """
-    g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmin, rmax, rstep)
+    g_calc = wrap_pdf(atoms, qmax, qmin, qbin, rmin, rmax, rstep)
     rw, scale = get_rw(gobs, g_calc, weight=None)
-    return rw, scale, g_calc, fq
+    return rw, scale, g_calc
 
 
 def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
@@ -201,9 +204,9 @@ def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     fq:1darray
         The reduced structure function
     """
-    g_calc, fq = wrap_pdf(atoms, qmax, qmin, qbin, rmin, rmax, rstep)
+    g_calc = wrap_pdf(atoms, qmax, qmin, qbin, rmin, rmax, rstep)
     rw, scale = get_chi_sq(gobs, g_calc)
-    return rw, scale, g_calc, fq
+    return rw, scale, g_calc
 
 
 def wrap_fq_grad(atoms, qmax=25., qbin=.1):
@@ -211,7 +214,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
 
 
 def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
-                 rmax=40., rstep=.01, rw=None, gcalc=None, scale=None):
+                 rmax=40., rstep=.01):
     """
     Generate the Rw value gradient
 
@@ -240,10 +243,9 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
         in percent
 
     """
-    if rw is None:
-        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmin,
-                                       rmax,
-                                       rstep)
+    rw, scale, gcalc = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmin,
+                                   rmax,
+                                   rstep)
     fq_grad = low_wrap_fq_grad(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):
@@ -258,8 +260,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
 
 def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
                      rmax=40.,
-                     rstep=.01,
-                     rw=None, gcalc=None, scale=None):
+                     rstep=.01,):
     """
     Generate the Rw value gradient
 
@@ -288,9 +289,8 @@ def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
         in percent
 
     """
-    if rw is None:
-        rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin,
-                                       rmax=rmax, rstep=rstep)
+    rw, scale, gcalc = wrap_rw(atoms, gobs, qmax, qmin, qbin, rmax=rmax,
+                               rstep=rstep)
     fq_grad = wrap_fq_grad(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):
@@ -310,9 +310,6 @@ if __name__ == '__main__':
     import os
     import matplotlib.pyplot as plt
 
-    # n = 400
-    # pos = np.random.random((n, 3)) * 10.
-    # atoms = Atoms('Au' + str(n), pos)
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms)
 
@@ -321,6 +318,3 @@ if __name__ == '__main__':
     grad_fq = wrap_fq_grad(atoms)
     print grad_fq
     plt.plot(pdf), plt.show()
-    # for i in range(10):
-    # gfq = wrap_fq_grad_gpu(atomsio)
-    # ''', sort='tottime')

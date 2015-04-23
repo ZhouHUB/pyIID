@@ -140,7 +140,7 @@ if __name__ == '__main__':
     
     gobs, fq = wrap_pdf(ideal_atoms, qbin=.1)
     
-    calc = PDFCalc(gobs=gobs, conv=100, potential='rw', qbin=.1)
+    calc = PDFCalc(gobs=gobs, qbin=.1, conv=100, potential='rw')
     # calc = PDFCalc(gobs=gobs, conv=1000, qbin=.1)
     start_atoms.set_calculator(calc)
     print start_atoms.get_potential_energy()

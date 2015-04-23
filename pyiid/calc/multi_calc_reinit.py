@@ -97,7 +97,8 @@ if __name__ == '__main__':
 
     gobs = wrap_pdf(ideal_atoms)[0]
 
-    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw', processor='cpu')
+    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw',
+                    processor='cpu')
     # calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw')
     calc2 = EMT()
     calc_list=[calc1, calc2]

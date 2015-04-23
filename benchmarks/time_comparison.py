@@ -44,7 +44,7 @@ try:
         wrap_atoms(atoms)
         atoms.rattle()
         print len(atoms), i/10.
-        calc = PDFCalc(gobs=pdf, qmin=0.0, conv=1, qbin=.1, potential='rw')
+        calc = PDFCalc(gobs=pdf, qmin=0.0, qbin=.1, conv=1, potential='rw')
         atoms.set_calculator(calc)
         s = time.time()
         nrg = atoms.get_potential_energy()

@@ -10,7 +10,7 @@ import ase.io as aseio
 
 from pyiid.sim.hmc import simulate_dynamics
 from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
-from pyiid.calc.pdfcalc_gpu import PDFCalc
+from old_files.pdfcalc_gpu import PDFCalc
 from pyiid.wrappers.cpu_wrap import wrap_atoms
 
 

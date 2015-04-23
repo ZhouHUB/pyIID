@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
-
+from pyiid.wrappers.master_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
 
 class PDFCalc(Calculator):
     """
@@ -11,7 +11,8 @@ class PDFCalc(Calculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None, gobs=None, qmin=0.0, qmax=25.0, qbin=None,
-                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., processor='multi_gpu', potential='chi_sq', **kwargs):
+                 rmin=0.0, rmax=40.0, rbin=.01, conv=1., potential='chi_sq',
+                 **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
@@ -30,21 +31,6 @@ class PDFCalc(Calculator):
             self.gobs = gobs
         else:
             raise NotImplementedError('Need an experimental PDF')
-
-        if processor == 'multi_gpu':
-            # from pyiid.wrappers.multi_gpu_wrap import *
-            from pyiid.wrappers.multi_gpu_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
-        elif processor == 'gpu_3_d':
-            # from pyiid.wrappers.three_d_gpu_wrap import *
-            from pyiid.wrappers.three_d_gpu_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
-        elif processor == 'gpu_2_d':
-            # from pyiid.wrappers.gpu_wrap import *
-            from pyiid.wrappers.gpu_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
-        else:
-            # from pyiid.wrappers.kernel_wrap import *
-            # from pyiid.wrappers.kernel_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
-            from pyiid.wrappers.cpu_wrap import wrap_rw, wrap_grad_rw
-
         if potential == 'chi_sq':
             self.potential = wrap_chi_sq
             self.grad = wrap_grad_chi_sq
@@ -94,7 +80,7 @@ class PDFCalc(Calculator):
         '''energy, scale, gcalc, fq = self.wrap_rw(atoms, self.gobs, self.qmax,
                                            self.qmin, self.qbin, self.rmax,
                                            self.rbin)'''
-        energy, scale, gcalc, fq = self.potential(atoms, self.gobs,
+        energy, scale, gcalc = self.potential(atoms, self.gobs,
                                                   self.qmax, self.qmin,
                                                   self.qbin, self.rmin,
                                                   self.rmax, self.rbin)
@@ -108,3 +94,25 @@ class PDFCalc(Calculator):
                               self.rmin, self.rmax, self.rbin) * self.rw_to_eV
 
         self.results['forces'] = forces
+
+if __name__ == '__main__':
+    from ase.atoms import Atoms
+    from ase.visualize import view
+    from pyiid.wrappers.master_wrap import wrap_pdf, wrap_atoms
+    from ase.cluster.octahedron import Octahedron
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    ideal_atoms = Octahedron('Au', 2)
+    ideal_atoms.pbc = False
+    wrap_atoms(ideal_atoms)
+
+    gobs = wrap_pdf(ideal_atoms)
+
+    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=.001)
+    calc1 = PDFCalc(gobs=gobs, qbin=.1, potential='rw', conv=.001)
+    ideal_atoms.set_calculator(calc1)
+    traj = []
+    ideal_atoms.positions *=1.5
+    print ideal_atoms.get_potential_energy()
+    print ideal_atoms.get_forces()

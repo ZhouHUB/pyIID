@@ -127,9 +127,7 @@ if __name__ == '__main__':
 
     for j in np.linspace(40, 110, 3):
         print j
-        calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=j, potential='rw',
-                        # processor='cpu'
-                        )
+        calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=j, potential='rw')
         calc_list=[
             calc1,
             calc2

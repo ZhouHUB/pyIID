@@ -39,7 +39,7 @@ print'fatoms'
 view(fatoms)
 rw, scale, apdf, afq = wrap_rw(atoms, pdf, qmin=2.5, qbin=.1)
 
-calc = PDFCalc(gobs=pdf, qmin=2.5, conv=1, qbin=.1)
+calc = PDFCalc(gobs=pdf, qmin=2.5, qbin=.1, conv=1)
 atoms.set_calculator(calc)
 rwi = atoms.get_potential_energy()
 print(rwi)
