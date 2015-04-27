@@ -71,7 +71,9 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
             print 'step', step_size
             rand_momenta = np.random.normal(0, p_scale, (len(atoms), 3))
             atoms.set_momenta(rand_momenta)
-            u = np.random.uniform(0, np.exp(-1.*traj[-1].get_total_energy()))
+            # u = np.random.uniform(0, np.exp(-1.*traj[-1].get_total_energy()))
+            e0 = traj[-1].get_total_energy()
+            u = np.random.uniform(0, 1)
 
             e = step_size
             n, s, j = 1, 1, 0
@@ -111,9 +113,11 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
 def buildtree(input_atoms, u, v, j, e, atoms0):
     if j == 0:
         atoms_prime = leapfrog(input_atoms, v*e)
-        n_prime = int(u <= np.exp(-atoms_prime.get_total_energy()))
-        s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
-
+        delta_energy = e0-atoms_prime.get_total_energy()
+        # n_prime = int(u <= np.exp(-atoms_prime.get_total_energy()))
+        # s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
+        n_prime = int(u <= np.exp(delta_energy))
+        s_prime = int(u <= np.exp(Emax + delta_energy))
         return atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime, min(1, np.exp(-atoms_prime.get_total_energy() + input_atoms.get_total_energy())), 1
     else:
         neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, na_prime = buildtree(
