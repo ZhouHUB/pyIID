@@ -95,11 +95,12 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                 s = s_prime * (span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (span.dot(pos_atoms.get_velocities().flatten()) >= 0)
                 # print 'iteration', m, 'depth', j, 'samples', 2**j
                 j += 1
+                print 'iteration', m, 'depth', j, 'samples', 2**j
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 
             step_size = np.exp(mu - (m ** .5 / gamma) * Hbar)
-            print 'iteration', m, 'depth', j, 'samples', 2**j
+
             m += 1
     except KeyboardInterrupt:
         pass

@@ -4,14 +4,21 @@ import inspect
 from numba import cuda
 import math
 import sys
-import os
-sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
-from pyiid.kernels.cpu_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
+import os
+import subprocess
+sys.path.extend(['/mnt/work-data/dev/pyIID'])
+from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
     get_grad_rw, get_chi_sq, get_grad_chi_sq
-from mpi4py import MPI
 from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 
+
+def count_nodes():
+    fileloc = os.getenv("$PBS_NODEFILE")
+    with open(fileloc, 'r') as f:
+        nodes = f.readlines()
+    node_set = set(nodes)
+    return len(node_set)
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
 
@@ -23,7 +30,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     scatter_array = atoms.get_array('scatter')
 
     #get nodes used
-    n_nodes = os.getenv('NODECOUNT', 1) #PBS_NP
+    n_nodes = count_nodes()
     print 'nodes', n_nodes
 
     # get info on our gpu setup and memory requrements
@@ -271,7 +278,7 @@ def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
     qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
 
-    n_nodes = os.getenv('NODECOUNT', 1)
+    n_nodes = count_nodes()
 
     ranks, mem_list = gpu_avail(n_nodes)
     gpu_total_mem = 0

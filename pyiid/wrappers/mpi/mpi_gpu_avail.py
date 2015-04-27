@@ -1,8 +1,8 @@
 __author__ = 'christopher'
-from mpi4py import MPI
 from numba import cuda
 
 if __name__ == '__main__':
+    from mpi4py import MPI
     comm = MPI.Comm.Get_parent()
     rank = comm.Get_rank()
 
@@ -16,3 +16,4 @@ if __name__ == '__main__':
     cuda.close()
     comm.gather(sendobj=rank, root=0)
     comm.gather(sendobj=mem_list[0], root=0)
+    comm.Disconnect()

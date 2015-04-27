@@ -15,10 +15,10 @@ def gpu_avail(n_nodes):
     )
     # reports = comm.gather(root=MPI.ROOT)
     ranks =  comm.gather(root=MPI.ROOT)
-    print ranks
     mem_list = comm.gather(root=MPI.ROOT)
-    print mem_list
     comm.Disconnect()
+    # ranks = None
+    # mem_list = None
     return ranks, mem_list
 
 

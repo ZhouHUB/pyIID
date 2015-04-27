@@ -1,11 +1,10 @@
 __author__ = 'christopher'
-from mpi4py import MPI
 from numba import cuda
 import numpy as np
 import math
 import sys
 if __name__ == '__main__':
-
+    from mpi4py import MPI
     comm = MPI.Comm.Get_parent()
     rank = comm.Get_rank()
     total_data = None
