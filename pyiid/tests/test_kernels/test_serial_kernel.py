@@ -56,16 +56,6 @@ def test_get_r_array():
     return
 
 
-def test_get_scatter_array():
-    scatter_array = np.loadtxt('./c60_scat.txt',
-                               dtype=np.float32)
-    ksa = np.zeros(scatter_array.shape)
-    numbers = np.ones(len(ksa), dtype=np.int) * 6
-    qbin = .1
-    get_scatter_array(ksa, numbers, qbin)
-
-    assert_allclose(scatter_array, ksa, rtol=1e-2)
-
 
 def test_fq_array():
     n = 60
