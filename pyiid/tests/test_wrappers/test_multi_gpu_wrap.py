@@ -60,7 +60,8 @@ if __name__ == '__main__':
     sfq = serial_grad_fq(atoms)
     gfq = gpu_grad_fq(atoms)
 
-    print np.amax(sfq-gfq)
+    print np.amax(sfq-gfq)/np.argmax(sfq-gfq)
+    print np.amax((sfq-gfq)/gfq)
     sfq_ave = sfq[0, 0, :]
     gfq_ave = gfq[0,0,:]
 
