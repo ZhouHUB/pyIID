@@ -15,10 +15,14 @@ from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 
 def count_nodes():
     fileloc = os.getenv("$PBS_NODEFILE")
-    with open(fileloc, 'r') as f:
-        nodes = f.readlines()
-    node_set = set(nodes)
-    return len(node_set)
+    if fileloc is None:
+        return 1
+    else:
+        with open(fileloc, 'r') as f:
+            nodes = f.readlines()
+        node_set = set(nodes)
+        return len(node_set)
+
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
 
