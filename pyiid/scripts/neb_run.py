@@ -7,7 +7,7 @@ import ase.io as aseio
 from ase.neb import NEB
 from ase.optimize.bfgs import BFGS
 
-from pyiid.wrappers.gpu_wrap import wrap_rw, wrap_pdf
+from old_files.gpu_wrap import wrap_rw, wrap_pdf
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.wrappers.cpu_wrap import wrap_atoms
 

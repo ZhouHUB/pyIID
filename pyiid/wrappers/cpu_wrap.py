@@ -1,6 +1,6 @@
 __author__ = 'christopher'
 from pyiid.kernels.cpu_kernel import *
-import numpy
+import numpy as np
 from numbapro import autojit
 
 

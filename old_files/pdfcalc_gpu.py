@@ -1,7 +1,8 @@
 __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
-from pyiid.wrappers.three_d_gpu_wrap import wrap_rw, wrap_grad_rw
+
+from old_files.three_d_gpu_wrap import wrap_rw, wrap_grad_rw
 
 
 class PDFCalc(Calculator):

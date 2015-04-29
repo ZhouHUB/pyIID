@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 import sys
 sys.path.extend(['/mnt/work-data/dev/pyIID'])
-from pyiid.wrappers.three_d_gpu_wrap import wrap_fq, wrap_fq_grad_gpu
+from old_files.three_d_gpu_wrap import wrap_fq_grad_gpu
 import ase.io as aseio
 import os
 from pyiid.wrappers.cpu_wrap import wrap_atoms
