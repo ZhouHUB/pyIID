@@ -7,7 +7,8 @@ import numpy as np
 
 Emax = 500
 
-@autojit(target='cpu')
+
+# @autojit(target='cpu')
 def leapfrog(atoms, step):
     """
     Propagate the dynamics of the system via the leapfrog algorithm one step
@@ -37,14 +38,16 @@ def leapfrog(atoms, step):
 
 def find_step_size(input_atoms):
     atoms = dc(input_atoms)
-    step_size = .8e-2
-    # '''
+    step_size = 1.5
+    '''
     atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
     atoms_prime = leapfrog(atoms, step_size)
 
-    a = 2 * (np.exp(-1*atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
-    while (np.exp(-1*atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
+    a = 2 * (np.exp(
+        -1 * atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
+    while (np.exp(
+                    -1 * atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
         step_size *= 2 ** a
         atoms_prime = leapfrog(atoms, step_size)
     # '''
@@ -59,12 +62,13 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     m = 0
 
     step_size = find_step_size(atoms)
-    mu = np.log(10*step_size)
+    mu = np.log(10 * step_size)
     # ebar = 1
     Hbar = 0
     gamma = 0.05
     t0 = 10
     # k = .75
+    samples_total = 0
     print 'start hmc'
     try:
         while m <= iterations:
@@ -82,11 +86,14 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
             while s == 1:
                 v = np.random.choice([-1, 1])
                 if v == -1:
-                    neg_atoms, _, atoms_prime, n_prime, s_prime, a, na = buildtree(neg_atoms, u, v, j, e, atoms0)
+                    neg_atoms, _, atoms_prime, n_prime, s_prime, a, na = buildtree(
+                        neg_atoms, u, v, j, e, atoms0, e0)
                 else:
-                    _, pos_atoms, atoms_prime, n_prime, s_prime, a, na = buildtree(pos_atoms, u, v, j, e, atoms0)
+                    _, pos_atoms, atoms_prime, n_prime, s_prime, a, na = buildtree(
+                        pos_atoms, u, v, j, e, atoms0, e0)
 
-                if s_prime == 1 and np.random.uniform() < min(1, n_prime * 1. / n):
+                if s_prime == 1 and np.random.uniform() < min(1,
+                                                              n_prime * 1. / n):
                     traj += [atoms_prime]
                     if wtraj is not None:
                         wtraj.write(atoms_prime)
@@ -94,10 +101,13 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                 n = n + n_prime
                 span = pos_atoms.positions - neg_atoms.positions
                 span = span.flatten()
-                s = s_prime * (span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (span.dot(pos_atoms.get_velocities().flatten()) >= 0)
+                s = s_prime * (
+                    span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
+                        span.dot(pos_atoms.get_velocities().flatten()) >= 0)
                 # print 'iteration', m, 'depth', j, 'samples', 2**j
                 j += 1
-                print 'iteration', m, 'depth', j, 'samples', 2**j
+                print 'iteration', m, 'depth', j, 'samples', 2 ** j
+            samples_total += 2**(j+1)
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 
@@ -106,31 +116,42 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
             m += 1
     except KeyboardInterrupt:
         pass
+    print samples_total
     return traj
 
 
 # @autojit(target='cpu')
-def buildtree(input_atoms, u, v, j, e, atoms0):
+def buildtree(input_atoms, u, v, j, e, atoms0, e0):
     if j == 0:
-        atoms_prime = leapfrog(input_atoms, v*e)
-        delta_energy = e0-atoms_prime.get_total_energy()
+        atoms_prime = leapfrog(input_atoms, v * e)
+        delta_energy = e0 - atoms_prime.get_total_energy()
+        try:
+            exp1 = np.exp(delta_energy)
+            exp2 = np.exp(Emax + delta_energy)
+        except:
+            exp1 = 0
+            exp2 = 0
+        # print exp1, exp2
         # n_prime = int(u <= np.exp(-atoms_prime.get_total_energy()))
         # s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
-        n_prime = int(u <= np.exp(delta_energy))
-        s_prime = int(u <= np.exp(Emax + delta_energy))
-        return atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime, min(1, np.exp(-atoms_prime.get_total_energy() + input_atoms.get_total_energy())), 1
+        n_prime = int(u <= exp1)
+        s_prime = int(u <= exp2)
+        return atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime, min(1,
+                                                                            np.exp(
+                                                                                -atoms_prime.get_total_energy() + input_atoms.get_total_energy())), 1
     else:
         neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, na_prime = buildtree(
-            input_atoms, u, v, j - 1, e, atoms0)
+            input_atoms, u, v, j - 1, e, atoms0, e0)
         if s_prime == 1:
             if v == -1:
                 neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime, app, napp = buildtree(
-                    neg_atoms, u, v, j - 1, e, atoms0)
+                    neg_atoms, u, v, j - 1, e, atoms0, e0)
             else:
                 _, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime, app, napp = buildtree(
-                    pos_atoms, u, v, j - 1, e, atoms0)
+                    pos_atoms, u, v, j - 1, e, atoms0, e0)
 
-            if np.random.uniform() < float(n_prime_prime / (max(n_prime + n_prime_prime, 1))):
+            if np.random.uniform() < float(
+                            n_prime_prime / (max(n_prime + n_prime_prime, 1))):
                 atoms_prime = atoms_prime_prime
 
             a_prime = a_prime + app
@@ -138,7 +159,9 @@ def buildtree(input_atoms, u, v, j, e, atoms0):
 
             datoms = pos_atoms.positions - neg_atoms.positions
             span = datoms.flatten()
-            s_prime = s_prime_prime * (span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (span.dot(pos_atoms.get_velocities().flatten()) >= 0)
+            s_prime = s_prime_prime * (
+                span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
+                          span.dot(pos_atoms.get_velocities().flatten()) >= 0)
             n_prime = n_prime + n_prime_prime
         return neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, na_prime
 
@@ -160,7 +183,8 @@ if __name__ == '__main__':
     from pyiid.wrappers.multi_gpu_wrap import wrap_rw, wrap_pdf
     from pyiid.calc.pdfcalc import PDFCalc
     from pyiid.wrappers.cpu_wrap import wrap_atoms
-    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, time_est
+    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, \
+        time_est
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     # start_atoms = Atoms('Au4', [[-1, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
@@ -185,14 +209,17 @@ if __name__ == '__main__':
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
         f = atoms.get_forces()
-        f2 = f*2
+        f2 = f * 2
     min_pe = np.argmin(pe_list)
     view(traj)
     rw, scale, _, _ = wrap_rw(traj[-1], gobs)
-    print traj[-1].get_potential_energy(),rw, scale
+    print traj[-1].get_potential_energy(), rw, scale
     r = np.arange(0, 40, .01)
     plt.plot(r, gobs, label='gobs')
-    plt.plot(r, wrap_pdf(traj[0], qbin=.1)[0]*wrap_rw(traj[0],gobs, qbin=.1)[1], label='ginitial')
-    plt.plot(r, wrap_pdf(traj[min_pe], qbin=.1)[0]*wrap_rw(traj[-1],gobs, qbin=.1)[1], label='gfinal')
+    plt.plot(r,
+             wrap_pdf(traj[0], qbin=.1)[0] * wrap_rw(traj[0], gobs, qbin=.1)[
+                 1], label='ginitial')
+    plt.plot(r, wrap_pdf(traj[min_pe], qbin=.1)[0] *
+             wrap_rw(traj[-1], gobs, qbin=.1)[1], label='gfinal')
     plt.legend()
     plt.show()
