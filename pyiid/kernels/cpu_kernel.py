@@ -1,10 +1,7 @@
 __author__ = 'christopher'
 import math
-from numbapro import autojit
 from numba import *
 import mkl
-import numpy as np
-import xraylib
 
 targ = 'cpu'
 

@@ -2,8 +2,8 @@ __author__ = 'christopher'
 
 import numpy as np
 from numpy.testing import assert_allclose
-
 from pyiid.kernels.cpu_kernel import *
+from pyiid.kernels.master_kernel import get_scatter_array
 
 
 def test_get_d_array():
@@ -57,7 +57,7 @@ def test_get_r_array():
 
 
 def test_get_scatter_array():
-    scatter_array = np.loadtxt('./pyiid/tests/test_kernels/c60_scat.txt',
+    scatter_array = np.loadtxt('./c60_scat.txt',
                                dtype=np.float32)
     ksa = np.zeros(scatter_array.shape)
     numbers = np.ones(len(ksa), dtype=np.int) * 6
