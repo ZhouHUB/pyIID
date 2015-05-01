@@ -44,7 +44,7 @@ def test_get_d_array():
     """
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
-    n = 60
+    n = 600
     q = np.random.random((n, 3)).astype(np.float32)
     cd = np.zeros((n, n, 3), dtype=np.float32)
     kd = dc(cd)
@@ -57,7 +57,8 @@ def test_get_d_array():
 
     dd = cuda.to_device(kd, stream)
     dq = cuda.to_device(q, stream)
-    get_d_array[bpg, tpb, stream](dd, dq, 0)
+    get_d_array1[bpg, tpb, stream](dd, dq, 0)
+    get_d_array2[bpg, tpb, stream](dd, 0)
     dd.to_host(stream)
 
     assert_allclose(cd, kd)
@@ -70,9 +71,16 @@ def test_get_r_array():
     Test of get_d_array
     """
     from pyiid.kernels.cpu_kernel import get_r_array as comp
+    from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
+    n = 600
+    q = np.random.random((n, 3)).astype(np.float32)
+    cd = np.zeros((n, n, 3), dtype=np.float32)
 
-    d = np.random.random((n, n, 3)).astype(np.float32)
+    # compiled version
+    serial_get_d_array(cd, q)
+    # d = np.random.random((n, n, 3)).astype(np.float32)
+    d = cd
     cr = np.zeros((n, n), dtype=np.float32)
     k_r = dc(cr)
 
@@ -83,9 +91,9 @@ def test_get_r_array():
     stream, bpg, tpb = set_up_gpu(n)
     d_out = cuda.to_device(k_r, stream)
     d_in = cuda.to_device(d, stream)
-    get_r_array[bpg, tpb, stream](d_out, d_in)
+    get_r_array1[bpg, tpb, stream](d_out, d_in)
+    get_r_array2[bpg, tpb, stream](d_out)
     d_out.to_host(stream)
-    print d
 
     assert_allclose(cr, k_r)
 
@@ -106,11 +114,11 @@ def test_get_normalization_array():
     stream, bpg, tpb = set_up_gpu(n, 250)
     dnorm = cuda.to_device(k_norm)
     dscat = cuda.to_device(scat)
-    get_normalization_array[bpg, tpb, stream](dnorm, dscat, 0)
+    get_normalization_array1[bpg, tpb, stream](dnorm, dscat, 0)
+    get_normalization_array2[bpg, tpb, stream](dnorm, 0)
     dnorm.to_host(stream)
 
     assert_allclose(c_norm, k_norm)
-
 
 
 if __name__ == '__main__':

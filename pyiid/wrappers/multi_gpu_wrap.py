@@ -12,8 +12,7 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     # Kernel
     # cuda kernel information
     with gpu:
-        from pyiid.kernels.multi_cuda import get_d_array, \
-            get_normalization_array, get_r_array, get_fq_p0_1_2, get_fq_p3
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, get_fq_p1, get_fq_p3
 
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -22,6 +21,7 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
         # NXN
         elements_per_dim_2 = [m, n]
         tpb_l_2 = [32, 32]
+        # tpb_l_2 = [8, 4]
         bpg_l_2 = []
         for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
             bpg = int(math.ceil(float(e_dim) / tpb))
@@ -33,6 +33,7 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
         # NxNxQ
         elements_per_dim_3 = [m, n, qmax_bin]
         tpb_l_3 = [16, 16, 4]
+        # tpb_l_3 = [4, 4, 2]
         bpg_l_3 = []
         for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
             bpg = int(math.ceil(float(e_dim) / tpb))
@@ -45,17 +46,25 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
 
         dscat = cuda.to_device(scatter_array, stream2)
         dnorm = cuda.to_device(data[2], stream2)
-        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat,
+                                                            n_cov)
+        # get_normalization_array2[bpg_l_3, tpb_l_3, stream2](dnorm, n_cov)
 
         dd = cuda.to_device(data[0], stream)
         dq = cuda.to_device(q, stream)
         dr = cuda.to_device(data[1], stream)
         dfq = cuda.to_device(data[3], stream)
 
-        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
-        get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
+
+        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
+
+        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
         get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
+
         dfq.to_host(stream)
 
         fq_q.append(data[3].sum(axis=(0, 1)))
@@ -63,7 +72,6 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
-
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -81,7 +89,8 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     gpu_total_mem = sum(sort_gmem)
-    total_req_mem = (2*qmax_bin*n*n+qmax_bin*n+4*n*n+3*n)*4
+    total_req_mem = (2 * qmax_bin * n * n + qmax_bin * n
+                     + 4 * n * n + 3 * n) * 4
 
     # starting buffers
     fq_q = []
@@ -94,7 +103,8 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
         # Then the total gpu space is larger than our problem, we should give
         # out atoms by the size of the free memory, giving each gpu some work
         # to do based on its capacity.
-        gpu_m = [int(round(n*float(g_mem)/gpu_total_mem)) for g_mem in sort_gmem]
+        gpu_m = [int(round(n * float(g_mem) / gpu_total_mem)) for g_mem in
+                 sort_gmem]
         for gpu, m in zip(sort_gpus, gpu_m):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 if n_cov >= n:
@@ -115,8 +125,9 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
         # finished.
         while n_cov < n:
             for gpu, mem in zip(sort_gpus, sort_gmem):
-                m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                    8 * n * (qmax_bin + 2))))
+                m = int(
+                    math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
+                        8 * n * (qmax_bin + 2))))
                 if m > n - n_cov:
                     m = n - n_cov
 
@@ -127,8 +138,8 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                         target=sub_fq, args=(
                             gpu, q, scatter_array,
                             fq_q, qmax_bin, qbin, m, n_cov))
-                    p_dict[gpu] = p
                     p.start()
+                    p_dict[gpu] = p
                     n_cov += m
                     # print float(n_cov)/n * 100, '% finished'
                     if n_cov >= n:
@@ -140,7 +151,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     fq = np.zeros(qmax_bin)
     for ele in fq_q:
         fq[:] += ele
-    na = np.average(scatter_array, axis=0)**2 * n
+    na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / na * fq)
     np.seterr(**old_settings)
@@ -156,10 +167,8 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
             (m, n, 3, qmax_bin), (m, n, qmax_bin)]
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
     with gpu:
-        from pyiid.kernels.multi_cuda import get_normalization_array, \
-            get_d_array, get_r_array, get_fq_p0_1_2, get_fq_p3, \
-            fq_grad_position3, fq_grad_position5, fq_grad_position7, \
-            fq_grad_position_final1, fq_grad_position_final2
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, get_fq_p1, get_fq_p3
+        from pyiid.kernels.multi_cuda import fq_grad_position3, fq_grad_position5, fq_grad_position7, fq_grad_position_final1, fq_grad_position_final2
         # cuda info
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -185,26 +194,29 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         dnorm = cuda.to_device(data[2], stream2)
 
         '--------------------------------------------------------------'
-        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
         '--------------------------------------------------------------'
         dd = cuda.to_device(data[0], stream)
         dr = cuda.to_device(data[1], stream)
         dfq = cuda.to_device(data[3], stream)
         dq = cuda.to_device(q, stream)
 
-        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
         # cuda.synchronize()
 
-        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
 
         '--------------------------------------------------------------'
-        get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
         '--------------------------------------------------------------'
         dcos_term = cuda.to_device(data[5], stream2)
         # cuda.synchronize()
 
 
-        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
         fq_grad_position3[bpg_l_3, tpb_l_3, stream3](dcos_term, dr, qbin)
         dgrad_p = cuda.to_device(data[4], stream2)
         # cuda.synchronize()
@@ -244,7 +256,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     gpu_total_mem = sum(sort_gmem)
-    total_req_mem = 6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n
+    total_req_mem = 6 * qmax_bin * n * n + qmax_bin * n + 4 * n * n + 3 * n
 
     grad_q = []
     index_list = []
@@ -257,7 +269,8 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
         # Then the total gpu space is larger than our problem, we should give
         # out atoms by the size of the free memory, giving each gpu some work
         # to do based on its capacity.
-        gpu_m = [int(round(n*float(g_mem)/gpu_total_mem)) for g_mem in sort_gmem]
+        gpu_m = [int(round(n * float(g_mem) / gpu_total_mem)) for g_mem in
+                 sort_gmem]
         for gpu, m in zip(sort_gpus, gpu_m):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 p = Thread(
@@ -273,8 +286,9 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     else:
         while n_cov < n:
             for gpu, mem in zip(sort_gpus, sort_gmem):
-                m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                    8 * n * (3 * qmax_bin + 2))))
+                m = int(
+                    math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
+                        8 * n * (3 * qmax_bin + 2))))
                 if m > n - n_cov:
                     m = n - n_cov
                 if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
@@ -306,7 +320,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     grad_p = grad_p_final
 
     # sum reduce to 1D
-    na = np.average(scatter_array, axis=0)**2 * n
+    na = np.average(scatter_array, axis=0) ** 2 * n
 
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
@@ -329,7 +343,7 @@ if __name__ == '__main__':
     # n = 400
     # pos = np.random.random((n, 3)) * 10.
     # atoms = Atoms('Au' + str(n), pos)
-    atoms = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
+    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms)
 
     fq = wrap_fq(atoms)

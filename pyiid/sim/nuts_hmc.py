@@ -39,7 +39,7 @@ def leapfrog(atoms, step):
 def find_step_size(input_atoms):
     atoms = dc(input_atoms)
     step_size = 1.5
-    '''
+    # '''
     atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
     atoms_prime = leapfrog(atoms, step_size)
