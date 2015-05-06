@@ -12,5 +12,5 @@ setup(
     license='',
     author='Christopher J. Wright',
     author_email='wright1@email.sc.edu',
-    description='', requires=['numpy', 'numba', 'nose']
+    description='', requires=['numpy', 'numba', 'nose', 'mpi4py']
 )

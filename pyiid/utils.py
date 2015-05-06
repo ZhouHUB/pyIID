@@ -10,7 +10,7 @@ from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, GetLa
 from itertools import combinations
 
 import math
-import tkFileDialog
+# import tkFileDialog
 from pyiid.kernels.cpu_kernel import get_d_array
 from copy import deepcopy as dc
 import time
@@ -66,18 +66,28 @@ def load_gr_file(gr_file=None, skiplines=None):
     """
     Load gr files produced from PDFgetx3
     """
+    exp_keys = ['qmax', 'qbin', 'qmin', 'rmin', 'rmax', 'rstep']
     #TODO: also give back the filename
-    if gr_file is None:
-        print 'Open Gr'
-        gr_file = tkFileDialog.askopenfilename()
     if skiplines is None:
-        with open(gr_file) as my_file:
-            for num, line in enumerate(my_file,1):
+        with open(gr_file) as f:
+            exp_dict = {}
+            lines = f.readlines()
+            record = False
+            for num, line in enumerate(lines, 1):
+                if "# End of config" in line:
+                    record = False
+                if record is True and line.startswith(tuple(exp_keys)):
+                    print 'line = ', line
+                    key, val = line.split(' = ')
+                    if key in exp_keys:
+                        exp_dict[key] = float(val)
+                if '# PDF calculation setup' in line:
+                    record = True
                 if '#### start data' in line:
                     skiplines=num+2
                     break
     data = np.loadtxt(gr_file, skiprows=skiplines)
-    return data[:, 0], data[:, 1]
+    return data[:, 0], data[:, 1], exp_dict
 
 
 def convert_stru_to_atoms(stru):

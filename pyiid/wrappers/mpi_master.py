@@ -13,12 +13,9 @@ def gpu_avail(n_nodes):
         args=[avail_loc],
         maxprocs=n_nodes
     )
-    # reports = comm.gather(root=MPI.ROOT)
     ranks =  comm.gather(root=MPI.ROOT)
     mem_list = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
-    # ranks = None
-    # mem_list = None
     return ranks, mem_list
 
 
@@ -40,7 +37,7 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
             msg = (q, scatter_array, qmax_bin, qbin, m, n_cov)
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
-    print 'done master'
+    # print 'done master'
     reports = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
     return reports
