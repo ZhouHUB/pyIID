@@ -22,10 +22,12 @@ if __name__ == '__main__':
         data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
         if total_data is None:
             total_data = np.zeros(data[4].shape)
-        from pyiid.kernels.multi_cuda import get_normalization_array, \
-            get_d_array, get_r_array, get_fq_p0_1_2, get_fq_p3, \
-            fq_grad_position3, fq_grad_position5, fq_grad_position7, \
-            fq_grad_position_final1, fq_grad_position_final2
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+            get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
+            get_fq_p1, get_fq_p3
+        from pyiid.kernels.multi_cuda import fq_grad_position3, \
+            fq_grad_position5, fq_grad_position7, fq_grad_position_final1, \
+            fq_grad_position_final2
         # cuda info
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -51,26 +53,30 @@ if __name__ == '__main__':
         dnorm = cuda.to_device(data[2], stream2)
 
         '--------------------------------------------------------------'
-        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat,
+                                                            n_cov)
         '--------------------------------------------------------------'
         dd = cuda.to_device(data[0], stream)
         dr = cuda.to_device(data[1], stream)
         dfq = cuda.to_device(data[3], stream)
         dq = cuda.to_device(q, stream)
 
-        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
         # cuda.synchronize()
 
-        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
 
         '--------------------------------------------------------------'
-        get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
         '--------------------------------------------------------------'
         dcos_term = cuda.to_device(data[5], stream2)
         # cuda.synchronize()
 
 
-        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
         fq_grad_position3[bpg_l_3, tpb_l_3, stream3](dcos_term, dr, qbin)
         dgrad_p = cuda.to_device(data[4], stream2)
         # cuda.synchronize()
@@ -87,6 +93,8 @@ if __name__ == '__main__':
 
         fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
         dgrad_p.to_host(stream)
+
+
         total_data += data[4]
         n_cov_list.append(n_cov)
         del data, dscat, dnorm, dd, dr, dfq, dcos_term, dgrad_p

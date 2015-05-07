@@ -12,7 +12,9 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     # Kernel
     # cuda kernel information
     with gpu:
-        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, get_fq_p1, get_fq_p3
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+            get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
+            get_fq_p1, get_fq_p3
 
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -167,8 +169,12 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
             (m, n, 3, qmax_bin), (m, n, qmax_bin)]
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
     with gpu:
-        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, get_fq_p1, get_fq_p3
-        from pyiid.kernels.multi_cuda import fq_grad_position3, fq_grad_position5, fq_grad_position7, fq_grad_position_final1, fq_grad_position_final2
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+            get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
+            get_fq_p1, get_fq_p3
+        from pyiid.kernels.multi_cuda import fq_grad_position3, \
+            fq_grad_position5, fq_grad_position7, fq_grad_position_final1, \
+            fq_grad_position_final2
         # cuda info
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -194,7 +200,8 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         dnorm = cuda.to_device(data[2], stream2)
 
         '--------------------------------------------------------------'
-        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat,
+                                                            n_cov)
         '--------------------------------------------------------------'
         dd = cuda.to_device(data[0], stream)
         dr = cuda.to_device(data[1], stream)

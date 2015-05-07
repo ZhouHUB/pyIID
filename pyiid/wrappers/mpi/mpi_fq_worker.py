@@ -17,10 +17,11 @@ if __name__ == '__main__':
         n = len(q)
         tups = [(m, n, 3), (m, n), (m, n, qmax_bin), (m, n, qmax_bin)]
         data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
-        #start GPU Processing
+        # start GPU Processing
         #import kernels
-        from pyiid.kernels.multi_cuda import get_d_array, \
-            get_normalization_array, get_r_array, get_fq_p0_1_2, get_fq_p3
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+            get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
+            get_fq_p1, get_fq_p3
 
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -52,17 +53,25 @@ if __name__ == '__main__':
 
         dscat = cuda.to_device(scatter_array, stream2)
         dnorm = cuda.to_device(data[2], stream2)
-        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat,
+                                                            n_cov)
+        # get_normalization_array2[bpg_l_3, tpb_l_3, stream2](dnorm, n_cov)
 
         dd = cuda.to_device(data[0], stream)
         dq = cuda.to_device(q, stream)
         dr = cuda.to_device(data[1], stream)
         dfq = cuda.to_device(data[3], stream)
 
-        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
-        get_fq_p0_1_2[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
+
+        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
+
+        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
         get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
+
         dfq.to_host(stream)
 
         #Return Finished Data
