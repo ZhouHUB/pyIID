@@ -6,7 +6,7 @@ from pyiid.wrappers.master_wrap import wrap_atoms
 
 n = 40
 
-
+'''
 def test_pdf0():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
@@ -120,7 +120,7 @@ def test_grad_pdf1():
 
     return
 
-
+'''
 if __name__ == '__main__':
     import nose
 

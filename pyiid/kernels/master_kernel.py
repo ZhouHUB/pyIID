@@ -5,7 +5,7 @@ from numba import *
 import mkl
 import numpy as np
 import xraylib
-from numpy.testing import assert_allclose
+# from numpy.testing import assert_allclose
 
 targ = 'cpu'
 
@@ -75,7 +75,7 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid):
         wplo = 1.0 - wphi
         pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
     pdf1 = pdf0 * 2
-    assert_allclose(pdf1.real**2, pdf1**2)
+    # assert_allclose(pdf1.real**2, pdf1**2)
     return pdf1.real
     # return gpad
 
