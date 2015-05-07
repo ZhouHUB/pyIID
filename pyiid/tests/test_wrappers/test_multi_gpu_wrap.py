@@ -50,10 +50,10 @@ def test_grad_fq():
 # '''
 
 if __name__ == '__main__':
-    # import nose
-    # nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    import nose
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
 
-    # '''
+    '''
     import matplotlib.pyplot as plt
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
