@@ -78,11 +78,11 @@ try:
 except :
     pass
 '''
-# f_name_list = [('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f), ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)]
-# for f_str, lst in f_name_list:
-#     with open(f_str, 'w') as f:
-#         pickle.dump(lst, f)
-
+f_name_list = [('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f), ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)]
+for f_str, lst in f_name_list:
+    with open(f_str, 'w') as f:
+        pickle.dump(lst, f)
+#
 # plt.plot(cpu_sizes, cpu_e, 'bo', label='cpu energy')
 # plt.plot(sizes, cpu_f, 'bs', label='cpu force')
 
@@ -92,5 +92,5 @@ plt.legend(loc=2)
 plt.xlabel('NP diameter in Angstrom')
 plt.ylabel('time (s) [lower is better]')
 plt.title('Scaling of algorithm')
-# plt.savefig('speed.eps', bbox_inches='tight', transparent=True)
+plt.savefig('gpu_speed.eps', bbox_inches='tight', transparent=True)
 plt.show()

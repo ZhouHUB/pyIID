@@ -3,14 +3,13 @@ from distutils.core import setup
 setup(
     name='pyIID',
     version='',
-    packages=['pyiid', 'pyiid.sim', 'pyiid.calc', 'pyiid.tests',
-              'pyiid.tests.test_kernels', 'pyiid.tests.test_wrappers',
-              'pyiid.kernels',
-              'pyiid.testing', 'pyiid.wrappers', 'pyiid.wrappers.mpi',
-              ],
+    packages=['extra', 'pyiid', 'pyiid.sim', 'pyiid.calc', 'pyiid.tests',
+              'pyiid.tests.test_cpu', 'pyiid.tests.test_gpu',
+              'pyiid.tests.test_master', 'pyiid.kernels', 'pyiid.testing',
+              'pyiid.wrappers', 'pyiid.wrappers.mpi'],
     url='',
     license='',
     author='Christopher J. Wright',
     author_email='wright1@email.sc.edu',
-    description='', requires=['numpy', 'numba', 'nose', 'mpi4py']
+    description=''
 )
