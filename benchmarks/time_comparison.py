@@ -2,9 +2,8 @@ __author__ = 'christopher'
 from ase.atoms import Atoms
 import ase.io as aseio
 
-from pyiid.wrappers.cpu_wrap import wrap_atoms
+from pyiid.wrappers.master_wrap import wrap_atoms, wrap_rw, wrap_pdf
 from pyiid.calc.pdfcalc import PDFCalc
-from pyiid.wrappers.multi_gpu_wrap import wrap_rw, wrap_pdf
 from pyiid.utils import build_sphere_np
 
 import matplotlib.pyplot as plt
@@ -18,7 +17,7 @@ atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
 
 wrap_atoms(atoms)
 atoms2 = dc(atoms)
-pdf, fq = wrap_pdf(atoms, qmin=0.0, qbin=.1)
+pdf = wrap_pdf(atoms, qmin=0.0, qbin=.1)
 
 
 atoms.positions *= .95
@@ -78,7 +77,10 @@ try:
 except :
     pass
 '''
-f_name_list = [('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f), ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)]
+f_name_list = [
+    # ('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f),
+    ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)
+]
 for f_str, lst in f_name_list:
     with open(f_str, 'w') as f:
         pickle.dump(lst, f)
@@ -93,4 +95,5 @@ plt.xlabel('NP diameter in Angstrom')
 plt.ylabel('time (s) [lower is better]')
 plt.title('Scaling of algorithm')
 plt.savefig('gpu_speed.eps', bbox_inches='tight', transparent=True)
+plt.savefig('gpu_speed.png', bbox_inches='tight', transparent=True)
 plt.show()
