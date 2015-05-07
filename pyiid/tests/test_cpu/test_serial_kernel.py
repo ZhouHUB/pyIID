@@ -8,7 +8,7 @@ from pyiid.kernels.master_kernel import get_scatter_array
 
 def test_get_d_array():
     """
-    Test of get_d_array
+    Test of serial get_d_array
     """
 
     # prep data

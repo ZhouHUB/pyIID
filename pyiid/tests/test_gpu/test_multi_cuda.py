@@ -1,8 +1,9 @@
 __author__ = 'christopher'
-
 import numpy as np
 from numpy.testing import assert_allclose
 from copy import deepcopy as dc
+import sys
+sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.multi_cuda import *
 n = 600
@@ -40,7 +41,7 @@ def set_up_gpu(n, qmax_bin=None):
 
 def test_get_d_array():
     """
-    Test of get_d_array
+    Test of cuda get_d_array
     """
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
@@ -68,7 +69,7 @@ def test_get_d_array():
 
 def test_get_r_array():
     """
-    Test of get_d_array
+    Test of cuda get_d_array
     """
     from pyiid.kernels.cpu_kernel import get_r_array as comp
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array

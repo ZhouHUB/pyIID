@@ -16,11 +16,12 @@ install:
   - conda create -n testenv --yes pip nose python=$TRAVIS_PYTHON_VERSION xraylib numpy scipy six numba mkl matplotlib numbapro mpi4py
   - source activate testenv
   - pip install python-ase
+  - pip install nose-exclude
   - python setup.py install
   - pip install coveralls
 
 script:
-  - python run_tests.py
+  - python run_tests.py -v -d
 
 after_success:
   coveralls
