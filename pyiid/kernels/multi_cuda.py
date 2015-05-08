@@ -362,3 +362,29 @@ def fq_grad_position_final2(grad_p, cos_term):
         return
     for tz in range(3):
         grad_p[tx, ty, tz, kq] *= cos_term[tx, ty, kq]
+
+# General Kernels ------------------------------------------------------------
+@cuda.jit(argtypes=[f4[:], f4[:, :, :]])
+def gpu_reduce_3D_to_1D(reduced, A):
+
+    N = A.shape[0]
+    threadi = cuda.grid(1)
+
+    if threadi >= A.shape[2]:
+        return
+
+    for k in range(N):
+        for l in range(N):
+            reduced[threadi] += A[k, l, threadi]
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:, :, :, :]])
+def gpu_reduce_4D_to_3D(reduced, A):
+
+    imax, N, jmax, kmax = A.shape
+    i, j, k = cuda.grid(3)
+
+    if i >= imax or j >= jmax or k >= kmax:
+        return
+
+    for l in range(N):
+        reduced[i, j, k] += A[i, l, j, k]
