@@ -377,6 +377,33 @@ def gpu_reduce_3D_to_1D(reduced, A):
         for l in range(N):
             reduced[threadi] += A[k, l, threadi]
 
+
+@cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
+def gpu_reduce_3D_to_2D(reduced, A):
+
+    N = A.shape[0]
+    threadi, threadj = cuda.grid(2)
+
+    if threadi >= A.shape[0] or threadj >= A.shape[2]:
+        return
+
+    for k in range(N):
+        reduced[threadi, threadj] += A[k, threadi, threadj]
+
+
+@cuda.jit(argtypes=[f4[:], f4[:, :]])
+def gpu_reduce_2D_to_1D(reduced, A):
+
+    N = A.shape[0]
+    threadi = cuda.grid(1)
+
+    if threadi >= A.shape[2]:
+        return
+
+    for k in range(N):
+        reduced[threadi] += A[k, threadi]
+
+
 @cuda.jit(argtypes=[f4[:,:,:], f4[:, :, :, :]])
 def gpu_reduce_4D_to_3D(reduced, A):
 
