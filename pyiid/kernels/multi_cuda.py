@@ -204,9 +204,9 @@ def get_normalization_array1(norm_array, scat, offset):
     n = norm_array.shape[1]
     qmax_bin = norm_array.shape[2]
 
-    if tx >= m or ty >= n or kq >= qmax_bin:
-        return
     if tx > ty:
+        return
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
 
@@ -230,9 +230,9 @@ def get_normalization_array2(norm_array, offset):
     n = norm_array.shape[1]
     qmax_bin = norm_array.shape[2]
 
-    if tx >= m or ty >= n or kq >= qmax_bin:
-        return
     if tx <= ty:
+        return
+    if tx >= m or ty >= n or kq >= qmax_bin:
         return
     norm_array[tx, ty, kq] = norm_array[ty, tx + offset, kq]
 
@@ -372,36 +372,49 @@ def gpu_reduce_3D_to_1D(reduced, A):
 
     if threadi >= A.shape[2]:
         return
-
+    tmp = 0.0
     for k in range(N):
         for l in range(N):
-            reduced[threadi] += A[k, l, threadi]
-
+            tmp += A[k, l, threadi]
+            # reduced[threadi] += A[k, l, threadi]
+    reduced[threadi] += tmp
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
 def gpu_reduce_3D_to_2D(reduced, A):
 
-    N = A.shape[0]
     threadi, threadj = cuda.grid(2)
 
     if threadi >= A.shape[0] or threadj >= A.shape[2]:
         return
 
+    N = A.shape[1]
+    # tmp = cuda.local.array(1, float32)
+    # tmp[0] = 0.0
+    tmp = 0.0
     for k in range(N):
-        reduced[threadi, threadj] += A[k, threadi, threadj]
-
+        # tmp[0] += A[threadi, k, threadj]
+        tmp += A[threadi, k, threadj]
+    # reduced[threadi, threadj] = tmp[0]
+    reduced[threadi, threadj] = tmp
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def gpu_reduce_2D_to_1D(reduced, A):
 
-    N = A.shape[0]
     threadi = cuda.grid(1)
 
-    if threadi >= A.shape[2]:
+    if threadi >= A.shape[1]:
         return
 
+    N = A.shape[0]
+    # tmp = cuda.local.array(1, float32)
+    # tmp[0] = 0.0
+    tmp = 0.0
     for k in range(N):
-        reduced[threadi] += A[k, threadi]
+        # tmp[0] += A[k, threadi]
+        tmp += A[k, threadi]
+
+    # reduced[threadi] = tmp[0]
+    reduced[threadi] = tmp
 
 
 @cuda.jit(argtypes=[f4[:,:,:], f4[:, :, :, :]])
@@ -412,6 +425,9 @@ def gpu_reduce_4D_to_3D(reduced, A):
 
     if i >= imax or j >= jmax or k >= kmax:
         return
-
+    # tmp = 0.0
+    # for l in range(N):
+    #     tmp += A[i, l, j, k]
+    # reduced[i, j, k] = tmp
     for l in range(N):
         reduced[i, j, k] += A[i, l, j, k]

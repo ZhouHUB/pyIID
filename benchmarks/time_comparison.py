@@ -38,7 +38,7 @@ cpu_e = []
 multi_gpu_f = []
 multi_gpu_e = []
 try:
-    for i in range(10, 105, 5):
+    for i in range(50, 55, 5):
         atoms = build_sphere_np('/mnt/work-data/dev/pyIID/benchmarks/1100138.cif', float(i) / 2)
         wrap_atoms(atoms)
         atoms.rattle()
@@ -77,6 +77,8 @@ try:
 except :
     pass
 '''
+print multi_gpu_e
+AAA
 f_name_list = [
     # ('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f),
     ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)

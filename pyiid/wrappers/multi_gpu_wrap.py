@@ -89,18 +89,20 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
 
         final = np.zeros(qmax_bin, dtype=np.float32)
         dfinal = cuda.to_device(final, stream2)
-        dfinal_2D = cuda.device_array((n, qmax_bin), dtype=np.float32,
-                                      stream=stream2)
+
+        # dfinal_2D = cuda.device_array((n, qmax_bin), dtype=np.float32, stream=stream2)
+
         get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
         get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
         get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
 
-        gpu_reduce_3D_to_2D[bpg_l_2_q, tpb_l_2_q, stream](dfinal_2D, dfq)
-        gpu_reduce_2D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfinal_2D)
+        # gpu_reduce_3D_to_2D[bpg_l_2_q, tpb_l_2_q, stream](dfinal_2D, dfq)
+        # gpu_reduce_2D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfinal_2D)
 
-        # gpu_reduce_3D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfq)
+        gpu_reduce_3D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfq)
 
         dfinal.to_host(stream)
+        # print final
         fq_q.append(final)
         del data, dscat, dnorm, dd, dq, dr, dfq, final, dfinal
 

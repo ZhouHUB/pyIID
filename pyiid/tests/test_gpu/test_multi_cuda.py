@@ -6,7 +6,7 @@ import sys
 sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.multi_cuda import *
-n = 600
+n = 1000
 
 
 def set_up_gpu(n, qmax_bin=None):
@@ -45,7 +45,7 @@ def test_get_d_array():
     """
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
-    n = 600
+    # n = 600
     q = np.random.random((n, 3)).astype(np.float32)
     cd = np.zeros((n, n, 3), dtype=np.float32)
     kd = dc(cd)
@@ -69,12 +69,12 @@ def test_get_d_array():
 
 def test_get_r_array():
     """
-    Test of cuda get_d_array
+    Test of get_d_array
     """
     from pyiid.kernels.cpu_kernel import get_r_array as comp
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
-    n = 600
+    # n = 600
     q = np.random.random((n, 3)).astype(np.float32)
     cd = np.zeros((n, n, 3), dtype=np.float32)
 
