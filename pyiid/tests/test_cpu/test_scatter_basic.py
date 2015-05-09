@@ -17,10 +17,10 @@ def test_scatter():
             atoms = setup_atoms(int(n))
             fq = scat.fq(atoms)
             assert fq is not None
-            assert fq != np.zeros(fq.shape)
+            assert not np.all(fq)
             pdf = scat.pdf(atoms)
             assert pdf is not None
-            assert pdf != np.zeros(pdf.shape)
+            assert not np.all(pdf)
 
 @known_fail_if(True)
 def test_gpu_scatter_fail():
