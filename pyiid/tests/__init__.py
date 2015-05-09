@@ -6,7 +6,7 @@ from pyiid.wrappers.master_wrap import wrap_atoms
 
 def setup_atoms(n):
     q = np.random.random((n, 3)) * 10
-    atoms = Atoms('Au' + n, q)
+    atoms = Atoms('Au' + str(n), q)
     wrap_atoms(atoms)
     return atoms
 
