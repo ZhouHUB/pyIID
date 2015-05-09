@@ -53,7 +53,7 @@ def test_grad_fq():
         assert_allclose(gpu, cpu)
 
 
-def test_pdf():
+def test_grad_pdf():
     scat = Scatter()
     for n in np.logspace(1, 3, 3):
         atoms = setup_atoms(n)
