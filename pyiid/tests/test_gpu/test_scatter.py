@@ -15,7 +15,7 @@ def test_fq():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(n)
+            atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
             gpu = scat.fq(atoms)
             scat.set_processor('Serial-CPU')
@@ -32,7 +32,7 @@ def test_pdf():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(n)
+            atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
             gpu = scat.pdf(atoms)
             scat.set_processor('Serial-CPU')
@@ -49,7 +49,7 @@ def test_grad_fq():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(n)
+            atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
             gpu = scat.grad_fq(atoms)
             scat.set_processor('Serial-CPU')
@@ -65,7 +65,7 @@ def test_grad_pdf():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(n)
+            atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
             gpu = scat.grad_pdf(atoms)
             scat.set_processor('Serial-CPU')

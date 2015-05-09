@@ -13,7 +13,7 @@ def test_scatter():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(n)
+            atoms = setup_atoms(int(n))
             fq = scat.fq(atoms)
             assert fq is not None
             assert fq != np.zeros(fq.shape)
