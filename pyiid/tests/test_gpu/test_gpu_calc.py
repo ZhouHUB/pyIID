@@ -3,7 +3,7 @@ from numpy.testing import assert_allclose
 import numpy as np
 
 from pyiid.wrappers.scatter import Scatter
-from pyiid.tests.test_gpu.test_scatter import setup_atoms, generate_experiment
+from pyiid.tests import setup_atoms, generate_experiment
 from pyiid.calc.oo_pdfcalc import PDFCalc
 
 
