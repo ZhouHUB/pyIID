@@ -28,8 +28,8 @@ def get_d_array1(d, q, offset):
         return
     for tz in range(3):
         d[tx, ty, tz] = q[ty, tz] - q[tx + offset, tz]
-        d[ty, tx, tz] = -1*d[tx, ty, tz]
-'''
+        # d[ty, tx, tz] = -1*d[tx, ty, tz]
+
 @cuda.jit(argtypes=[f4[:, :, :], i4])
 def get_d_array2(d, offset):
     """
@@ -52,7 +52,7 @@ def get_d_array2(d, offset):
         return
     for tz in range(3):
         d[tx, ty, tz] = -1*d[ty, tx+offset, tz]
-'''
+
 @cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
 def get_r_array1(r, d):
     """
@@ -78,8 +78,8 @@ def get_r_array1(r, d):
         return
     r[tx, ty] = math.sqrt(
         d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
-    r[ty, tx] = r[tx, ty]
-'''
+    # r[ty, tx] = r[tx, ty]
+
 @cuda.jit(argtypes=[f4[:, :]])
 def get_r_array2(r):
     """
@@ -104,7 +104,7 @@ def get_r_array2(r):
     if tx <= ty:
         return
     r[tx, ty] = r[ty, tx]
-'''
+
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
 # @cuda.jit(argtypes=[f8[:, :, :], f8[:, :], f4])
 def get_fq_p0(fq, r, qbin):
@@ -211,9 +211,9 @@ def get_normalization_array1(norm_array, scat, offset):
     if tx >= m or ty >= n or kq >= qmax_bin:
         return
     norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
-    norm_array[ty, tx, kq] = norm_array[tx, ty, kq]
+    # norm_array[ty, tx, kq] = norm_array[tx, ty, kq]
 
-'''
+
 @cuda.jit(argtypes=[f4[:, :, :], i4])
 def get_normalization_array2(norm_array, offset):
     """
@@ -238,7 +238,7 @@ def get_normalization_array2(norm_array, offset):
     if tx >= m or ty >= n or kq >= qmax_bin:
         return
     norm_array[tx, ty, kq] = norm_array[ty, tx + offset, kq]
-'''
+
 # Gradient kernels -----------------------------------------------------------
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
