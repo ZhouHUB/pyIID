@@ -45,13 +45,19 @@ class Scatter(object):
     def __init__(self, exp_dict=None):
         # Currently supported processor architectures
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'Serial-CPU']
+        # Should be read in from the gr file, but if not here are some defaults
         if exp_dict is None or bool(exp_dict) is False:
             exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
                         'rmax': 40.0, 'rstep': .01}
+        # Technically we should use this for qbin:
+        #  self.qbin = np.pi / (rmax + 6 * 2 * np.pi / qmax)
         self.exp = exp_dict
+        # Just in case something blows up down the line
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
-        self.processor = self.set_processor()
+        self.processor = 'Serial-CPU'
+        # Get the fastest processor architecture available
+        self.set_processor()
 
     def set_processor(self, processor=None):
         """
@@ -122,7 +128,8 @@ class Scatter(object):
             (len(atoms), 3, self.exp['rmax'] / self.exp['rstep']))
         grad_pdf(pdf_grad, fq_grad, self.exp['rstep'], self.exp['qbin'],
                  np.arange(0, self.exp['rmax'], self.exp['rstep']))
-        return pdf_grad[:, :, math.floor(self.exp['rmin'] / self.exp['rstep']):]
+        return pdf_grad[:, :,
+               math.floor(self.exp['rmin'] / self.exp['rstep']):]
 
 
 if __name__ == '__main__':
