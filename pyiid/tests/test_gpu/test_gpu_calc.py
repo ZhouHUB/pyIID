@@ -1,22 +1,111 @@
 __author__ = 'christopher'
-from ase.atoms import Atoms
+from numpy.testing import assert_allclose
 import numpy as np
 
 from pyiid.wrappers.scatter import Scatter
+from pyiid.tests.test_gpu.test_scatter import setup_atoms, generate_experiment
+from pyiid.calc.oo_pdfcalc import PDFCalc
 
-
-def setup_atoms(n):
-    q = np.random.random((n, 3)) * 10
-    atoms = Atoms('Au' + n, q)
-    return atoms
-
-
-def generate_experiment():
-    exp_dict = {'qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep'}
-    exp_ranges = [(0, 1.5), (19., 25.), (.8, .12), (0., 2.5), (30., 50.),
-                  (.005, .015)]
-
-    for n, k in enumerate(exp_dict):
-        exp_dict[k] = np.random.uniform(exp_ranges[n][0], exp_ranges[n][1])
 
 def test_calc_rw():
+    # Test a random set of experimental parameters
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(n)
+            atoms2 = setup_atoms(n)
+
+            scat.set_processor('Multi-GPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            gpu = calc.calculate_energy(atoms2)
+
+            scat.set_processor('Serial-CPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            cpu = calc.calculate_energy(atoms2)
+
+            assert_allclose(gpu, cpu)
+
+
+def test_calc_chi_sq():
+    # Test a random set of experimental parameters
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(n)
+            atoms2 = setup_atoms(n)
+
+            scat.set_processor('Multi-GPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            gpu = calc.calculate_energy(atoms2)
+
+            scat.set_processor('Serial-CPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            cpu = calc.calculate_energy(atoms2)
+
+            assert_allclose(gpu, cpu)
+
+
+def test_calc_grad_rw():
+    # Test a random set of experimental parameters
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(n)
+            atoms2 = setup_atoms(n)
+
+            scat.set_processor('Multi-GPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            gpu = calc.calculate_forces(atoms2)
+
+            scat.set_processor('Serial-CPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            cpu = calc.calculate_forces(atoms2)
+
+            assert_allclose(gpu, cpu)
+
+
+def test_calc_grad_chi_sq():
+    # Test a random set of experimental parameters
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(n)
+            atoms2 = setup_atoms(n)
+
+            scat.set_processor('Multi-GPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            gpu = calc.calculate_forces(atoms2)
+
+            scat.set_processor('Serial-CPU')
+            gobs = scat.pdf(atoms)
+            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            cpu = calc.calculate_forces(atoms2)
+
+            assert_allclose(gpu, cpu)
