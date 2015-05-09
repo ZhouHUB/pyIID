@@ -30,12 +30,5 @@ def test_gpu_scatter_fail():
         else:
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
-        # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(int(n))
-            fq = scat.fq(atoms)
-            assert fq is not None
-            assert fq != np.zeros(fq.shape)
-            pdf = scat.pdf(atoms)
-            assert pdf is not None
-            assert pdf != np.zeros(pdf.shape)
+        scat.set_processor('Multi-GPU')
+        assert scat.processor == 'Multi-GPU'
