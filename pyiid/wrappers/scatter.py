@@ -98,10 +98,10 @@ class Scatter(object):
             self.grad = cpu_wrap_fq_grad
             self.processor = processor
 
-    def fq(self, atoms):
+    def get_fq(self, atoms):
         return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
 
-    def pdf(self, atoms):
+    def get_pdf(self, atoms):
         fq = self.fq(atoms)
         fq[:int(self.exp['qmin'] / self.exp['qbin'])] = 0
         pdf0 = get_pdf_at_qmin(fq, self.exp['rstep'], self.exp['qbin'],
@@ -111,18 +111,18 @@ class Scatter(object):
             self.exp['rmax'] / self.exp['rstep'])]
         return pdf
 
-    def sq(self, atoms):
+    def get_sq(self, atoms):
         fq = self.fq(atoms)
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
         return fq / scatter_vector + np.ones(len(scatter_vector))
 
-    def iq(self, atoms):
-        return self.sq(atoms) * np.average(atoms.get_array('scatter')) ** 2
+    def get_iq(self, atoms):
+        return self.get_sq(atoms) * np.average(atoms.get_array('scatter')) ** 2
 
-    def grad_fq(self, atoms):
+    def get_grad_fq(self, atoms):
         return self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
 
-    def grad_pdf(self, atoms):
+    def get_grad_pdf(self, atoms):
         fq_grad = self.grad(atoms)
         qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
         for tx in range(len(atoms)):
@@ -148,6 +148,6 @@ if __name__ == '__main__':
     # scat.set_processor('Serial-CPU')
     scat.set_processor()
     print scat.processor
-    print scat.grad_fq(atoms)
-    plt.plot(scat.iq(atoms))
+    print scat.get_grad_fq(atoms)
+    plt.plot(scat.get_iq(atoms))
     plt.show()

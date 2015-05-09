@@ -15,7 +15,7 @@ def test_scatter_fq():
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
-            fq = scat.fq(atoms)
+            fq = scat.get_fq(atoms)
             assert fq is not None
             assert np.all(fq)
 
@@ -30,7 +30,7 @@ def test_scatter_pdf():
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
-            pdf = scat.pdf(atoms)
+            pdf = scat.get_pdf(atoms)
             assert pdf is not None
             assert np.all(pdf)
 

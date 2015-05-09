@@ -34,9 +34,9 @@ def test_pdf():
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
-            gpu = scat.pdf(atoms)
+            gpu = scat.get_pdf(atoms)
             scat.set_processor('Serial-CPU')
-            cpu = scat.pdf(atoms)
+            cpu = scat.get_pdf(atoms)
 
             assert_allclose(gpu, cpu)
 
@@ -51,9 +51,9 @@ def test_grad_fq():
         for n in np.logspace(1, 4, 4):
             atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
-            gpu = scat.grad_fq(atoms)
+            gpu = scat.get_grad_fq(atoms)
             scat.set_processor('Serial-CPU')
-            cpu = scat.grad_fq(atoms)
+            cpu = scat.get_grad_fq(atoms)
             assert_allclose(gpu, cpu)
 
 
@@ -67,9 +67,9 @@ def test_grad_pdf():
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
-            gpu = scat.grad_pdf(atoms)
+            gpu = scat.get_grad_pdf(atoms)
             scat.set_processor('Serial-CPU')
-            cpu = scat.grad_pdf(atoms)
+            cpu = scat.get_grad_pdf(atoms)
             assert_allclose(gpu, cpu)
 
 if __name__ == '__main__':
