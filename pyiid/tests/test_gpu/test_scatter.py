@@ -17,9 +17,9 @@ def test_fq():
         for n in np.logspace(1, 4, 4):
             atoms = setup_atoms(int(n))
             scat.set_processor('Multi-GPU')
-            gpu = scat.fq(atoms)
+            gpu = scat.get_fq(atoms)
             scat.set_processor('Serial-CPU')
-            cpu = scat.fq(atoms)
+            cpu = scat.get_fq(atoms)
 
             assert_allclose(gpu, cpu)
 
