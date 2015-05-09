@@ -1,5 +1,4 @@
 __author__ = 'christopher'
-import os
 from numba import cuda
 import numpy as np
 import math
@@ -45,17 +44,22 @@ class Scatter(object):
     def __init__(self, exp_dict=None):
         # Currently supported processor architectures
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'Serial-CPU']
+
         # Should be read in from the gr file, but if not here are some defaults
         if exp_dict is None or bool(exp_dict) is False:
             exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
                         'rmax': 40.0, 'rstep': .01}
+
         # Technically we should use this for qbin:
-        #  self.qbin = np.pi / (rmax + 6 * 2 * np.pi / qmax)
+        # self.qbin = np.pi / (rmax + 6 * 2 * np.pi / qmax)
+
         self.exp = exp_dict
+
         # Just in case something blows up down the line
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
         self.processor = 'Serial-CPU'
+
         # Get the fastest processor architecture available
         self.set_processor()
 
@@ -72,7 +76,7 @@ class Scatter(object):
         """
         # If a processor is given try to use that processor, but check if it is
         # viable first.
-        # print processor
+
         if processor is None:
             # Test each processor in order of most advanced to least
             for pro in self.avail_pro:
@@ -135,7 +139,6 @@ class Scatter(object):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from pyiid.wrappers.master_wrap import wrap_atoms
-    import os
     import matplotlib.pyplot as plt
 
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
@@ -146,5 +149,5 @@ if __name__ == '__main__':
     scat.set_processor()
     print scat.processor
     print scat.grad_fq(atoms)
-    # plt.plot(scat.iq(atoms))
-    # plt.show()
+    plt.plot(scat.iq(atoms))
+    plt.show()

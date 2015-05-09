@@ -1,32 +1,187 @@
 __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
-from pyiid.wrappers.master_wrap import wrap_chi_sq, wrap_grad_chi_sq, wrap_rw, wrap_grad_rw
+
+from pyiid.wrappers.scatter import Scatter
+from pyiid.kernels.master_kernel import get_rw, grad_pdf, get_grad_rw, \
+    get_chi_sq, get_grad_chi_sq
+
+
+def wrap_rw(gcalc, gobs):
+    """
+    Generate the Rw value
+
+    Parameters
+    -----------
+    :param gcalc:
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+
+    rw: float
+        The Rw value in percent
+    scale: float
+        The scale factor between the observed and calculated PDF
+    pdf0:1darray
+        The atomic pair distributuion function
+    fq:1darray
+        The reduced structure function
+    """
+    rw, scale = get_rw(gobs, gcalc, weight=None)
+    return rw, scale
+
+
+def wrap_chi_sq(gcalc, gobs):
+    """
+    Generate the Rw value
+
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+
+    rw: float
+        The Rw value in percent
+    scale: float
+        The scale factor between the observed and calculated PDF
+    pdf0:1darray
+        The atomic pair distributuion function
+    fq:1darray
+        The reduced structure function
+    """
+    rw, scale = get_chi_sq(gobs, gcalc)
+    return rw, scale
+
+
+def wrap_grad_rw(grad_gcalc, gcalc, gobs):
+    """
+    Generate the Rw value gradient
+
+    Parameters
+    -----------
+    :param grad_gcalc:
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+
+    grad_rw: float
+        The gradient of the Rw value with respect to the atomic positions,
+        in percent
+
+    """
+    rw, scale = wrap_rw(gcalc, gobs)
+    grad_rw = np.zeros((len(gcalc), 3))
+    get_grad_rw(grad_rw, grad_gcalc, gcalc, gobs, rw, scale, weight=None)
+    return grad_rw
+
+
+def wrap_grad_chi_sq(grad_gcalc, gcalc, gobs):
+    """
+    Generate the Rw value gradient
+
+    Parameters
+    -----------
+    :param gcalc:
+    atoms: ase.Atoms
+        The atomic configuration
+    gobs: 1darray
+        The observed atomic pair distributuion function
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+    rmax: float
+        Maximum r value
+    rstep: float
+        Size between r values
+
+    Returns
+    -------
+
+    grad_chi_sq: float
+        The gradient of the Rw value with respect to the atomic positions,
+        in percent
+
+    """
+    chi_sq, scale = wrap_chi_sq(gcalc, gobs)
+    grad_chi_sq = np.zeros((len(grad_gcalc), 3))
+    get_grad_chi_sq(grad_chi_sq, grad_gcalc, gcalc, gobs, scale)
+    return grad_chi_sq
 
 
 class PDFCalc(Calculator):
     """
-    Class for doing PDF based RW calculations
+    Class for doing PDF based RW/chi**2 calculations
     """
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 atoms=None, gobs=None, conv=1., potential='chi_sq',
-                 **kwargs):
+                 atoms=None, gobs=None, scatter=Scatter(), conv=1.,
+                 potential='chi_sq', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
+        self.scatter = scatter
         self.rw_to_eV = conv
+
         if gobs is not None:
             self.gobs = gobs
         else:
             raise NotImplementedError('Need an experimental PDF')
+
         if potential == 'chi_sq':
             self.potential = wrap_chi_sq
             self.grad = wrap_grad_chi_sq
-        else:
+        elif potential == 'rw':
             self.potential = wrap_rw
             self.grad = wrap_grad_rw
+        else:
+            raise NotImplementedError('Potential not implemented')
 
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
@@ -67,23 +222,18 @@ class PDFCalc(Calculator):
         :param atoms:
         :return:
         """
-        '''energy, scale, gcalc, fq = self.wrap_rw(atoms, self.gobs, self.qmax,
-                                           self.qmin, self.qbin, self.rmax,
-                                           self.rbin)'''
-        energy, scale, gcalc = self.potential(atoms, self.gobs,
-                                                  self.qmax, self.qmin,
-                                                  self.qbin, self.rmin,
-                                                  self.rmax, self.rbin)
+        energy, scale = self.potential(self.scatter.pdf(atoms), self.gobs)
         self.energy_free = energy * self.rw_to_eV
         self.energy_zero = energy * self.rw_to_eV
         self.results['energy'] = energy * self.rw_to_eV
 
     def calculate_forces(self, atoms):
         self.results['forces'] = np.zeros((len(atoms), 3))
-        forces = self.grad(atoms, self.gobs, self.qmax, self.qmin, self.qbin,
-                              self.rmin, self.rmax, self.rbin) * self.rw_to_eV
+        forces = self.grad(self.scatter.grad_pdf(atoms),
+                           self.gobs) * self.rw_to_eV
 
         self.results['forces'] = forces
+
 
 if __name__ == '__main__':
     from ase.atoms import Atoms
