@@ -44,10 +44,10 @@ def find_step_size(input_atoms):
 
     atoms_prime = leapfrog(atoms, step_size)
 
-    a = 2 * (np.exp(
-        -1 * atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
-    while (np.exp(
-                    -1 * atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
+    a = 2 * (np.exp(-1 * atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
+
+    while (np.exp(-1 * atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
+        print 'initial step size', a
         step_size *= 2 ** a
         atoms_prime = leapfrog(atoms, step_size)
     # '''
@@ -107,7 +107,7 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                 # print 'iteration', m, 'depth', j, 'samples', 2**j
                 j += 1
                 print 'iteration', m, 'depth', j, 'samples', 2 ** j
-            samples_total += 2**(j+1)
+            samples_total += 2 ** (j + 1)
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 
@@ -118,9 +118,9 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
         pass
     print 'number of leapfrog samples', samples_total
     print 'number of successful leapfrog samples', len(traj)
-    print 'percent of good leapfrog samples', float(len(traj))/samples_total
-    print 'number of leapfrog per iteration, average', float(samples_total)/m
-    print 'print number of good leapfrog per iteration, average', len(traj)/m
+    print 'percent of good leapfrog samples', float(len(traj)) / samples_total
+    print 'number of leapfrog per iteration, average', float(samples_total) / m
+    print 'print number of good leapfrog per iteration, average', len(traj) / m
     return traj
 
 
