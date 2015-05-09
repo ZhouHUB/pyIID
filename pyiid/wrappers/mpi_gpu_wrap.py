@@ -188,7 +188,7 @@ def wrap_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
     return rw, scale, g_calc, fq
 
 
-def wrap_fq_grad_gpu(atoms, qmax=25., qbin=.1):
+def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -287,7 +287,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     if rw is None:
         rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin,
                                        rmin = rmin, rmax=rmax, rstep=rstep)
-    fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
+    fq_grad = wrap_fq_grad(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):
         for tz in range(3):
@@ -333,7 +333,7 @@ def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
     if rw is None:
         rw, scale, gcalc, fq = wrap_rw(atoms, gobs, qmax, qmin, qbin,
                                        rmax=rmax, rstep=rstep)
-    fq_grad = wrap_fq_grad_gpu(atoms, qmax, qbin)
+    fq_grad = wrap_fq_grad(atoms, qmax, qbin)
     qmin_bin = int(qmin / qbin)
     for tx in range(len(atoms)):
         for tz in range(3):
@@ -365,7 +365,7 @@ if __name__ == '__main__':
     # fq = wrap_fq(atoms)
     # print fq
     pdf, fq = wrap_pdf(atoms)
-    grad_fq = wrap_fq_grad_gpu(atoms)
+    grad_fq = wrap_fq_grad(atoms)
     print grad_fq
     plt.plot(pdf), plt.show()
     # for i in range(10):
