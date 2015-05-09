@@ -109,3 +109,9 @@ def test_calc_grad_chi_sq():
             cpu = calc.calculate_forces(atoms2)
 
             assert_allclose(gpu, cpu)
+
+
+if __name__ == '__main__':
+    import nose
+
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)

@@ -13,7 +13,7 @@ def test_scatter_fq():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
+        for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             fq = scat.fq(atoms)
             assert fq is not None
@@ -28,7 +28,7 @@ def test_scatter_pdf():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
+        for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             pdf = scat.pdf(atoms)
             assert pdf is not None
@@ -45,3 +45,8 @@ def test_gpu_scatter_fail():
         scat = Scatter(exp_dict=exp)
         scat.set_processor('Multi-GPU')
         assert scat.processor == 'Multi-GPU'
+        
+        
+if __name__ == '__main__':
+    import nose
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
