@@ -116,7 +116,11 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
             m += 1
     except KeyboardInterrupt:
         pass
-    print samples_total
+    print 'number of leapfrog samples', samples_total
+    print 'number of successful leapfrog samples', len(traj)
+    print 'percent of good leapfrog samples', float(len(traj))/samples_total
+    print 'number of leapfrog per iteration, average', float(samples_total)/m
+    print 'print number of good leapfrog per iteration, average', len(traj)/m
     return traj
 
 

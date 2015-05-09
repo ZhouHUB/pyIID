@@ -77,7 +77,7 @@ def load_gr_file(gr_file=None, skiplines=None):
                 if "# End of config" in line:
                     record = False
                 if record is True and line.startswith(tuple(exp_keys)):
-                    print 'line = ', line
+                    # print 'line = ', line
                     key, val = line.split(' = ')
                     if key in exp_keys:
                         exp_dict[key] = float(val)
