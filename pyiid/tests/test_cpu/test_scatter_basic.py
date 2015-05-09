@@ -5,7 +5,7 @@ from pyiid.tests import setup_atoms, generate_experiment
 from pyiid.testing.decorators import known_fail_if
 
 
-def test_scatter():
+def test_scatter_fq():
     for i in range(4):
         if i == 0:
             exp = None
@@ -18,9 +18,22 @@ def test_scatter():
             fq = scat.fq(atoms)
             assert fq is not None
             assert np.all(fq)
+
+
+def test_scatter_pdf():
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(int(n))
             pdf = scat.pdf(atoms)
             assert pdf is not None
             assert np.all(pdf)
+
 
 @known_fail_if(True)
 def test_gpu_scatter_fail():
