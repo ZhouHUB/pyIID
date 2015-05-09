@@ -18,50 +18,73 @@ def generate_experiment():
 
     for n, k in enumerate(exp_dict):
         exp_dict[k] = np.random.uniform(exp_ranges[n][0], exp_ranges[n][1])
+    return exp_dict
 
 
 def test_fq():
-    scat = Scatter()
-    for n in np.logspace(1, 4, 4):
-        atoms = setup_atoms(n)
-        scat.set_processor('Multi-GPU')
-        gpu = scat.fq(atoms)
-        scat.set_processor('Serial-CPU')
-        cpu = scat.fq(atoms)
-        assert_allclose(gpu, cpu)
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(n)
+            scat.set_processor('Multi-GPU')
+            gpu = scat.fq(atoms)
+            scat.set_processor('Serial-CPU')
+            cpu = scat.fq(atoms)
+
+            assert_allclose(gpu, cpu)
 
 
 def test_pdf():
-    scat = Scatter()
-    for n in np.logspace(1, 3, 3):
-        atoms = setup_atoms(n)
-        scat.set_processor('Multi-GPU')
-        gpu = scat.pdf(atoms)
-        scat.set_processor('Serial-CPU')
-        cpu = scat.pdf(atoms)
-        assert_allclose(gpu, cpu)
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        for n in np.logspace(1, 3, 3):
+            atoms = setup_atoms(n)
+            scat.set_processor('Multi-GPU')
+            gpu = scat.pdf(atoms)
+            scat.set_processor('Serial-CPU')
+            cpu = scat.pdf(atoms)
+
+            assert_allclose(gpu, cpu)
 
 
 def test_grad_fq():
-    scat = Scatter()
-    for n in np.logspace(1, 4, 4):
-        atoms = setup_atoms(n)
-        scat.set_processor('Multi-GPU')
-        gpu = scat.grad_fq(atoms)
-        scat.set_processor('Serial-CPU')
-        cpu = scat.grad_fq(atoms)
-        assert_allclose(gpu, cpu)
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        for n in np.logspace(1, 4, 4):
+            atoms = setup_atoms(n)
+            scat.set_processor('Multi-GPU')
+            gpu = scat.grad_fq(atoms)
+            scat.set_processor('Serial-CPU')
+            cpu = scat.grad_fq(atoms)
+            assert_allclose(gpu, cpu)
 
 
 def test_grad_pdf():
-    scat = Scatter()
-    for n in np.logspace(1, 3, 3):
-        atoms = setup_atoms(n)
-        scat.set_processor('Multi-GPU')
-        gpu = scat.grad_pdf(atoms)
-        scat.set_processor('Serial-CPU')
-        cpu = scat.grad_pdf(atoms)
-        assert_allclose(gpu, cpu)
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        for n in np.logspace(1, 3, 3):
+            atoms = setup_atoms(n)
+            scat.set_processor('Multi-GPU')
+            gpu = scat.grad_pdf(atoms)
+            scat.set_processor('Serial-CPU')
+            cpu = scat.grad_pdf(atoms)
+            assert_allclose(gpu, cpu)
 
 
 if __name__ == '__main__':
