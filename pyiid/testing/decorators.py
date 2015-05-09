@@ -37,7 +37,7 @@ This module is for decorators related to testing.
 Much of this code is inspired by the code in matplotlib.  Exact copies
 are noted.
 """
-from skxray.testing.noseclasses import (KnownFailureTest,
+from pyiid.testing.noseclasses import (KnownFailureTest,
                                        KnownFailureDidNotFailTest)
 
 import nose
