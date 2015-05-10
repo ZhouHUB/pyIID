@@ -71,6 +71,40 @@ def test_scatter_pdf():
             assert np.any(pdf)
 
 
+def test_scatter_grad_fq():
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 3, 3):
+            atoms = setup_atoms(int(n))
+            grad_fq = scat.get_grad_fq(atoms)
+            # Check that Scatter gave back something
+            assert grad_fq is not None
+            # Check that all the values are not zero
+            assert np.any(grad_fq)
+
+
+def test_scatter_grad_pdf():
+    for i in range(4):
+        if i == 0:
+            exp = None
+        else:
+            exp = generate_experiment()
+        scat = Scatter(exp_dict=exp)
+        # Test a set of different sized ensembles
+        for n in np.logspace(1, 3, 3):
+            atoms = setup_atoms(int(n))
+            grad_pdf = scat.get_grad_pdf(atoms)
+            # Check that Scatter gave back something
+            assert grad_pdf is not None
+            # Check that all the values are not zero
+            assert np.any(grad_pdf)
+
+
 @known_fail_if(True)
 def test_gpu_scatter_fail():
     for i in range(4):
