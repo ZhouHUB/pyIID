@@ -3,6 +3,8 @@ from numba import cuda
 import numpy as np
 import math
 
+from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf
+
 from pyiid.wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
 from pyiid.wrappers.cpu_wrap import wrap_fq_grad as cpu_wrap_fq_grad
 
@@ -13,9 +15,6 @@ from pyiid.wrappers.multi_gpu_wrap import \
 from pyiid.wrappers.mpi_gpu_wrap import wrap_fq as multi_node_gpu_wrap_fq
 from pyiid.wrappers.mpi_gpu_wrap import \
     wrap_fq_grad as multi_node_gpu_wrap_fq_grad
-
-from pyiid.kernels.master_kernel import get_pdf_at_qmin, \
-    get_rw, grad_pdf, get_grad_rw, get_chi_sq, get_grad_chi_sq
 
 
 def check_mpi():
@@ -114,7 +113,6 @@ class Scatter(object):
     def get_sq(self, atoms):
         fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
-        print fq.shape, scatter_vector.shape
         sq = (fq / scatter_vector) + np.ones(scatter_vector.shape)
         sq[np.isinf(sq)] = 0
         return sq
