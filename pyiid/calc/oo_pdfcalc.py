@@ -231,7 +231,8 @@ class PDFCalc(Calculator):
     def calculate_forces(self, atoms):
         # self.results['forces'] = np.zeros((len(atoms), 3))
         forces = self.grad(self.scatter.get_grad_pdf(atoms),
-                           self.gobs) * self.rw_to_eV
+                           self.scatter.get_pdf(atoms),
+        self.gobs) * self.rw_to_eV
 
         self.results['forces'] = forces
 
