@@ -56,6 +56,19 @@ def test_grad_rw():
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
 
+def test_grad_chi_sq():
+    atoms1, atoms2, scale = setup_atomic_configs()
+    scat = Scatter()
+    gobs = scat.get_pdf(atoms1)
+    calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+    atoms2.set_calculator(calc)
+    forces = atoms2.get_forces()
+    com = atoms2.get_center_of_mass()
+    for i in range(len(atoms2)):
+        dist = atoms2[i].position - com
+        print dist, forces[i], np.cross(dist, forces[i])
+        assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
+
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
