@@ -17,11 +17,13 @@ def test_scatter_fq_defaults():
             # Check that all the values are not zero
             assert np.any(fq)
 
+
 def test_scatter_fq():
     for i in range(3):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
+        print exp
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             fq = scat.get_fq(atoms)
@@ -48,6 +50,7 @@ def test_scatter_sq():
     for i in range(3):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
+        print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
@@ -75,6 +78,7 @@ def test_scatter_iq():
     for i in range(3):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
+        print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
@@ -102,6 +106,7 @@ def test_scatter_pdf():
     for i in range(3):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
+        print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
@@ -129,6 +134,7 @@ def test_scatter_grad_fq():
     for i in range(3):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
+        print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
@@ -156,6 +162,7 @@ def test_scatter_grad_pdf():
     for i in range(3):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
+        print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
