@@ -28,7 +28,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     q = atoms.get_positions()
 
     # define scatter_q information and initialize constants
-    qmax_bin = int(qmax / qbin)
+    qmax_bin = int(math.ceil(qmax / qbin))
     n = len(q)
 
     # Get pair coordinate distance array
@@ -40,7 +40,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     get_r_array(r, d)
 
     # get scatter array
-    scatter_array =atoms.get_array('scatter')
+    scatter_array = atoms.get_array('scatter')
 
     # get non-normalized fq
     fq = np.zeros(qmax_bin)
