@@ -16,6 +16,7 @@ def test_scatter_fq():
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             fq = scat.get_fq(atoms)
+            print type(fq)
             assert fq is not None
             assert np.all(fq)
 
