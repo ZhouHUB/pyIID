@@ -21,7 +21,7 @@ def test_scatter_fq():
             # Check that all the values are not zero
             assert np.any(fq)
 
-def test_scatter_fq():
+def test_scatter_sq():
     for i in range(4):
         if i == 0:
             exp = None
@@ -37,7 +37,7 @@ def test_scatter_fq():
             # Check that all the values are not zero
             assert np.any(sq)
 
-def test_scatter_fq():
+def test_scatter_iq():
     for i in range(4):
         if i == 0:
             exp = None
