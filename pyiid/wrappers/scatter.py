@@ -112,7 +112,7 @@ class Scatter(object):
         return pdf
 
     def get_sq(self, atoms):
-        fq = self.fq(atoms)
+        fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
         print fq.shape, scatter_vector.shape
         sq = (fq / scatter_vector) + np.ones(scatter_vector.shape)
@@ -126,7 +126,7 @@ class Scatter(object):
         return self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
-        fq_grad = self.grad(atoms)
+        fq_grad = self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
         qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
         for tx in range(len(atoms)):
             for tz in range(3):

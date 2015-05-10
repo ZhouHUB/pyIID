@@ -27,6 +27,7 @@ def test_scatter_fq():
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             fq = scat.get_fq(atoms)
+            print fq.shape
             # Check that Scatter gave back something
             assert fq is not None
             # Check that all the values are not zero
@@ -54,6 +55,8 @@ def test_scatter_sq():
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
+            fq = scat.get_fq(atoms)
+            print fq.shape
             sq = scat.get_sq(atoms)
             # Check that Scatter gave back something
             assert sq is not None
