@@ -113,7 +113,7 @@ def wrap_grad_rw(grad_gcalc, gcalc, gobs):
 
     """
     rw, scale = wrap_rw(gcalc, gobs)
-    grad_rw = np.zeros((len(gcalc), 3))
+    grad_rw = np.zeros((len(grad_gcalc), 3))
     get_grad_rw(grad_rw, grad_gcalc, gcalc, gobs, rw, scale, weight=None)
     return grad_rw
 
