@@ -174,11 +174,7 @@ def test_scatter_grad_pdf():
 
 @known_fail_if(True)
 def test_gpu_scatter_fail():
-    for i in range(4):
-        if i == 0:
-            exp = None
-        else:
-            exp = generate_experiment()
+        exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         scat.set_processor('Multi-GPU')
         assert scat.processor == 'Multi-GPU'
