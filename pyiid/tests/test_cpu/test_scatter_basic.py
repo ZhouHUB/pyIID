@@ -16,9 +16,11 @@ def test_scatter_fq():
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             fq = scat.get_fq(atoms)
-            print type(fq)
+            print fq
+            # Check that Scatter gave back something
             assert fq is not None
-            assert np.all(fq)
+            # Check that all the values are not zero
+            assert np.any(fq)
 
 
 def test_scatter_pdf():
@@ -32,8 +34,10 @@ def test_scatter_pdf():
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n))
             pdf = scat.get_pdf(atoms)
+            # Check that Scatter gave back something
             assert pdf is not None
-            assert np.all(pdf)
+            # Check that all the values are not zero
+            assert np.any(pdf)
 
 
 @known_fail_if(True)
@@ -46,8 +50,7 @@ def test_gpu_scatter_fail():
         scat = Scatter(exp_dict=exp)
         scat.set_processor('Multi-GPU')
         assert scat.processor == 'Multi-GPU'
-        
-        
+
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
