@@ -38,7 +38,7 @@ cpu_e = []
 multi_gpu_f = []
 multi_gpu_e = []
 try:
-    for i in range(50, 55, 5):
+    for i in range(10, 105, 5):
         atoms = build_sphere_np('/mnt/work-data/dev/pyIID/benchmarks/1100138.cif', float(i) / 2)
         wrap_atoms(atoms, exp_dict)
         atoms.rattle()

@@ -3,6 +3,7 @@ from numba import *
 from numbapro import cuda
 import mkl
 import math
+import numpy as np
 
 # F(Q) kernels ---------------------------------------------------------------
 
@@ -28,7 +29,7 @@ def get_d_array1(d, q, offset):
         return
     for tz in range(3):
         d[tx, ty, tz] = q[ty, tz] - q[tx + offset, tz]
-        # d[ty, tx, tz] = -1*d[tx, ty, tz]
+        d[ty, tx, tz] = -1*d[tx, ty, tz]
 
 @cuda.jit(argtypes=[f4[:, :, :], i4])
 def get_d_array2(d, offset):
@@ -78,7 +79,7 @@ def get_r_array1(r, d):
         return
     r[tx, ty] = math.sqrt(
         d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
-    # r[ty, tx] = r[tx, ty]
+    r[ty, tx] = r[tx, ty]
 
 @cuda.jit(argtypes=[f4[:, :]])
 def get_r_array2(r):
@@ -132,7 +133,8 @@ def get_fq_p0(fq, r, qbin):
     if tx >= ty:
         return
     fq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[tx, ty]
-    # fq[ty, tx, kq] = fq[tx, ty, kq]
+    # fq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty])
+    # fq[tx, ty, kq] /= r[tx, ty]
 
 @cuda.jit(argtypes=[f4[:, :, :]])
 # @cuda.jit(argtypes=[f8[:, :, :]])
@@ -187,8 +189,10 @@ def get_fq_p3(fq, norm_array):
     fq[tx, ty, kq] *= norm_array[tx, ty, kq]
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], i4])
-def get_normalization_array1(norm_array, scat, offset):
+# @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], i4])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
+# def get_normalization_array1(norm_array, scat, offset):
+def get_normalization_array1(norm_array, scat):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -210,9 +214,10 @@ def get_normalization_array1(norm_array, scat, offset):
         return
     if tx >= m or ty >= n or kq >= qmax_bin:
         return
-    norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
+    # norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
+    norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
     # norm_array[ty, tx, kq] = norm_array[tx, ty, kq]
-
+#
 
 @cuda.jit(argtypes=[f4[:, :, :], i4])
 def get_normalization_array2(norm_array, offset):
@@ -375,12 +380,14 @@ def gpu_reduce_3D_to_1D(reduced, A):
 
     if threadi >= A.shape[2]:
         return
-    tmp = 0.0
-    for k in range(N):
-        for l in range(N):
-            tmp += A[k, l, threadi]
+    # tmp = 0.0
+    # reduced[threadi] = 0.0
+    reduced[threadi] = A[:, :, threadi].sum()
+    # for k in range(N):
+    #     for l in range(N):
+            # tmp += A[k, l, threadi]
             # reduced[threadi] += A[k, l, threadi]
-    reduced[threadi] += tmp
+    # reduced[threadi] = tmp
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
 def gpu_reduce_3D_to_2D(reduced, A):
@@ -391,14 +398,12 @@ def gpu_reduce_3D_to_2D(reduced, A):
         return
 
     N = A.shape[1]
-    # tmp = cuda.local.array(1, float32)
-    # tmp[0] = 0.0
-    tmp = 0.0
+    # tmp = 0.0
+    reduced[threadi, threadj] = 0.0
     for k in range(N):
-        # tmp[0] += A[threadi, k, threadj]
-        tmp += A[threadi, k, threadj]
-    # reduced[threadi, threadj] = tmp[0]
-    reduced[threadi, threadj] = tmp
+        # tmp += A[threadi, k, threadj]
+        reduced[threadi, threadj] += A[threadi, k, threadj]
+    # reduced[threadi, threadj] = tmp
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def gpu_reduce_2D_to_1D(reduced, A):
@@ -409,14 +414,12 @@ def gpu_reduce_2D_to_1D(reduced, A):
         return
 
     N = A.shape[0]
-    # tmp = cuda.local.array(1, float32)
-    # tmp[0] = 0.0
-    tmp = 0.0
-    for k in range(N):
-        # tmp[0] += A[k, threadi]
-        tmp += A[k, threadi]
 
-    # reduced[threadi] = tmp[0]
+    tmp = 0.0
+    # reduced[threadi] = 0.0
+    for k in range(N):
+        tmp += A[k, threadi]
+        # reduced[threadi] += A[k, threadi]
     reduced[threadi] = tmp
 
 

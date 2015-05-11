@@ -18,10 +18,11 @@ def test_fq():
             atoms = setup_atoms(int(n), exp)
             scat.set_processor('Multi-GPU')
             gpu = scat.get_fq(atoms)
+            print gpu
             scat.set_processor('Serial-CPU')
             cpu = scat.get_fq(atoms)
 
-            assert_allclose(gpu, cpu)
+            assert_allclose(gpu, cpu, rtol=1e-3)
 
 
 def test_pdf():
@@ -73,6 +74,52 @@ def test_grad_pdf():
             assert_allclose(gpu, cpu)
 
 if __name__ == '__main__':
-    import nose
+    # import nose
+    # nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    import matplotlib.pyplot as plt
 
-    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    i = 0
+    print 'hi'
+    if i == 0:
+        exp = None
+    else:
+        exp = generate_experiment()
+    print 'scat'
+    scat = Scatter(exp_dict=exp)
+    # for n in np.logspace(1, 4, 4):
+    for n in np.logspace(1, 4, 4):
+        print n
+        atoms = setup_atoms(int(n), exp)
+        # print 'start cpu'
+        scat.set_processor('Serial-CPU')
+        cpu = scat.get_fq(atoms)
+        # print 'set gpu'
+        scat.set_processor('Multi-GPU')
+        # print 'start gpu'
+        gpu = scat.get_fq(atoms)
+        print 'finish gpu'
+        # print gpu
+
+        # assert_allclose(gpu, cpu, rtol=1e-2, atol=1e-7)
+        del atoms
+    del scat
+    print 'ok'
+
+    i = 1
+    print 'hi'
+    if i == 0:
+        exp = None
+    else:
+        exp = generate_experiment()
+    print 'scat'
+    scat = Scatter(exp_dict=exp)
+    for n in np.logspace(1, 4, 4):
+        atoms = setup_atoms(int(n), exp)
+        scat.set_processor('Multi-GPU')
+        gpu = scat.get_fq(atoms)
+        # print gpu
+        scat.set_processor('Serial-CPU')
+        cpu = scat.get_fq(atoms)
+        assert_allclose(gpu, cpu, rtol=1e-2, atol=1e-7)
+    del scat
+    print 'ok'

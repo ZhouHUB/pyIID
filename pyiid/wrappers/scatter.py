@@ -48,6 +48,7 @@ class Scatter(object):
         if exp_dict is None or bool(exp_dict) is False:
             exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
                         'rmax': 40.0, 'rstep': .01}
+        # Check keys
 
 
         self.exp = exp_dict
@@ -99,6 +100,7 @@ class Scatter(object):
             self.processor = processor
 
     def get_fq(self, atoms):
+        print 'start fq'
         return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
 
     def get_pdf(self, atoms):
@@ -147,7 +149,8 @@ if __name__ == '__main__':
     # exp_dict = {'rmin': 2.1258299268629384, 'qbin': 0.060791373983067366, 'rstep': 0.007592256574962222, 'rmax': 49.93509260358347, 'qmax': 21.626742525881657, 'qmin': 1.1708189666388753}
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
-
+    scat.processor = 'Multi-GPU'
+    print scat.processor
     scat.get_grad_pdf(atoms)
     # plt.plot(np.arange(0, 25.,exp_dict['qbin']),scat.get_fq(atoms))
     # del scat
@@ -155,5 +158,6 @@ if __name__ == '__main__':
     # exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
     # exp_dict = None
     # scat = Scatter(exp_dict)
-    # plt.plot(np.arange(0, 25, .1), scat.get_fq(atoms))
-    # plt.show()
+    # plt.plot(np.arange(0, 25, exp_dict['qbin']), scat.get_iq(atoms))
+    plt.plot(np.arange(0, 45, .01), scat.get_pdf(atoms))
+    plt.show()
