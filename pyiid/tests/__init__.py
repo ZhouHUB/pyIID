@@ -4,7 +4,7 @@ from ase.atoms import Atoms
 from pyiid.wrappers.master_wrap import wrap_atoms
 
 
-def setup_atoms(n, exp_dict):
+def setup_atoms(n, exp_dict=None):
     q = np.random.random((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
     wrap_atoms(atoms, exp_dict)

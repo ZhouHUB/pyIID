@@ -12,6 +12,10 @@ from pyiid.wrappers.multi_gpu_wrap import wrap_fq as node_0_gpu_wrap_fq
 from pyiid.wrappers.multi_gpu_wrap import \
     wrap_fq_grad as node_0_gpu_wrap_fq_grad
 
+from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
+from pyiid.wrappers.flat_gpu_wrap import \
+    wrap_fq_grad as flat_grad
+
 from pyiid.wrappers.mpi_gpu_wrap import wrap_fq as multi_node_gpu_wrap_fq
 from pyiid.wrappers.mpi_gpu_wrap import \
     wrap_fq_grad as multi_node_gpu_wrap_fq_grad
@@ -25,8 +29,8 @@ def check_mpi():
 
 def check_multi_gpu():
     try:
-        cuda.get_current_device()
-        cuda.close()
+        cuda.gpus.lst
+        # cuda.detect()
         return True
     except:
         return False
@@ -90,8 +94,11 @@ class Scatter(object):
             self.processor = processor
 
         elif processor == self.avail_pro[1] and check_multi_gpu() is True:
-            self.fq = node_0_gpu_wrap_fq
-            self.grad = node_0_gpu_wrap_fq_grad
+            # self.fq = node_0_gpu_wrap_fq
+            # self.grad = node_0_gpu_wrap_fq_grad
+
+            self.fq = flat_fq
+            self.grad = flat_grad
             self.processor = processor
 
         elif processor == self.avail_pro[2]:
@@ -100,18 +107,22 @@ class Scatter(object):
             self.processor = processor
 
     def get_fq(self, atoms):
-        print 'start fq'
         return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
 
     def get_pdf(self, atoms):
         fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
         # fq[:int(self.exp['qmin'] / self.exp['qbin'])] = 0
+        r = np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep'])
+        pdf0 = get_pdf_at_qmin(
+            fq,
+            self.exp['rstep'],
+            self.exp['qbin'],
+            r,
+            self.exp['qmin']
+        )
 
-        pdf0 = get_pdf_at_qmin(fq, self.exp['rstep'], self.exp['qbin'], np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep']), self.exp['qmin'])
-
-        pdf = pdf0[int(self.exp['rmin'] / self.exp['rstep']):int(
-            self.exp['rmax'] / self.exp['rstep'])]
-        return pdf
+        # pdf = pdf0[int(self.exp['rmin'] / self.exp['rstep']):int(self.exp['rmax'] / self.exp['rstep'])]
+        return pdf0
 
     def get_sq(self, atoms):
         fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
@@ -130,10 +141,19 @@ class Scatter(object):
         fq_grad = self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
         qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
         fq_grad[:, :, :qmin_bin] = 0.
-        rgrid = np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep'])
+        rgrid = np.arange(self.exp['rmin'], self.exp['rmax'],
+                          self.exp['rstep'])
         pdf_grad = np.zeros(
             (len(atoms), 3, len(rgrid)))
-        grad_pdf(pdf_grad, fq_grad, self.exp['rstep'], self.exp['qbin'], rgrid, self.exp[ 'qmin'])
+
+        grad_pdf(
+            pdf_grad,
+            fq_grad,
+            self.exp['rstep'],
+            self.exp['qbin'],
+            rgrid,
+            self.exp['qmin']
+        )
         return pdf_grad[:, :,
                math.floor(self.exp['rmin'] / self.exp['rstep']):]
 
@@ -145,19 +165,20 @@ if __name__ == '__main__':
 
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
 
-    exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
-    # exp_dict = {'rmin': 2.1258299268629384, 'qbin': 0.060791373983067366, 'rstep': 0.007592256574962222, 'rmax': 49.93509260358347, 'qmax': 21.626742525881657, 'qmin': 1.1708189666388753}
+    exp_dict = {'qmin': 0.0, 'qmax': 25.,
+                'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
+                'rmax': 45.0, 'rstep': .01}
+    # exp_dict = {'rmin': 2.1258299268629384, 'qbin': 0.060791373983067366,
+    #             'rstep': 0.007592256574962222, 'rmax': 49.93509260358347,
+    #             'qmax': 21.626742525881657, 'qmin': 1.1708189666388753}
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
     scat.processor = 'Multi-GPU'
     print scat.processor
-    scat.get_grad_pdf(atoms)
-    # plt.plot(np.arange(0, 25.,exp_dict['qbin']),scat.get_fq(atoms))
-    # del scat
-
-    # exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
-    # exp_dict = None
-    # scat = Scatter(exp_dict)
-    # plt.plot(np.arange(0, 25, exp_dict['qbin']), scat.get_iq(atoms))
-    plt.plot(np.arange(0, 45, .01), scat.get_pdf(atoms))
+    print scat.get_grad_fq(atoms).shape
+    pdf = scat.get_pdf(atoms)
+    print len(pdf)
+    r = np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])
+    print len(r)
+    plt.plot(r, pdf)
     plt.show()

@@ -16,7 +16,8 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     # with gpu:
     cuda.select_device(gpu)
     from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
-        get_normalization_array1,get_normalization_array2, get_r_array1, get_r_array2, get_fq_p0, \
+        get_normalization_array1,get_normalization_array2, get_r_array1, \
+        get_r_array2, get_fq_p0, \
         get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D, gpu_reduce_3D_to_2D, \
         gpu_reduce_2D_to_1D
 
@@ -127,6 +128,7 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     del data, dscat, dnorm, dd, dq, dr, dfq, final, dfinal
     cuda.close()
     return
+
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
     # print 'start wrapper'
