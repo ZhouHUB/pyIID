@@ -315,7 +315,7 @@ if __name__ == '__main__':
     import os
     import matplotlib.pyplot as plt
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms, exp_dict)
+    wrap_atoms(atoms)
 
     fq = wrap_fq(atoms)
     pdf = wrap_pdf(atoms)

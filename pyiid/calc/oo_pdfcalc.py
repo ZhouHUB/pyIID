@@ -247,14 +247,14 @@ if __name__ == '__main__':
 
     ideal_atoms = Octahedron('Au', 2)
     ideal_atoms.pbc = False
-    wrap_atoms(ideal_atoms, exp_dict)
+    wrap_atoms(ideal_atoms)
 
-    gobs = wrap_pdf(ideal_atoms)
+    scat = Scatter()
+    gobs = scat.get_pdf(ideal_atoms)
 
-    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=.001)
-    calc1 = PDFCalc(gobs=gobs, qbin=.1, potential='rw', conv=.001)
+    # calc1 = PDFCalc(gobs=gobs, scatter=scat)
+    calc1 = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
     ideal_atoms.set_calculator(calc1)
-    traj = []
     ideal_atoms.positions *= 1.5
     print ideal_atoms.get_potential_energy()
     print ideal_atoms.get_forces()

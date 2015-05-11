@@ -6,7 +6,7 @@ import mkl
 import numpy as np
 import xraylib
 import matplotlib.pyplot as plt
-# from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose
 
 targ = 'cpu'
 
@@ -83,8 +83,7 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
         wplo = 1.0 - wphi
         pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
     pdf1 = pdf0 * 2
-    # pdf1 = pdf0
-    # assert_allclose(pdf1.real**2, pdf1**2)
+    assert_allclose(pdf1.real**2, pdf1**2)
     return pdf1.real
     # return gpad
 
@@ -233,12 +232,14 @@ def get_chi_sq(gobs, gcalc):
 
 
 # Gradient test_kernels -------------------------------------------------------
-@autojit(target=targ)
-def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin):
+# @autojit(target=targ)
+def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
     n = len(grad_fq)
+    print pdf_grad.shape
+    print grad_fq.shape
     for tx in range(n):
         for tz in range(3):
-            grad_pdf[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
+            pdf_grad[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
                                                rgrid, qmin)
 
 

@@ -129,12 +129,8 @@ class Scatter(object):
         qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
         fq_grad[:, :, :qmin_bin] = 0.
         pdf_grad = np.zeros(
-            (len(atoms), 3, self.exp['rmax'] / self.exp['rstep']))
-        grad_pdf(pdf_grad, fq_grad, self.exp['rstep'], self.exp['qbin'],
-                 np.arange(self.exp['rmin'], self.exp['rmax'], self.exp[
-                     'rstep']),
-                 self.exp[
-                'qmin'])
+            (len(atoms), 3, self.exp['rmax'] / self.exp['rstep'] - self.exp['min'] / self.exp['rstep']))
+        grad_pdf(pdf_grad, fq_grad, self.exp['rstep'], self.exp['qbin'], np.arange(self.exp['rmin'], self.exp['rmax'], self.exp[ 'rstep']), self.exp[ 'qmin'])
         return pdf_grad[:, :,
                math.floor(self.exp['rmin'] / self.exp['rstep']):]
 
@@ -146,12 +142,14 @@ if __name__ == '__main__':
 
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
 
-    exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
-
+    # exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
+    exp_dict = {'rmin': 2.1258299268629384, 'qbin': 0.060791373983067366, 'rstep': 0.007592256574962222, 'rmax': 49.93509260358347, 'qmax': 21.626742525881657, 'qmin': 1.1708189666388753}
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
-    plt.plot(np.arange(0, 25.,exp_dict['qbin']),scat.get_fq(atoms))
-    del scat
+
+    scat.get_grad_pdf(atoms)
+    # plt.plot(np.arange(0, 25.,exp_dict['qbin']),scat.get_fq(atoms))
+    # del scat
 
     # exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
     # exp_dict = None
