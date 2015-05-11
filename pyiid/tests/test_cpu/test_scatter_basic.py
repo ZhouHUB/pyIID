@@ -165,7 +165,7 @@ def test_scatter_grad_pdf():
         scat = Scatter(exp_dict=exp)
         print exp
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 3, 3):
+        for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             grad_pdf = scat.get_grad_pdf(atoms)
             # Check that Scatter gave back something
