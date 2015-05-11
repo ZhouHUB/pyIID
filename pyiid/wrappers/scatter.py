@@ -115,7 +115,7 @@ class Scatter(object):
         fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
         sq = (fq / scatter_vector) + np.ones(scatter_vector.shape)
-        sq[np.isinf(sq)] = 0
+        sq[np.isinf(sq)] = 0.
         return sq
 
     def get_iq(self, atoms):

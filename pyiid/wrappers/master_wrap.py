@@ -73,7 +73,7 @@ def set_processor(processor=None):
 processor, low_wrap_fq, low_wrap_fq_grad = set_processor()
 
 
-def wrap_atoms(atoms, exp_dict):
+def wrap_atoms(atoms, exp_dict=None):
     """
     Call this function before applying calculator, it will generate static
     arrays for the scattering, preventing recalculation
@@ -83,6 +83,9 @@ def wrap_atoms(atoms, exp_dict):
     :return:
     """
 
+    if exp_dict is None:
+        exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
+                            'rmax': 40.0, 'rstep': .01}
     qbin = np.pi / (exp_dict['rmax'] + 6 * 2 * np.pi / exp_dict['qmax'])
     n = len(atoms)
     qmax_bin = int(math.ceil(exp_dict['qmax'] / qbin))
