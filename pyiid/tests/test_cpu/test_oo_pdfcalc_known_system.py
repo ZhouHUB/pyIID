@@ -12,7 +12,7 @@ from pyiid.wrappers.master_wrap import wrap_atoms
 
 def setup_atomic_configs():
     atoms1 = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
-    wrap_atoms(atoms1, exp_dict)
+    wrap_atoms(atoms1)
     atoms2 = atoms1.copy()
     scale = .75
     atoms2.positions *= scale
