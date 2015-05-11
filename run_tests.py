@@ -25,7 +25,7 @@ multiprocess._instantiate_plugins = plugins
 
 def run():
 
-    nose.run(addplugins=[x() for x in plugins], env=env)
+    nose.main(addplugins=[x() for x in plugins], env=env)
 
 
 if __name__ == '__main__':
