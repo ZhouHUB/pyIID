@@ -235,8 +235,6 @@ def get_chi_sq(gobs, gcalc):
 # @autojit(target=targ)
 def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
     n = len(grad_fq)
-    print pdf_grad.shape
-    print grad_fq.shape
     for tx in range(n):
         for tz in range(3):
             pdf_grad[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
