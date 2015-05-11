@@ -23,7 +23,7 @@ install:
 script:
   - python run_tests.py -v -d
 
-after_success:
-  coveralls
-#after_script:
+#after_success:
 #  coveralls
+after_script:
+  coveralls
