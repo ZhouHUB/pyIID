@@ -396,7 +396,7 @@ if __name__ == '__main__':
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
 
     fq = wrap_fq(atoms)
     grad_fq = wrap_fq_grad(atoms)

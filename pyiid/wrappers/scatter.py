@@ -49,10 +49,11 @@ class Scatter(object):
             exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
                         'rmax': 40.0, 'rstep': .01}
 
-        # Technically we should use this for qbin:
-        # self.qbin = np.pi / (rmax + 6 * 2 * np.pi / qmax)
 
         self.exp = exp_dict
+        # Technically we should use this for qbin:
+        self.exp['qbin'] = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
+                                    self.exp['qmax'])
 
         # Just in case something blows up down the line
         self.fq = cpu_wrap_fq
@@ -146,7 +147,8 @@ if __name__ == '__main__':
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
 
     exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
-    wrap_atoms(atoms, qbin=exp_dict['qbin'])
+
+    wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
     plt.plot(np.arange(0, 25.,exp_dict['qbin']),scat.get_fq(atoms))
     del scat

@@ -15,7 +15,7 @@ import pickle
 
 atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
 
-wrap_atoms(atoms)
+wrap_atoms(atoms, exp_dict)
 atoms2 = dc(atoms)
 pdf = wrap_pdf(atoms, qmin=0.0, qbin=.1)
 
@@ -40,7 +40,7 @@ multi_gpu_e = []
 try:
     for i in range(50, 55, 5):
         atoms = build_sphere_np('/mnt/work-data/dev/pyIID/benchmarks/1100138.cif', float(i) / 2)
-        wrap_atoms(atoms)
+        wrap_atoms(atoms, exp_dict)
         atoms.rattle()
         print len(atoms), i/10.
         calc = PDFCalc(gobs=pdf, qmin=0.0, qbin=.1, conv=1, potential='rw')

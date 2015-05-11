@@ -12,7 +12,7 @@ def test_pdf0():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
 
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
 
     spdf = serial_pdf(atoms)[0]
     gpdf = gpu_pdf(atoms)[0]
@@ -25,7 +25,7 @@ def test_pdf1():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
 
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
 
     spdf = serial_pdf(atoms, qmin=2.5)[0]
     gpdf = gpu_pdf(atoms, qmin=2.5)[0]
@@ -36,7 +36,7 @@ def test_pdf1():
 def test_rw0():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
     gobs = serial_pdf(atoms)[0]
     atoms.rattle(.1)
 
@@ -50,7 +50,7 @@ def test_rw0():
 def test_rw1():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
     gobs = serial_pdf(atoms)[0]
     atoms.rattle(.1)
 
@@ -64,7 +64,7 @@ def test_rw1():
 def test_grad_rw0():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
     gobs = serial_pdf(atoms)[0]
     atoms.rattle(.1)
 
@@ -78,7 +78,7 @@ def test_grad_rw0():
 def test_grad_rw1():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
     gobs = serial_pdf(atoms)[0]
     atoms.rattle(.1)
 
@@ -92,7 +92,7 @@ def test_grad_rw1():
 def test_grad_pdf1():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
     atoms.rattle(.1)
 
     qmin = 2.5

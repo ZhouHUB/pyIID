@@ -426,7 +426,7 @@ if __name__ == '__main__':
     exp_dict = {'qmin': 0.5, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0,
                         'rmax': 45.0, 'rstep': .01}
 
-    wrap_atoms(atoms, qbin=exp_dict['qbin'])
+    wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
     # scat.set_processor('Serial-CPU')
     fq = scat.get_fq(atoms)

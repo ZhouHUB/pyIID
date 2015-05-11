@@ -19,7 +19,7 @@ def test_fq():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
 
     sfq_ave = np.zeros(250)
     gfq_ave = np.zeros(250)
@@ -40,7 +40,7 @@ def test_grad_fq():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au'+str(n), pos)
 
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
 
     sfq = serial_grad_fq(atoms)
     gfq = gpu_grad_fq(atoms)

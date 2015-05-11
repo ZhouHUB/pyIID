@@ -73,18 +73,19 @@ def set_processor(processor=None):
 processor, low_wrap_fq, low_wrap_fq_grad = set_processor()
 
 
-def wrap_atoms(atoms, qmax=25., qbin=.1):
+def wrap_atoms(atoms, exp_dict):
     """
     Call this function before applying calculator, it will generate static
     arrays for the scattering, preventing recalculation
+    :param exp_dict:
     :param atoms:
-    :param qmax:
     :param qbin:
     :return:
     """
 
+    qbin = np.pi / (exp_dict['rmax'] + 6 * 2 * np.pi / exp_dict['qmax'])
     n = len(atoms)
-    qmax_bin = int(math.ceil(qmax / qbin))
+    qmax_bin = int(math.ceil(exp_dict['qmax'] / qbin))
     e_num = atoms.get_atomic_numbers()
 
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
@@ -311,7 +312,7 @@ if __name__ == '__main__':
     import os
     import matplotlib.pyplot as plt
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms)
+    wrap_atoms(atoms, exp_dict)
 
     fq = wrap_fq(atoms)
     pdf = wrap_pdf(atoms)

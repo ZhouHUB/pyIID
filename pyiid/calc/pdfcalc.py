@@ -105,7 +105,7 @@ if __name__ == '__main__':
 
     ideal_atoms = Octahedron('Au', 2)
     ideal_atoms.pbc = False
-    wrap_atoms(ideal_atoms)
+    wrap_atoms(ideal_atoms, exp_dict)
 
     gobs = wrap_pdf(ideal_atoms)
 

@@ -10,7 +10,7 @@ def test_scatter_fq_defaults():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             fq = scat.get_fq(atoms)
             # Check that Scatter gave back something
             assert fq is not None
@@ -25,7 +25,7 @@ def test_scatter_fq():
         # Test a set of different sized ensembles
         print exp
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             fq = scat.get_fq(atoms)
             print fq.shape
             # Check that Scatter gave back something
@@ -39,7 +39,7 @@ def test_scatter_sq_defaults():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             sq = scat.get_sq(atoms)
             # Check that Scatter gave back something
             assert sq is not None
@@ -54,7 +54,7 @@ def test_scatter_sq():
         print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             sq = scat.get_sq(atoms)
             # Check that Scatter gave back something
             assert sq is not None
@@ -67,7 +67,7 @@ def test_scatter_iq_defaults():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             iq = scat.get_iq(atoms)
             # Check that Scatter gave back something
             assert iq is not None
@@ -82,7 +82,7 @@ def test_scatter_iq():
         print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             iq = scat.get_iq(atoms)
             # Check that Scatter gave back something
             assert iq is not None
@@ -95,7 +95,7 @@ def test_scatter_pdf_defaults():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             pdf = scat.get_pdf(atoms)
             # Check that Scatter gave back something
             assert pdf is not None
@@ -110,7 +110,7 @@ def test_scatter_pdf():
         print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             pdf = scat.get_pdf(atoms)
             # Check that Scatter gave back something
             assert pdf is not None
@@ -123,7 +123,7 @@ def test_scatter_grad_fq_defaults():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             grad_fq = scat.get_grad_fq(atoms)
             # Check that Scatter gave back something
             assert grad_fq is not None
@@ -138,7 +138,7 @@ def test_scatter_grad_fq():
         print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             grad_fq = scat.get_grad_fq(atoms)
             # Check that Scatter gave back something
             assert grad_fq is not None
@@ -151,7 +151,7 @@ def test_scatter_grad_pdf_defaults():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             grad_pdf = scat.get_grad_pdf(atoms)
             # Check that Scatter gave back something
             assert grad_pdf is not None
@@ -166,7 +166,7 @@ def test_scatter_grad_pdf():
         print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
-            atoms = setup_atoms(int(n))
+            atoms = setup_atoms(int(n), exp)
             grad_pdf = scat.get_grad_pdf(atoms)
             # Check that Scatter gave back something
             assert grad_pdf is not None

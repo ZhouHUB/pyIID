@@ -12,7 +12,7 @@ from pyiid.wrappers.master_wrap import wrap_atoms
 
 def setup_atomic_configs():
     atoms1 = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
-    wrap_atoms(atoms1)
+    wrap_atoms(atoms1, exp_dict)
     atoms2 = atoms1.copy()
     scale = .75
     atoms2.positions *= scale
@@ -72,7 +72,8 @@ def test_grad_chi_sq():
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
-    import matplotlib.pyplot as plt
+
+    '''import matplotlib.pyplot as plt
     from pyiid.calc.oo_pdfcalc import wrap_rw
     from ase.visualize import view
 
@@ -88,4 +89,4 @@ if __name__ == '__main__':
     print atoms2.get_forces()
     plt.plot(gobs)
     plt.plot(gcalc*scale)
-    # plt.show()
+    # plt.show()'''

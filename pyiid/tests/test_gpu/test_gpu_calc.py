@@ -17,8 +17,8 @@ def test_calc_rw():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(int(n))
-            atoms2 = setup_atoms(n)
+            atoms = setup_atoms(int(n), exp)
+            atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
@@ -43,8 +43,8 @@ def test_calc_chi_sq():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(int(n))
-            atoms2 = setup_atoms(n)
+            atoms = setup_atoms(int(n), exp)
+            atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
@@ -69,8 +69,8 @@ def test_calc_grad_rw():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(int(n))
-            atoms2 = setup_atoms(n)
+            atoms = setup_atoms(int(n), exp)
+            atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
@@ -95,8 +95,8 @@ def test_calc_grad_chi_sq():
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 4, 4):
-            atoms = setup_atoms(int(n))
-            atoms2 = setup_atoms(n)
+            atoms = setup_atoms(int(n), exp)
+            atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
