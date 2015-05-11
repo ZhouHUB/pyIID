@@ -234,7 +234,7 @@ def get_chi_sq(gobs, gcalc):
 
 # Gradient test_kernels -------------------------------------------------------
 @autojit(target=targ)
-def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid):
+def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid, qmin):
     n = len(grad_fq)
     for tx in range(n):
         for tz in range(3):

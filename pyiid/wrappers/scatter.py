@@ -126,13 +126,14 @@ class Scatter(object):
     def get_grad_pdf(self, atoms):
         fq_grad = self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
         qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
-        for tx in range(len(atoms)):
-            for tz in range(3):
-                fq_grad[tx, tz, :qmin_bin] = 0.
+        fq_grad[:, :, :qmin_bin] = 0.
         pdf_grad = np.zeros(
             (len(atoms), 3, self.exp['rmax'] / self.exp['rstep']))
         grad_pdf(pdf_grad, fq_grad, self.exp['rstep'], self.exp['qbin'],
-                 np.arange(0, self.exp['rmax'], self.exp['rstep']))
+                 np.arange(self.exp['rmin'], self.exp['rmax'], self.exp[
+                     'rstep']),
+                 self.exp[
+                'qmin'])
         return pdf_grad[:, :,
                math.floor(self.exp['rmin'] / self.exp['rstep']):]
 
