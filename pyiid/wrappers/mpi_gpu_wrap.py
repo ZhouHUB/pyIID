@@ -103,7 +103,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmax=40., rstep=.01):
     qmin_bin = int(qmin / qbin)
     fq = wrap_fq(atoms, qmax, qbin)
     fq[:qmin_bin] = 0
-    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep))
+    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep), qmin)
     return pdf0, fq
 
 

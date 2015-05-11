@@ -5,6 +5,7 @@ from numba import *
 import mkl
 import numpy as np
 import xraylib
+import matplotlib.pyplot as plt
 # from numpy.testing import assert_allclose
 
 targ = 'cpu'
@@ -35,13 +36,14 @@ def get_scatter_array(scatter_array, numbers, qbin):
                                                     kq * qbin / 4 / np.pi)
 
 
-@autojit(target=targ)
-def get_pdf_at_qmin(fpad, rstep, qstep, rgrid):
+# @autojit(target=targ)
+def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     """
     Get the atomic pair distribution function
 
     Parameters
     -----------
+    :param qmin:
     fpad: 1d array
         The reduced structure function, padded with zeros to qmin
     rstep: float
@@ -58,35 +60,43 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid):
     1d array:
         The atomic pair distribution function
     """
+    # Zero out F(Q) below qmin theshold
+    fpad[:int(math.ceil(qmin/qstep))] = 0.0
+    # Expand F(Q)
     nfromdr = int(math.ceil(math.pi / rstep / qstep))
     if nfromdr > int(len(fpad)):
         # put in a bunch of zeros
         fpad2 = np.zeros(nfromdr)
         fpad2[:len(fpad)] = fpad
         fpad = fpad2
-    gpad = fft_fq_to_gr(fpad, qstep)
+
+    gpad = fft_fq_to_gr(fpad, qstep, qmin)
+
     drpad = math.pi / (len(gpad) * qstep)
-    pdf0 = np.zeros(len(rgrid), dtype=complex)
+    pdf0 = np.zeros(len(rgrid))
     for i, r in enumerate(rgrid):
         xdrp = r / drpad / 2
+        # xdrp = r / drpad
         iplo = int(xdrp)
         iphi = iplo + 1
         wphi = xdrp - iplo
         wplo = 1.0 - wphi
         pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
     pdf1 = pdf0 * 2
+    # pdf1 = pdf0
     # assert_allclose(pdf1.real**2, pdf1**2)
     return pdf1.real
     # return gpad
 
 
-@autojit(target='cpu')
-def fft_fq_to_gr(f, qbin):
+# @autojit(target='cpu')
+def fft_fq_to_gr(f, qbin, qmin):
     """
     Fourier Transform from F(Q) to G(r)
 
     Parameters
     -----------
+    :param qmin:
     f: Nd array
         F(Q)
     qbin: float
@@ -98,18 +108,19 @@ def fft_fq_to_gr(f, qbin):
     g: Nd array
         The PDF
     """
-    g = fft_gr_to_fq(f, qbin)
+    g = fft_gr_to_fq(f, qbin, qmin)
     g *= 2.0 / math.pi
     return g
 
 
-@autojit(target='cpu')
-def fft_gr_to_fq(g, rbin):
+# @autojit(target='cpu')
+def fft_gr_to_fq(g, rstep, rmin):
     """
     Fourier Transform from G(r) to F(Q)
 
     Parameters
     ----------
+    :param rmin:
     g: Nd array
         The PDF
     rbin: float
@@ -120,17 +131,20 @@ def fft_gr_to_fq(g, rbin):
     f: Nd array
         The reduced structure factor
     """
-    if g is None:
-        return g
-    npad1 = len(g)
+    if g is None: return g
+    padrmin = int(round(rmin/rstep))
+    npad1 = padrmin + len(g)
+
     # pad to the next power of 2 for fast Fourier transformation
-    npad2 = (1 << int(math.ceil(math.log(npad1, 2))))
+    npad2 = (1 << int(math.ceil(math.log(npad1, 2))))*2
     # sine transformations needs an odd extension
-    # gpadc array has to be doubled for complex coefficients
+
     npad4 = 4 * npad2
+    # gpadc array has to be doubled for complex coefficients
     gpadc = np.zeros(npad4)
     # copy the original g signal
     ilo = 0
+    # ilo = padrmin
     for i in range(len(g)):
         gpadc[2 * ilo] = g[i]
         ilo += 1
@@ -140,10 +154,19 @@ def fft_gr_to_fq(g, rbin):
     for ilo in range(1, npad2):
         gpadc[2 * ihi] = -1 * gpadc[2 * ilo]
         ihi -= 1
-    gpadcfft = np.fft.ihfft(gpadc)
+
+    # plt.plot(gpadc)
+    # plt.show()
+
+    # gpadcfft = np.fft.ihfft(gpadc)
+    gpadcfft = np.fft.ifft(gpadc)
+    # plt.plot(gpadcfft.imag)
+    # plt.show()
+
     f = np.zeros(npad2, dtype=complex)
     for i in range(npad2):
-        f[i] = gpadcfft[2 * i + 1] * npad2 * rbin
+        # f[i] = gpadcfft[2 * i + 1] * npad2 * rstep
+        f[i] = gpadcfft[2 * i] * npad2 * rstep
     return f.imag
 
 
@@ -216,7 +239,7 @@ def grad_pdf(grad_pdf, grad_fq, rstep, qstep, rgrid):
     for tx in range(n):
         for tz in range(3):
             grad_pdf[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
-                                               rgrid)
+                                               rgrid, qmin)
 
 
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
@@ -375,3 +398,77 @@ def spring_force_kernel(direction, d, r, mag):
         for j in range(n):
             if i != j:
                 direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]
+
+if __name__ == '__main__':
+    from pyiid.wrappers.scatter import Scatter
+    from ase.atoms import Atoms
+    from pyiid.wrappers.master_wrap import wrap_atoms
+    import matplotlib.pyplot as plt
+    from scipy.fftpack import dst, idst
+    from scipy.signal import resample, argrelmax
+    from numpy.testing import assert_allclose
+
+    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+
+    from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+    from pyiid.utils import convert_atoms_to_stru
+
+    stru = convert_atoms_to_stru(atoms)
+    dpc = DebyePDFCalculator()
+    dpc.qmin = 0.5
+    dpc.qmax = 25
+    dpc.rmin = 0.0
+    dpc.rmax = 45.0
+    r, gr = dpc(stru)
+    srfq = dpc.fq
+
+
+    exp_dict = {'qmin': 0.5, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0,
+                        'rmax': 45.0, 'rstep': .01}
+
+    wrap_atoms(atoms, qbin=exp_dict['qbin'])
+    scat = Scatter(exp_dict)
+    # scat.set_processor('Serial-CPU')
+    fq = scat.get_fq(atoms)
+    pdf = scat.get_pdf(atoms)
+
+
+    assert_allclose(np.arange(0, 25, exp_dict['qbin']), dpc.qgrid, rtol=1e-4)
+    assert_allclose(fq, srfq, atol=5e-3)
+
+    mix = get_pdf_at_qmin(srfq, dpc.rstep, dpc.qstep, dpc.rgrid, dpc.qmin)
+
+    # plt.plot(np.arange(0, 25, exp_dict['qbin']), fq, label='scat')
+    # plt.plot(dpc.qgrid,srfq, label='diffpy')
+    # plt.legend()
+    # plt.show()
+    # print len(srfq), len(fq)
+    # print dpc.qstep, np.pi / (45 + 6 * 2 * np.pi / 25)
+    # print len(r), len(gr), \
+    #     len(pdf)
+    # scale = np.max(gr)/np.max(mix)
+    scale = 1
+    plt.plot(r, gr,
+             # 'ro',
+             label='srfit')
+    # pdf2 = np.zeros(len(pdf))
+    # pdf2[1:] = pdf[:-1]
+    plt.plot(r, pdf*scale,
+             # 'go',
+             label='scat')
+    plt.plot(r, mix*scale,
+             # 'bo',
+             label='mix')
+
+    from pyiid.calc.oo_pdfcalc import wrap_rw
+    rw, scale = wrap_rw(pdf, gr)
+    print rw*100, scale
+    rw, scale = wrap_rw(mix, gr)
+    print rw*100, scale
+    plt.legend()
+    plt.show()
+    # plt.plot(r, dstpdf)
+    # plt.plot(r[argrelmax(gr)])
+    # plt.plot(r[argrelmax(pdf)])
+    # plt.plot((r[argrelmax(gr)] - r[argrelmax(pdf)])*100)
+    # plt.show()

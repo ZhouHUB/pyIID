@@ -101,11 +101,11 @@ class Scatter(object):
         return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
 
     def get_pdf(self, atoms):
-        fq = self.fq(atoms)
-        fq[:int(self.exp['qmin'] / self.exp['qbin'])] = 0
-        pdf0 = get_pdf_at_qmin(fq, self.exp['rstep'], self.exp['qbin'],
-                               np.arange(0, self.exp['rmax'],
-                                         self.exp['rstep']))
+        fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
+        # fq[:int(self.exp['qmin'] / self.exp['qbin'])] = 0
+
+        pdf0 = get_pdf_at_qmin(fq, self.exp['rstep'], self.exp['qbin'], np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep']), self.exp['qmin'])
+
         pdf = pdf0[int(self.exp['rmin'] / self.exp['rstep']):int(
             self.exp['rmax'] / self.exp['rstep'])]
         return pdf
@@ -143,12 +143,15 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms)
 
-    scat = Scatter()
-    # scat.set_processor('Serial-CPU')
-    scat.set_processor()
-    print scat.processor
-    print scat.get_grad_fq(atoms)
-    plt.plot(scat.get_iq(atoms))
-    plt.show()
+    exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
+    wrap_atoms(atoms, qbin=exp_dict['qbin'])
+    scat = Scatter(exp_dict)
+    plt.plot(np.arange(0, 25.,exp_dict['qbin']),scat.get_fq(atoms))
+    del scat
+
+    # exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0, 'rmax': 45.0, 'rstep': .01}
+    # exp_dict = None
+    # scat = Scatter(exp_dict)
+    # plt.plot(np.arange(0, 25, .1), scat.get_fq(atoms))
+    # plt.show()

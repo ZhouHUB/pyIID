@@ -84,7 +84,7 @@ def wrap_atoms(atoms, qmax=25., qbin=.1):
     """
 
     n = len(atoms)
-    qmax_bin = int(qmax / qbin)
+    qmax_bin = int(math.ceil(qmax / qbin))
     e_num = atoms.get_atomic_numbers()
 
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
@@ -126,7 +126,7 @@ def wrap_pdf(atoms, qmax=25., qmin=0.0, qbin=.1, rmin=0.0, rmax=40.,
     """
     fq = wrap_fq(atoms, qmax, qbin)
     fq[:int(qmin / qbin)] = 0
-    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep))
+    pdf0 = get_pdf_at_qmin(fq, rstep, qbin, np.arange(0, rmax, rstep), qmin)
     pdf = pdf0[int(rmin / rstep):int(rmax / rstep)]
     return pdf
 
