@@ -2,6 +2,8 @@ __author__ = 'christopher'
 from numba import cuda
 import numpy as np
 import math
+import sys
+sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf
 
@@ -30,7 +32,6 @@ def check_mpi():
 def check_multi_gpu():
     try:
         cuda.gpus.lst
-        # cuda.detect()
         return True
     except:
         return False
@@ -163,22 +164,25 @@ if __name__ == '__main__':
     from pyiid.wrappers.master_wrap import wrap_atoms
     import matplotlib.pyplot as plt
 
-    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-
+    # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    # n = 400
+    n = 4000
+    pos = np.random.random((n, 3)) * 10.
+    atoms = Atoms('Au' + str(n), pos)
     exp_dict = {'qmin': 0.0, 'qmax': 25.,
                 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
-                'rmax': 45.0, 'rstep': .01}
-    # exp_dict = {'rmin': 2.1258299268629384, 'qbin': 0.060791373983067366,
-    #             'rstep': 0.007592256574962222, 'rmax': 49.93509260358347,
-    #             'qmax': 21.626742525881657, 'qmin': 1.1708189666388753}
+                'rmax': 40.0, 'rstep': .01}
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
-    scat.processor = 'Multi-GPU'
-    print scat.processor
-    print scat.get_grad_fq(atoms).shape
-    pdf = scat.get_pdf(atoms)
-    print len(pdf)
-    r = np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])
-    print len(r)
-    plt.plot(r, pdf)
-    plt.show()
+    scat.set_processor('Multi-GPU')
+    print 'start calc'
+    scat.get_grad_fq(atoms)
+    # fq = scat.get_fq(atoms)
+    # plt.plot(fq)
+    # plt.show()
+
+    # pdf = scat.get_pdf(atoms)
+    # r = np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])
+    # print len(r)
+    # plt.plot(r, pdf)
+    # plt.show()

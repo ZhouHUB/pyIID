@@ -13,121 +13,119 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
     # Kernel
     # cuda kernel information
-    # with gpu:
-    cuda.select_device(gpu)
-    from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
-        get_normalization_array1,get_normalization_array2, get_r_array1, \
-        get_r_array2, get_fq_p0, \
-        get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D, gpu_reduce_3D_to_2D, \
-        gpu_reduce_2D_to_1D
+    with gpu:
+    # cuda.select_device(gpu)
+        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+            get_normalization_array1,get_normalization_array2, get_r_array1, \
+            get_r_array2, get_fq_p0, \
+            get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D, gpu_reduce_3D_to_2D, \
+            gpu_reduce_2D_to_1D
 
-    stream = cuda.stream()
-    stream2 = cuda.stream()
+        stream = cuda.stream()
+        stream2 = cuda.stream()
 
-    print 'define grids'
-    # three kinds of test_kernels; Q, NxN or NxNxQ
-    # Q
-    elements_per_dim_1 = [qmax_bin]
-    tpb_l_1 = [32]
-    bpg_l_1 = []
-    for e_dim, tpb in zip(elements_per_dim_1, tpb_l_1):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_1.append(bpg)
-    # NxQ
-    elements_per_dim_2_q = [n, qmax_bin]
-    tpb_l_2_q = [32, 32]
-    bpg_l_2_q = []
-    for e_dim, tpb in zip(elements_per_dim_2_q, tpb_l_2_q):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_2_q.append(bpg)
+        print 'define grids'
+        # three kinds of test_kernels; Q, NxN or NxNxQ
+        # Q
+        elements_per_dim_1 = [qmax_bin]
+        tpb_l_1 = [32]
+        bpg_l_1 = []
+        for e_dim, tpb in zip(elements_per_dim_1, tpb_l_1):
+            bpg = int(math.ceil(float(e_dim) / tpb))
+            if bpg < 1:
+                bpg = 1
+            assert (bpg * tpb >= e_dim)
+            bpg_l_1.append(bpg)
+        # NxQ
+        elements_per_dim_2_q = [n, qmax_bin]
+        tpb_l_2_q = [32, 32]
+        bpg_l_2_q = []
+        for e_dim, tpb in zip(elements_per_dim_2_q, tpb_l_2_q):
+            bpg = int(math.ceil(float(e_dim) / tpb))
+            if bpg < 1:
+                bpg = 1
+            assert (bpg * tpb >= e_dim)
+            bpg_l_2_q.append(bpg)
 
-    # NXN
-    elements_per_dim_2 = [m, n]
-    tpb_l_2 = [32, 32]
-    # tpb_l_2 = [8, 4]
-    bpg_l_2 = []
-    for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_2.append(bpg)
+        # NXN
+        elements_per_dim_2 = [m, n]
+        tpb_l_2 = [32, 32]
+        # tpb_l_2 = [8, 4]
+        bpg_l_2 = []
+        for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
+            bpg = int(math.ceil(float(e_dim) / tpb))
+            if bpg < 1:
+                bpg = 1
+            assert (bpg * tpb >= e_dim)
+            bpg_l_2.append(bpg)
 
-    # NxNxQ
-    elements_per_dim_3 = [m, n, qmax_bin]
-    tpb_l_3 = [16, 16, 4]
-    # tpb_l_3 = [4, 4, 2]
-    bpg_l_3 = []
-    for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_3.append(bpg)
+        # NxNxQ
+        elements_per_dim_3 = [m, n, qmax_bin]
+        tpb_l_3 = [16, 16, 4]
+        # tpb_l_3 = [4, 4, 2]
+        bpg_l_3 = []
+        for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
+            bpg = int(math.ceil(float(e_dim) / tpb))
+            if bpg < 1:
+                bpg = 1
+            assert (bpg * tpb >= e_dim)
+            bpg_l_3.append(bpg)
 
-    # start calculations
-    print 'start calculation'
-    dscat = cuda.to_device(scatter_array, stream2)
-    dnorm = cuda.device_array(data[2].shape, dtype=np.float32,
-                              stream=stream2)
-    dscat.to_host()
-    dnorm.copy_to_host(data[2])
-    print n_cov
-    print dnorm.shape
-    print dscat.shape
-    print 'gpu error after this'
-    # get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
-    get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
+        # start calculations
+        print 'start calculation'
+        dscat = cuda.to_device(scatter_array, stream2)
+        dnorm = cuda.device_array(data[2].shape, dtype=np.float32,
+                                  stream=stream2)
+        dscat.to_host()
+        dnorm.copy_to_host(data[2])
+        print n_cov
+        print dnorm.shape
+        print dscat.shape
+        print 'gpu error after this'
+        # get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
 
-    # get_normalization_array2[bpg_l_3, tpb_l_3, stream2](dnorm, n_cov)
-
-
-
-    dd = cuda.device_array(data[0].shape, dtype=np.float32, stream=stream)
-    dr = cuda.device_array(data[1].shape, dtype=np.float32, stream=stream)
-    # dfq = cuda.device_array(data[3].shape, dtype=np.float32, stream=stream)
-    assert not np.all(data[3])
-    dfq = cuda.to_device(data[3], stream=stream)
-    dq = cuda.to_device(q, stream)
-
-    print 'error continues'
-    get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-    # get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
-    print 'got d array'
-    get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
-    # get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
-
-    final = np.zeros(qmax_bin, dtype=np.float32)
-    dfinal = cuda.to_device(final, stream2)
-
-    # dfinal_2D = cuda.device_array((n, qmax_bin), dtype=np.float32, stream=stream2)
-
-    get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
-    get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
-    get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
+        # get_normalization_array2[bpg_l_3, tpb_l_3, stream2](dnorm, n_cov)
 
 
-    # gpu_reduce_3D_to_2D[bpg_l_2_q, tpb_l_2_q, stream](dfinal_2D, dfq)
-    # gpu_reduce_2D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfinal_2D)
 
-    gpu_reduce_3D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfq)
+        dd = cuda.device_array(data[0].shape, dtype=np.float32, stream=stream)
+        dr = cuda.device_array(data[1].shape, dtype=np.float32, stream=stream)
+        # dfq = cuda.device_array(data[3].shape, dtype=np.float32, stream=stream)
+        assert not np.all(data[3])
+        dfq = cuda.to_device(data[3], stream=stream)
+        dq = cuda.to_device(q, stream)
+
+        print 'error continues'
+        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        # get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
+        print 'got d array'
+        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
+        # get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
+
+        final = np.zeros(qmax_bin, dtype=np.float32)
+        dfinal = cuda.to_device(final, stream2)
+
+        # dfinal_2D = cuda.device_array((n, qmax_bin), dtype=np.float32, stream=stream2)
+
+        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
 
 
-    dfinal.to_host(stream)
-    # print final
-    # dfq.to_host(stream)
-    # final = data[3].sum(axis=(0, 1))
-    fq_q.append(final)
+        # gpu_reduce_3D_to_2D[bpg_l_2_q, tpb_l_2_q, stream](dfinal_2D, dfq)
+        # gpu_reduce_2D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfinal_2D)
 
-    del data, dscat, dnorm, dd, dq, dr, dfq, final, dfinal
-    cuda.close()
-    return
+        gpu_reduce_3D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfq)
+
+
+        dfinal.to_host(stream)
+        # print final
+        # dfq.to_host(stream)
+        # final = data[3].sum(axis=(0, 1))
+        fq_q.append(final)
+
+        del data, dscat, dnorm, dd, dq, dr, dfq, final, dfinal
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
@@ -386,7 +384,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     # Sort grads to make certain indices are in order
     sort_grads = [x for (y, x) in sorted(zip(index_list, grad_q))]
 
-    len(sort_grads)
+    # len(sort_grads)
     # sorted_sum_grads = [x.sum(axis=(1)) for x in sort_grads]
 
     # Stitch arrays together

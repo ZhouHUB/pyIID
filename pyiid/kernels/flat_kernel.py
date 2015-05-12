@@ -3,7 +3,7 @@ from numba import *
 import math
 import numpy as np
 
-
+@autojit()
 def get_ij_lists(n):
     i_list = []
     j_list = []
@@ -23,6 +23,16 @@ def symmetric_reshape(out_data, in_data, i_list, j_list):
 def antisymmetric_reshape(out_data, in_data, i_list, j_list):
     out_data[j_list, i_list] = in_data
     out_data[i_list, j_list] = -1 * in_data
+
+
+def asr_gpu(new_grad, grad, il, jl):
+    k, qx = cuda.grid(2)
+
+    if k > len(il):
+        return
+    for tz in range(3):
+        new_grad[jl[k], il[k], tz, qx] = grad[k, tz, qx]
+        new_grad[il[k], jl[k], tz, qx] = -1*grad[k, tz, qx]
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
@@ -81,11 +91,20 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
     if k >= len(r) or qx > norm.shape[1]:
         return
     for w in range(3):
-        grad[k, w, qx] = (
-                             norm[k, qx] * qx * qbin * math.cos(
-                                 qx * qbin * r[k]) -
-                             fq[k, qx]) / r[k] * d[k, w] / r[k]
+        grad[k, w, qx] = (norm[k, qx] * qx * qbin * math.cos(qx * qbin * r[k]) - fq[k, qx]) \
+                         / r[k] * d[k, w] / r[k]
 
+
+'''
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
+def get_grad_fq(grad, fq, r, d, norm, qbin):
+    k, qx = cuda.grid(2)
+
+    if k >= len(r) or qx > norm.shape[1]:
+        return
+    for w in range(3):
+        grad[k, w, qx] /= (norm[k, qx] * qx * qbin * math.cos(qx * qbin * r[k]) - fq[k, qx]) / r[k] * d[k, w] / r[k]
+'''
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def d2_to_d1_sum(d1, d2):
@@ -98,5 +117,31 @@ def d2_to_d1_sum(d1, d2):
         d1[qx] += d2[k, qx]
 
 
-def d3_to_d2_sum(d3, d4):
-    pass
+def d4_to_d2_sum(d3, d4):
+    imax, N, jmax, kmax = d4.shape
+    i, j, k = cuda.grid(3)
+    if i >= imax or j >= jmax or k >= kmax:
+        return
+    for l in range(N):
+        d3[i, j, k] += d4[i, l, j, k]
+
+@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], i4[:], i4[:]])
+def construct_qij(qi, qj, q, il, jl):
+
+    k = cuda.grid(1)
+
+    if k >= len(il):
+        return
+    for tz in range(3):
+        qi[k, tz] = q[il[k], tz]
+        qj[k, tz] = q[jl[k], tz]
+
+@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], i4[:], i4[:]])
+def construct_scatij(scati, scatj, scat, il, jl):
+
+    k, qx = cuda.grid(2)
+
+    if k >= len(il) or qx >= scat.shape[1]:
+        return
+    scati[k, qx] = scat[il[k], qx]
+    scatj[k, qx] = scat[jl[k], qx]

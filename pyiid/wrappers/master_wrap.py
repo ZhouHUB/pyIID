@@ -21,7 +21,8 @@ def set_processor(processor=None):
         return processor, low_wrap_fq, low_wrap_fq_grad
 
     elif processor == 'Multi-GPU':
-        cuda.get_current_device()
+        cuda.gpus.lst
+        # cuda.get_current_device()
         from pyiid.wrappers.multi_gpu_wrap import \
             wrap_fq as low_wrap_fq
         from pyiid.wrappers.multi_gpu_wrap import \
@@ -29,7 +30,7 @@ def set_processor(processor=None):
 
         return processor, low_wrap_fq, low_wrap_fq_grad
 
-        cuda.close()
+        # cuda.close()
 
     elif processor == 'Serial-CPU':
         from pyiid.wrappers.cpu_wrap import wrap_fq as low_wrap_fq
@@ -51,13 +52,14 @@ def set_processor(processor=None):
 
                     break
                 elif i == 'Multi-GPU':
-                    cuda.get_current_device()
+                    cuda.gps.lst
+                    # cuda.get_current_device()
                     from pyiid.wrappers.multi_gpu_wrap import \
                         wrap_fq as low_wrap_fq
                     from pyiid.wrappers.multi_gpu_wrap import \
                         wrap_fq_grad as low_wrap_fq_grad
 
-                    cuda.close()
+                    # cuda.close()
                     break
                 elif i == 'Serial-CPU':
                     from pyiid.wrappers.cpu_wrap import wrap_fq as low_wrap_fq
