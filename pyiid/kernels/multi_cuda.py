@@ -189,10 +189,10 @@ def get_fq_p3(fq, norm_array):
     fq[tx, ty, kq] *= norm_array[tx, ty, kq]
 
 
-# @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], i4])
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
-# def get_normalization_array1(norm_array, scat, offset):
-def get_normalization_array1(norm_array, scat):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], i4])
+# @cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
+def get_normalization_array1(norm_array, scat, offset):
+# def get_normalization_array1(norm_array, scat):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -214,9 +214,9 @@ def get_normalization_array1(norm_array, scat):
         return
     if tx >= m or ty >= n or kq >= qmax_bin:
         return
-    # norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
-    norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
-    # norm_array[ty, tx, kq] = norm_array[tx, ty, kq]
+    norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
+    # norm_array[tx, ty, kq] = scat[tx, kq] * scat[ty, kq]
+    norm_array[ty, tx, kq] = norm_array[tx, ty, kq]
 #
 
 @cuda.jit(argtypes=[f4[:, :, :], i4])
@@ -431,9 +431,9 @@ def gpu_reduce_4D_to_3D(reduced, A):
 
     if i >= imax or j >= jmax or k >= kmax:
         return
-    # tmp = 0.0
-    # for l in range(N):
-    #     tmp += A[i, l, j, k]
-    # reduced[i, j, k] = tmp
+    tmp = 0.0
     for l in range(N):
-        reduced[i, j, k] += A[i, l, j, k]
+        tmp += A[i, l, j, k]
+    reduced[i, j, k] = tmp
+    # for l in range(N):
+    #     reduced[i, j, k] += A[i, l, j, k]

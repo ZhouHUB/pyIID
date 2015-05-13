@@ -1,9 +1,9 @@
 __author__ = 'christopher'
-import numpy as np
-from numba import cuda
 import math
 from threading import Thread
-from numpy.testing import assert_allclose
+
+import numpy as np
+from numba import cuda
 
 
 def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
@@ -15,11 +15,15 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
     # cuda kernel information
     with gpu:
     # cuda.select_device(gpu)
-        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
-            get_normalization_array1,get_normalization_array2, get_r_array1, \
-            get_r_array2, get_fq_p0, \
-            get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D, gpu_reduce_3D_to_2D, \
-            gpu_reduce_2D_to_1D
+    #     from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+    #         get_normalization_array1,get_normalization_array2, get_r_array1, \
+    #         get_r_array2, get_fq_p0, \
+    #         get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D, gpu_reduce_3D_to_2D, \
+    #         gpu_reduce_2D_to_1D
+        from pyiid.kernels.multi_cuda import get_d_array1, \
+            get_normalization_array1, get_r_array1, \
+            get_fq_p0, \
+            get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D
 
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -231,9 +235,12 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
             (m, n, 3, qmax_bin), (m, n, qmax_bin)]
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
     with gpu:
-        from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
-            get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
+        from pyiid.kernels.multi_cuda import get_d_array1, \
+            get_normalization_array1, get_r_array1, get_fq_p0, \
             get_fq_p1, get_fq_p3, gpu_reduce_4D_to_3D
+        # from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
+        #     get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
+        #     get_fq_p1, get_fq_p3, gpu_reduce_4D_to_3D
         from pyiid.kernels.multi_cuda import fq_grad_position3, \
             fq_grad_position5, fq_grad_position7, fq_grad_position_final1, \
             fq_grad_position_final2
@@ -271,10 +278,10 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         dq = cuda.to_device(q, stream)
 
         get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-        get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
+        # get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
 
         get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
-        get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
+        # get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
 
         '--------------------------------------------------------------'
         get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
@@ -294,7 +301,9 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
 
         # cuda.synchronize()
         final = np.zeros((m, 3, qmax_bin), dtype=np.float32)
-        dfinal = cuda.to_device(final, stream=stream3)
+
+        # dfinal = cuda.device_array(final.shape, dtype=np.float32, stream=stream2)
+        # dfinal = cuda.to_device(final, stream=stream2)
 
         fq_grad_position_final1[bpg_l_3, tpb_l_3, stream](dgrad_p, dd, dr)
         fq_grad_position5[bpg_l_3, tpb_l_3, stream2](dcos_term, dnorm)
@@ -304,10 +313,12 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         # cuda.synchronize()
 
         fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
+        dgrad_p.copy_to_host(data[4])
+        print data[4]
+        # gpu_reduce_4D_to_3D[bpg_l_3, tpb_l_3, stream](dfinal, dgrad_p)
 
-        gpu_reduce_4D_to_3D[bpg_l_3, tpb_l_3, stream](dfinal, dgrad_p)
-
-        dfinal.to_host(stream)
+        # dfinal.to_host()
+        # dfinal.copy_to_host(final, stream)
         grad_q.append(final)
         index_list.append(n_cov)
         del data, dscat, dnorm, dd, dr, dfq, dcos_term, dgrad_p
@@ -318,7 +329,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    qmax_bin = int(qmax / qbin)
+    qmax_bin = int(math.ceil(qmax / qbin))
     scatter_array = atoms.get_array('scatter')
 
     gpus = cuda.gpus.lst
@@ -414,9 +425,7 @@ if __name__ == '__main__':
     # import cProfile
     # cProfile.run('''
     from ase.atoms import Atoms
-    import os
     from pyiid.wrappers.master_wrap import wrap_atoms
-    import matplotlib.pyplot as plt
 
     n = 400
     pos = np.random.random((n, 3)) * 10.

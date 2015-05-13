@@ -165,8 +165,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    # n = 400
-    n = 4000
+    n = 700
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
     exp_dict = {'qmin': 0.0, 'qmax': 25.,
@@ -175,8 +174,11 @@ if __name__ == '__main__':
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
     scat.set_processor('Multi-GPU')
-    print 'start calc'
-    scat.get_grad_fq(atoms)
+    # scat.set_processor('Serial-CPU')
+    # print 'start calc'
+    print scat.processor
+    print scat.get_grad_fq(atoms)
+    # raw_input()
     # fq = scat.get_fq(atoms)
     # plt.plot(fq)
     # plt.show()

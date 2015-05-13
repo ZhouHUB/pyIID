@@ -122,8 +122,10 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
 
     # setup flat map
     il, jl = get_ij_lists(n)
+    # print il, jl
     k_max = len(il)
-    # print k_max
+
+    # AAA
     gpus, mem_list = get_gpus_mem()
     # print gpus, mem_list
 
@@ -170,7 +172,7 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
         # load kernels
         from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
             get_normalization_array, get_fq, d2_to_d1_sum, get_grad_fq, \
-            construct_scatij, construct_qij
+            construct_scatij, construct_qij, flat_sum
 
         elements_per_dim_1 = [len(il)]
         tpb1 = [32]
@@ -201,6 +203,27 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
                 bpg = 1
             assert (bpg * tpb >= e_dim)
             bpg2.append(bpg)
+
+
+        elements_per_dim_nq = [len(q), qmax_bin]
+        tpbnq = [16, 4]
+        bpgnq = []
+        for e_dim, tpb in zip(elements_per_dim_nq, tpbnq):
+            bpg = int(math.ceil(float(e_dim) / tpb))
+            if bpg < 1:
+                bpg = 1
+            assert (bpg * tpb >= e_dim)
+            bpgnq.append(bpg)
+
+        elements_per_dim_3 = [len(il), len(q), qmax_bin]
+        tpb3 = [64, 1, 1]
+        bpg3 = []
+        for e_dim, tpb in zip(elements_per_dim_3, tpb3):
+            bpg = int(math.ceil(float(e_dim) / tpb))
+            if bpg < 1:
+                bpg = 1
+            assert (bpg * tpb >= e_dim)
+            bpg3.append(bpg)
 
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -233,7 +256,7 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
 
         construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
         get_normalization_array[bpg2, tpb2, stream2](dnorm, dscati, dscatj)
-        del dscati, dscatj, dscat, dil, djl
+        del dscati, dscatj, dscat
 
         dfq = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
                                 stream=stream2)
@@ -241,16 +264,40 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
         get_fq[bpg2, tpb2, stream2](dfq, dr, dnorm, qbin)
 
         grad = np.zeros((len(il), 3, qmax_bin), dtype=np.float32)
-
         dgrad = cuda.device_array(grad.shape, dtype=np.float32, stream=stream2)
 
-        get_grad_fq[bpg2, tpb2, stream2](dgrad, dfq, dr, dd, dnorm, qbin)
-        dgrad.copy_to_host(grad, stream2)
-        del dd, dr, dnorm, dfq, dgrad
 
-    # TODO:NEED MAPPING BACK TO N SPACE, THAT DOESN'T TAKE A TON OF MEMORY
-    antisymmetric_reshape(newgrad, grad, il, jl)
-    grad_q.append(newgrad.sum(axis=1))
+        get_grad_fq[bpg2, tpb2, stream2](dgrad, dfq, dr, dd, dnorm, qbin)
+
+        new_grad2 = np.zeros((len(q), 3, qmax_bin), dtype=np.float32)
+        dnew_grad = cuda.to_device(new_grad2, stream=stream2)
+        # dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32, stream=stream2)
+
+        jil = np.zeros((len(q), len(q)-1), dtype=np.int32)
+        min_n = min([np.min(il), np.min(jl)])
+        for n in range(min_n, len(q)):
+            jil[n, :] = np.concatenate([np.where(jl == n)[0], np.where(il == n)[0]])
+        # print jil
+        djil = cuda.to_device(jil, stream2)
+        # djil = cuda.to_device(jil)
+        flat_sum[bpgnq, tpbnq, stream2](dnew_grad, dgrad, djil)
+        dnew_grad.to_host(stream2)
+        # print new_grad2
+        # flat_sum[bpg2, tpb2, stream2](dnew_grad, dgrad, dil, djl)
+
+        # dgrad.copy_to_host(grad, stream=stream2)
+        # final = np.zeros((len(q), 3, qmax_bin))
+        # for k in range(len(il)):
+        # final[jl[:]] -= grad[:]
+        # final[il[:]] += grad[:]
+        # dnew_grad.copy_to_host(new_grad2, stream=stream2)
+        # print final
+        # for n in range(len(q)):
+        #     new_grad2[n, :, :] += grad[jil[n, :n], :, :].sum(axis=0)
+        #     new_grad2[n, :, :] -= grad[jil[n, n:], :, :].sum(axis=0)
+
+        del dd, dr, dnorm, dfq, dgrad, dil, djl
+    grad_q.append(new_grad2)
     index_list.append(k_cov)
     del grad, k_cov, il, jl
 
@@ -265,6 +312,7 @@ def wrap_fq_grad(atoms, qmax=25, qbin=.1):
     # setup flat map
 
     il, jl = get_ij_lists(n)
+    # print il, jl
     k_max = len(il)
 
     gpus, mem_list = get_gpus_mem()
@@ -280,8 +328,9 @@ def wrap_fq_grad(atoms, qmax=25, qbin=.1):
             if m > k_max - k_cov:
                 m = k_max - k_cov
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                if k_cov >= k_max:
-                    break
+                # if k_cov >= k_max:
+                #     break
+                # print float(k_cov+m)/k_max * 100, '%'
                 p = Thread(target=subs_grad_fq, args=(
                     gpu, q, scatter_array, grad_q, qmax_bin, qbin,
                     il[k_cov:k_cov+m],
@@ -295,24 +344,35 @@ def wrap_fq_grad(atoms, qmax=25, qbin=.1):
 
                 if k_cov >= k_max:
                     break
+        #TODO: sum arrays during processing to cut down on memory
     for value in p_dict.values():
         value.join()
 
     sort_grads = [x for (y, x) in sorted(zip(index_list, grad_q))]
 
     if len(sort_grads) > 1:
-        grad_p = np.concatenate(sort_grads, axis=0)
+        # grads = np.concatenate(sort_grads, axis=)
+        grad_p = np.sum(sort_grads, axis=0)
+        print grad_p.shape
     else:
         grad_p = sort_grads[0]
-
-    newgrad = newgrad.sum(axis=1)
+    '''
+    jil = np.zeros((len(q), len(q)-1), dtype=np.int32)
+    for n in range(len(q)):
+        jil[n, :] = np.concatenate([np.where(jl == n)[0], np.where(il == n)[0]])
+    grad_p = np.zeros((len(q), 3, qmax_bin))
+    print jil
+    for n in range(len(q)):
+        grad_p[n, :, :] += grads[jil[n, :n], :, :].sum(axis=0)
+        grad_p[n, :, :] -= grads[jil[n, n:], :, :].sum(axis=0)
+    '''
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
-            newgrad[tx, tz] = np.nan_to_num(1 / na * newgrad[tx, tz])
+            grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
     np.seterr(**old_settings)
-    return newgrad
+    return grad_p
 
 
 if __name__ == '__main__':
