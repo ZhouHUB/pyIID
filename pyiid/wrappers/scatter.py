@@ -165,7 +165,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    n = 700
+    n = 900
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
     exp_dict = {'qmin': 0.0, 'qmax': 25.,

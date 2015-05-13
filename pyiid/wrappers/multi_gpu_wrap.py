@@ -86,8 +86,8 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
         print dnorm.shape
         print dscat.shape
         print 'gpu error after this'
-        # get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
-        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
+        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
+        # get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
 
         # get_normalization_array2[bpg_l_3, tpb_l_3, stream2](dnorm, n_cov)
 
@@ -148,7 +148,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
         with gpu:
             meminfo = cuda.current_context().get_memory_info()
         mem_list.append(meminfo[0])
-    gpus = range(len(gpus))
+    # gpus = range(len(gpus))
     sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     gpu_total_mem = sum(sort_gmem)

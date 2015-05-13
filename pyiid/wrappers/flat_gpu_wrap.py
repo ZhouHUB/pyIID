@@ -168,6 +168,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
 
 def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, index_list):
     # set up GPU
+    n = len(q)
     with gpu:
         # load kernels
         from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
@@ -273,29 +274,19 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
         dnew_grad = cuda.to_device(new_grad2, stream=stream2)
         # dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32, stream=stream2)
 
-        jil = np.zeros((len(q), len(q)-1), dtype=np.int32)
+        # jil = np.zeros((len(q), len(q)-1), dtype=np.int32)
+        print min(il), min(jl), max(il), max(jl)
+        print '\n\n\n'
         min_n = min([np.min(il), np.min(jl)])
-        for n in range(min_n, len(q)):
-            jil[n, :] = np.concatenate([np.where(jl == n)[0], np.where(il == n)[0]])
-        # print jil
+
+        jil = np.zeros((n, n-1), dtype=np.int32)
+
+        for sn in range(n):
+            jil[sn, :] = np.concatenate([np.where(jl == sn)[0], np.where(il == sn)[0]])
+        print jil
         djil = cuda.to_device(jil, stream2)
-        # djil = cuda.to_device(jil)
         flat_sum[bpgnq, tpbnq, stream2](dnew_grad, dgrad, djil)
         dnew_grad.to_host(stream2)
-        # print new_grad2
-        # flat_sum[bpg2, tpb2, stream2](dnew_grad, dgrad, dil, djl)
-
-        # dgrad.copy_to_host(grad, stream=stream2)
-        # final = np.zeros((len(q), 3, qmax_bin))
-        # for k in range(len(il)):
-        # final[jl[:]] -= grad[:]
-        # final[il[:]] += grad[:]
-        # dnew_grad.copy_to_host(new_grad2, stream=stream2)
-        # print final
-        # for n in range(len(q)):
-        #     new_grad2[n, :, :] += grad[jil[n, :n], :, :].sum(axis=0)
-        #     new_grad2[n, :, :] -= grad[jil[n, n:], :, :].sum(axis=0)
-
         del dd, dr, dnorm, dfq, dgrad, dil, djl
     grad_q.append(new_grad2)
     index_list.append(k_cov)
@@ -325,6 +316,7 @@ def wrap_fq_grad(atoms, qmax=25, qbin=.1):
         for gpu, mem in zip(gpus, mem_list):
             m = int(math.floor(
                 float(mem - 4*qmax_bin*n - 12*n)/(4*(7*qmax_bin + 12))))
+            # m = 2
             if m > k_max - k_cov:
                 m = k_max - k_cov
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
