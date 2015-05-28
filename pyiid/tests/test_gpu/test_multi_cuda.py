@@ -3,10 +3,12 @@ import numpy as np
 from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 import sys
+
 sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.multi_cuda import *
-n = 10
+
+n = 600
 
 
 def set_up_gpu(n, qmax_bin=None):
@@ -21,7 +23,7 @@ def set_up_gpu(n, qmax_bin=None):
             bpg = int(math.ceil(float(e_dim) / tpb))
             if bpg < 1:
                 bpg = 1
-            assert(bpg*tpb >= e_dim)
+            assert (bpg * tpb >= e_dim)
             bpg_l_2.append(bpg)
         return stream, bpg_l_2, tpb_l_2
 
@@ -34,7 +36,7 @@ def set_up_gpu(n, qmax_bin=None):
             bpg = int(math.ceil(float(e_dim) / tpb))
             if bpg < 1:
                 bpg = 1
-            assert(bpg*tpb >= e_dim)
+            assert (bpg * tpb >= e_dim)
             bpg_l_3.append(bpg)
         return stream, bpg_l_3, tpb_l_3
 
@@ -58,8 +60,7 @@ def test_get_d_array():
 
     dd = cuda.to_device(kd, stream)
     dq = cuda.to_device(q, stream)
-    get_d_array1[bpg, tpb, stream](dd, dq, 0)
-    get_d_array2[bpg, tpb, stream](dd, 0)
+    get_d_array[bpg, tpb, stream](dd, dq, 0)
     dd.to_host(stream)
 
     assert_allclose(cd, kd)
@@ -69,7 +70,7 @@ def test_get_d_array():
 
 def test_get_r_array():
     """
-    Test of get_d_array
+    Test of get_r_array
     """
     from pyiid.kernels.cpu_kernel import get_r_array as comp
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
@@ -92,8 +93,7 @@ def test_get_r_array():
     stream, bpg, tpb = set_up_gpu(n)
     d_out = cuda.to_device(k_r, stream)
     d_in = cuda.to_device(d, stream)
-    get_r_array1[bpg, tpb, stream](d_out, d_in)
-    get_r_array2[bpg, tpb, stream](d_out)
+    get_r_array[bpg, tpb, stream](d_out, d_in)
     d_out.to_host(stream)
 
     assert_allclose(cr, k_r)
@@ -103,20 +103,20 @@ def test_get_r_array():
 
 def test_get_normalization_array():
     from pyiid.kernels.cpu_kernel import get_normalization_array as comp
+
     Q = 250
     scat = np.random.random((n, Q)).astype(np.float32)
     c_norm = np.zeros((n, n, Q), dtype=np.float32)
     k_norm = dc(c_norm)
 
-    #compiled
+    # compiled
     comp(c_norm, scat)
 
     #kernel
     stream, bpg, tpb = set_up_gpu(n, 250)
     dnorm = cuda.to_device(k_norm)
     dscat = cuda.to_device(scat)
-    get_normalization_array1[bpg, tpb, stream](dnorm, dscat, 0)
-    get_normalization_array2[bpg, tpb, stream](dnorm, 0)
+    get_normalization_array[bpg, tpb, stream](dnorm, dscat, 0)
     dnorm.to_host(stream)
 
     assert_allclose(c_norm, k_norm)
@@ -127,28 +127,29 @@ def test_get_fq_p0_1():
     r = np.random.random((n, n)).astype(np.float32)
     qbin = .1
     cfq = np.zeros((n, n, Q), dtype=np.float32)
-    #compiled
+    # compiled
     qmax_bin = cfq.shape[-1]
     for tx in range(n):
         for ty in range(n):
             if tx != ty:
                 for kq in range(0, qmax_bin):
-                    cfq[tx, ty, kq] = math.sin(kq*qbin*r[tx, ty])/r[tx, ty]
+                    cfq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[
+                        tx, ty]
 
     #kernel
     kfq = np.zeros((n, n, Q), dtype=np.float32)
     dfq = cuda.to_device(kfq)
     dr = cuda.to_device(r)
     stream, bpg, tpb = set_up_gpu(n, 250)
-    get_fq_p0[bpg, tpb, stream](dfq, dr, qbin)
-    get_fq_p1[bpg, tpb, stream](dfq)
+    get_fq_step_0[bpg, tpb, stream](dfq, dr, qbin)
     dfq.to_host(stream)
 
     rtol = 5e-2
-    print 'rms', np.sqrt(np.mean((kfq-cfq)**2))
-    print 'mean', np.mean(kfq-cfq)
-    print 'median', np.median(kfq-cfq)
-    print 'percent of errors', np.count_nonzero(kfq-cfq > cfq*rtol)/float(kfq.size)*100, '%'
+    print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
+    print 'mean', np.mean(kfq - cfq)
+    print 'median', np.median(kfq - cfq)
+    print 'percent of errors', np.count_nonzero(
+        kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
     assert_allclose(kfq, cfq, rtol=rtol)
 
 
@@ -159,13 +160,14 @@ def test_get_fq_p0_1_sum():
     qbin = .1
     cfq = np.zeros((n, n, Q), dtype=np.float32)
     # cfq = np.zeros((n, n, Q), dtype=np.float64)
-    #compiled
+    # compiled
     qmax_bin = cfq.shape[-1]
     for tx in range(n):
         for ty in range(n):
             if tx != ty:
                 for kq in range(0, qmax_bin):
-                    cfq[tx, ty, kq] = math.sin(kq*qbin*r[tx, ty])/r[tx, ty]
+                    cfq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[
+                        tx, ty]
 
     #kernel
     # kfq = np.zeros((n, n, Q), dtype=np.float64)
@@ -173,15 +175,15 @@ def test_get_fq_p0_1_sum():
     dfq = cuda.to_device(kfq)
     dr = cuda.to_device(r)
     stream, bpg, tpb = set_up_gpu(n, 250)
-    get_fq_p0[bpg, tpb, stream](dfq, dr, qbin)
-    get_fq_p1[bpg, tpb, stream](dfq)
+    get_fq_step_0[bpg, tpb, stream](dfq, dr, qbin)
     dfq.to_host(stream)
 
     rtol = 5e-2
-    print 'rms', np.sqrt(np.mean((kfq-cfq)**2))
-    print 'mean', np.mean(kfq-cfq)
-    print 'median', np.median(kfq-cfq)
-    print 'percent of errors', np.count_nonzero(kfq-cfq > cfq*rtol)/float(kfq.size)*100, '%'
+    print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
+    print 'mean', np.mean(kfq - cfq)
+    print 'median', np.median(kfq - cfq)
+    print 'percent of errors', np.count_nonzero(
+        kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
     assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol)
 
 
@@ -192,14 +194,15 @@ def test_get_fq_grad_p3():
     qbin = .1
     cfq = np.zeros((n, n, Q), dtype=np.float32)
     # cfq = np.zeros((n, n, Q), dtype=np.float64)
-    #compiled
+    # compiled
     qmax_bin = cfq.shape[-1]
     for tx in range(n):
         for ty in range(n):
             if tx != ty:
                 for kq in range(0, qmax_bin):
-                    cfq[tx, ty, kq] = math.cos(kq * qbin * r[tx, ty]) * kq * qbin / r[
-        tx, ty]
+                    cfq[tx, ty, kq] = math.cos(
+                        kq * qbin * r[tx, ty]) * kq * qbin / r[
+                                          tx, ty]
 
     #kernel
     # kfq = np.zeros((n, n, Q), dtype=np.float64)
@@ -207,14 +210,15 @@ def test_get_fq_grad_p3():
     dfq = cuda.to_device(kfq)
     dr = cuda.to_device(r)
     stream, bpg, tpb = set_up_gpu(n, 250)
-    fq_grad_position3[bpg, tpb, stream](dfq, dr, qbin)
+    fq_grad_step_0[bpg, tpb, stream](dfq, dr, qbin)
     dfq.to_host(stream)
 
     rtol = 5e-2
-    print 'rms', np.sqrt(np.mean((kfq-cfq)**2))
-    print 'mean', np.mean(kfq-cfq)
-    print 'median', np.median(kfq-cfq)
-    print 'percent of errors', np.count_nonzero(kfq-cfq > cfq*rtol)/float(kfq.size)*100, '%'
+    print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
+    print 'mean', np.mean(kfq - cfq)
+    print 'median', np.median(kfq - cfq)
+    print 'percent of errors', np.count_nonzero(
+        kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
     assert_allclose(kfq, cfq, rtol=rtol)
 
 
@@ -225,14 +229,15 @@ def test_get_fq_grad_p3_sum():
     qbin = .1
     cfq = np.zeros((n, n, Q), dtype=np.float32)
     # cfq = np.zeros((n, n, Q), dtype=np.float64)
-    #compiled
+    # compiled
     qmax_bin = cfq.shape[-1]
     for tx in range(n):
         for ty in range(n):
             if tx != ty:
                 for kq in range(0, qmax_bin):
-                    cfq[tx, ty, kq] = math.cos(kq * qbin * r[tx, ty]) * kq * qbin / r[
-        tx, ty]
+                    cfq[tx, ty, kq] = math.cos(
+                        kq * qbin * r[tx, ty]) * kq * qbin / r[
+                                          tx, ty]
 
     #kernel
     # kfq = np.zeros((n, n, Q), dtype=np.float64)
@@ -240,67 +245,51 @@ def test_get_fq_grad_p3_sum():
     dfq = cuda.to_device(kfq)
     dr = cuda.to_device(r)
     stream, bpg, tpb = set_up_gpu(n, 250)
-    fq_grad_position3[bpg, tpb, stream](dfq, dr, qbin)
+    fq_grad_step_0[bpg, tpb, stream](dfq, dr, qbin)
     dfq.to_host(stream)
 
     rtol = 5e-2
-    print 'rms', np.sqrt(np.mean((kfq-cfq)**2))
-    print 'mean', np.mean(kfq-cfq)
-    print 'median', np.median(kfq-cfq)
-    print 'percent of errors', np.count_nonzero(kfq-cfq > cfq*rtol)/float(kfq.size)*100, '%'
+    print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
+    print 'mean', np.mean(kfq - cfq)
+    print 'median', np.median(kfq - cfq)
+    print 'percent of errors', np.count_nonzero(
+        kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
     assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol)
 
 
-'''
-def test_get_fq_total():
-    from pyiid.kernels.cpu_kernel import get_fq_array
-    Q = 250
-    scat = np.random.random((n, Q)).astype(np.float32)
-    r = np.random.random((n, n)).astype(np.float32)
-    qbin = .1
-    cfq = np.zeros(Q, dtype=np.float32)
-
-    #compiled
-    get_fq_array(cfq, r, scat, qbin)
-
-    #kernel
-    kfq = np.zeros()
-    dfq =
-    stream, bpg, tpb = set_up_gpu(n, 250)
-    get_fq_p0[bpg, tpb, stream](dfq, dr, qbin)
-'''
 if __name__ == '__main__':
-    # import nose
-    # nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)
-
+    import nose
+    nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)
+    '''
     Q = 250
-    n = 2
-    # r = np.random.random((n, n)).astype(np.float32) * 10
-    r = np.asarray([[0, 1], [1, 0]]).astype(np.float32)
+    n = 200
+    if n == 2:
+        r = np.asarray([[0, 1], [1, 0]]).astype(np.float32)
+    else:
+        r = np.random.random((n, n)).astype(np.float32) * 10
     qbin = .1
     cfq = np.zeros((n, n, Q), dtype=np.float32)
-    # cfq = np.zeros((n, n, Q), dtype=np.float64)
-    #compiled
+    # CPU compiled
     qmax_bin = cfq.shape[-1]
     for tx in range(n):
         for ty in range(n):
             if tx != ty:
                 for kq in range(0, qmax_bin):
-                    cfq[tx, ty, kq] = math.sin(kq*qbin*r[tx, ty])/r[tx, ty]
+                    cfq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[
+                        tx, ty]
 
-    #kernel
-    # kfq = np.zeros((n, n, Q), dtype=np.float64)
+    # GPU kernel
     kfq = np.zeros((n, n, Q), dtype=np.float32)
     dfq = cuda.to_device(kfq)
     dr = cuda.to_device(r)
     stream, bpg, tpb = set_up_gpu(n, 250)
-    get_fq_p0[bpg, tpb, stream](dfq, dr, qbin)
-    get_fq_p1[bpg, tpb, stream](dfq)
+    get_fq_step_0[bpg, tpb, stream](dfq, dr, qbin)
     dfq.to_host(stream)
     cuda.close()
 
     import matplotlib.pyplot as plt
+
     plt.plot(kfq.sum(axis=(0, 1)), label='gpu')
     plt.plot(cfq.sum(axis=(0, 1)), label='cpu')
     plt.legend()
-    plt.show()
+    plt.show()'''

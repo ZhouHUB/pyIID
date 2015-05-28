@@ -7,28 +7,20 @@ from numba import cuda
 
 
 def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
-    print 'start sub'
     n = len(q)
     tups = [(m, n, 3), (m, n), (m, n, qmax_bin), (m, n, qmax_bin)]
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
     # Kernel
     # cuda kernel information
     with gpu:
-    # cuda.select_device(gpu)
-    #     from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
-    #         get_normalization_array1,get_normalization_array2, get_r_array1, \
-    #         get_r_array2, get_fq_p0, \
-    #         get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D, gpu_reduce_3D_to_2D, \
-    #         gpu_reduce_2D_to_1D
-        from pyiid.kernels.multi_cuda import get_d_array1, \
-            get_normalization_array1, get_r_array1, \
-            get_fq_p0, \
-            get_fq_p1, get_fq_p3, gpu_reduce_3D_to_1D
+        # Import and compile the GPU kernels
+        from pyiid.kernels.multi_cuda import get_d_array, \
+            get_normalization_array, get_r_array, \
+            get_fq_step_0, get_fq_step_1, gpu_reduce_3D_to_1D
 
         stream = cuda.stream()
         stream2 = cuda.stream()
 
-        print 'define grids'
         # three kinds of test_kernels; Q, NxN or NxNxQ
         # Q
         elements_per_dim_1 = [qmax_bin]
@@ -76,57 +68,33 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
             bpg_l_3.append(bpg)
 
         # start calculations
-        print 'start calculation'
         dscat = cuda.to_device(scatter_array, stream2)
         dnorm = cuda.device_array(data[2].shape, dtype=np.float32,
                                   stream=stream2)
-        dscat.to_host()
-        dnorm.copy_to_host(data[2])
-        print n_cov
-        print dnorm.shape
-        print dscat.shape
-        print 'gpu error after this'
-        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
-        # get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat)
-
-        # get_normalization_array2[bpg_l_3, tpb_l_3, stream2](dnorm, n_cov)
-
-
+        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
 
         dd = cuda.device_array(data[0].shape, dtype=np.float32, stream=stream)
         dr = cuda.device_array(data[1].shape, dtype=np.float32, stream=stream)
+
+        # Note that while direct allocation might be faster current kernels
+        # depend on having zero values thus preventing using "empty" arrays
         # dfq = cuda.device_array(data[3].shape, dtype=np.float32, stream=stream)
-        assert not np.all(data[3])
+
         dfq = cuda.to_device(data[3], stream=stream)
         dq = cuda.to_device(q, stream)
 
-        print 'error continues'
-        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-        # get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
-        print 'got d array'
-        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
-        # get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
+        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
 
         final = np.zeros(qmax_bin, dtype=np.float32)
         dfinal = cuda.to_device(final, stream2)
 
-        # dfinal_2D = cuda.device_array((n, qmax_bin), dtype=np.float32, stream=stream2)
-
-        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
-        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
-        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
-
-
-        # gpu_reduce_3D_to_2D[bpg_l_2_q, tpb_l_2_q, stream](dfinal_2D, dfq)
-        # gpu_reduce_2D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfinal_2D)
+        get_fq_step_0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_step_1[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
 
         gpu_reduce_3D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfq)
 
-
         dfinal.to_host(stream)
-        # print final
-        # dfq.to_host(stream)
-        # final = data[3].sum(axis=(0, 1))
         fq_q.append(final)
 
         del data, dscat, dnorm, dd, dq, dr, dfq, final, dfinal
@@ -235,15 +203,12 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
             (m, n, 3, qmax_bin), (m, n, qmax_bin)]
     data = [np.zeros(shape=tup, dtype=np.float32) for tup in tups]
     with gpu:
-        from pyiid.kernels.multi_cuda import get_d_array1, \
-            get_normalization_array1, get_r_array1, get_fq_p0, \
-            get_fq_p1, get_fq_p3, gpu_reduce_4D_to_3D
-        # from pyiid.kernels.multi_cuda import get_d_array1, get_d_array2, \
-        #     get_normalization_array1, get_r_array1, get_r_array2, get_fq_p0, \
-        #     get_fq_p1, get_fq_p3, gpu_reduce_4D_to_3D
-        from pyiid.kernels.multi_cuda import fq_grad_position3, \
-            fq_grad_position5, fq_grad_position7, fq_grad_position_final1, \
-            fq_grad_position_final2
+        from pyiid.kernels.multi_cuda import get_d_array, \
+            get_normalization_array, get_r_array, \
+            get_fq_step_0, get_fq_step_1, gpu_reduce_4D_to_3D
+        from pyiid.kernels.multi_cuda import fq_grad_step_0, \
+            fq_grad_step_1, fq_grad_step_2, fq_grad_step_3, \
+            fq_grad_step_4
         # cuda info
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -269,31 +234,31 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         dnorm = cuda.device_array(data[2].shape, dtype=np.float32,
                                   stream=stream2)
         '--------------------------------------------------------------'
-        get_normalization_array1[bpg_l_3, tpb_l_3, stream2](dnorm, dscat,
-                                                            n_cov)
+        get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat,
+                                                           n_cov)
         '--------------------------------------------------------------'
         dd = cuda.device_array(data[0].shape, dtype=np.float32, stream=stream)
         dr = cuda.device_array(data[1].shape, dtype=np.float32, stream=stream)
         dfq = cuda.device_array(data[3].shape, dtype=np.float32, stream=stream)
         dq = cuda.to_device(q, stream)
 
-        get_d_array1[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
+        get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
         # get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
 
-        get_r_array1[bpg_l_2, tpb_l_2, stream](dr, dd)
+        get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
         # get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
 
         '--------------------------------------------------------------'
-        get_fq_p0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
-        get_fq_p3[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
+        get_fq_step_0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
+        get_fq_step_1[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
         '--------------------------------------------------------------'
         dcos_term = cuda.device_array(data[5].shape, dtype=np.float32,
                                       stream=stream2)
         # cuda.synchronize()
 
 
-        get_fq_p1[bpg_l_3, tpb_l_3, stream](dfq)
-        fq_grad_position3[bpg_l_3, tpb_l_3, stream3](dcos_term, dr, qbin)
+
+        fq_grad_step_0[bpg_l_3, tpb_l_3, stream3](dcos_term, dr, qbin)
         dgrad_p = cuda.device_array(data[4].shape, dtype=np.float32,
                                     stream=stream2)
         # cuda.synchronize()
@@ -303,21 +268,21 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         final = np.zeros((m, 3, qmax_bin), dtype=np.float32)
 
         # dfinal = cuda.device_array(final.shape, dtype=np.float32, stream=stream2)
-        # dfinal = cuda.to_device(final, stream=stream2)
+        dfinal = cuda.to_device(final, stream=stream2)
 
-        fq_grad_position_final1[bpg_l_3, tpb_l_3, stream](dgrad_p, dd, dr)
-        fq_grad_position5[bpg_l_3, tpb_l_3, stream2](dcos_term, dnorm)
+        fq_grad_step_3[bpg_l_3, tpb_l_3, stream](dgrad_p, dd, dr)
+        fq_grad_step_1[bpg_l_3, tpb_l_3, stream2](dcos_term, dnorm)
         # cuda.synchronize()
 
-        fq_grad_position7[bpg_l_3, tpb_l_3, stream](dcos_term, dfq, dr)
+        fq_grad_step_2[bpg_l_3, tpb_l_3, stream](dcos_term, dfq, dr)
         # cuda.synchronize()
 
-        fq_grad_position_final2[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
+        fq_grad_step_4[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
         dgrad_p.copy_to_host(data[4])
-        print data[4]
-        # gpu_reduce_4D_to_3D[bpg_l_3, tpb_l_3, stream](dfinal, dgrad_p)
+        # print data[4]
+        gpu_reduce_4D_to_3D[bpg_l_3, tpb_l_3, stream](dfinal, dgrad_p)
 
-        # dfinal.to_host()
+        dfinal.to_host()
         # dfinal.copy_to_host(final, stream)
         grad_q.append(final)
         index_list.append(n_cov)

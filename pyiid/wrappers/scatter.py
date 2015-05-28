@@ -95,11 +95,11 @@ class Scatter(object):
             self.processor = processor
 
         elif processor == self.avail_pro[1] and check_multi_gpu() is True:
-            # self.fq = node_0_gpu_wrap_fq
-            # self.grad = node_0_gpu_wrap_fq_grad
+            self.fq = node_0_gpu_wrap_fq
+            self.grad = node_0_gpu_wrap_fq_grad
 
-            self.fq = flat_fq
-            self.grad = flat_grad
+            # self.fq = flat_fq
+            # self.grad = flat_grad
             self.processor = processor
 
         elif processor == self.avail_pro[2]:
@@ -165,7 +165,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    n = 900
+    n = 1500
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
     exp_dict = {'qmin': 0.0, 'qmax': 25.,
