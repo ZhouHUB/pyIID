@@ -10,18 +10,6 @@ from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf
 from pyiid.wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
 from pyiid.wrappers.cpu_wrap import wrap_fq_grad as cpu_wrap_fq_grad
 
-from pyiid.wrappers.multi_gpu_wrap import wrap_fq as node_0_gpu_wrap_fq
-from pyiid.wrappers.multi_gpu_wrap import \
-    wrap_fq_grad as node_0_gpu_wrap_fq_grad
-
-from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
-from pyiid.wrappers.flat_gpu_wrap import \
-    wrap_fq_grad as flat_grad
-
-from pyiid.wrappers.mpi_gpu_wrap import wrap_fq as multi_node_gpu_wrap_fq
-from pyiid.wrappers.mpi_gpu_wrap import \
-    wrap_fq_grad as multi_node_gpu_wrap_fq_grad
-
 
 def check_mpi():
     # Test if MPI GPU is viable
@@ -90,11 +78,24 @@ class Scatter(object):
                     break
 
         elif processor == self.avail_pro[0] and check_mpi() is True:
+            from pyiid.wrappers.mpi_gpu_wrap import wrap_fq as multi_node_gpu_wrap_fq
+            from pyiid.wrappers.mpi_gpu_wrap import \
+                wrap_fq_grad as multi_node_gpu_wrap_fq_grad
+
             self.fq = multi_node_gpu_wrap_fq
             self.grad = multi_node_gpu_wrap_fq_grad
             self.processor = processor
 
         elif processor == self.avail_pro[1] and check_multi_gpu() is True:
+            from pyiid.wrappers.multi_gpu_wrap import wrap_fq as node_0_gpu_wrap_fq
+            from pyiid.wrappers.multi_gpu_wrap import \
+                wrap_fq_grad as node_0_gpu_wrap_fq_grad
+
+
+            from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
+            from pyiid.wrappers.flat_gpu_wrap import \
+                wrap_fq_grad as flat_grad
+
             # self.fq = node_0_gpu_wrap_fq
             self.grad = node_0_gpu_wrap_fq_grad
 
