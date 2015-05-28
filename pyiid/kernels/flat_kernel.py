@@ -111,9 +111,8 @@ def d2_to_d1_sum(d1, d2):
 
     if qx >= len(d1):
         return
-    d1[qx] = 0.0
-    for k in range(d2.shape[0]):
-        d1[qx] += d2[k, qx]
+    tmp = d2[:, qx].sum()
+    d1[qx] = tmp
 
 
 def d4_to_d2_sum(d3, d4):

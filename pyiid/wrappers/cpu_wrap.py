@@ -124,41 +124,41 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     return dfq_dq
 
 
-@autojit
+# @autojit
 def spring_nrg(atoms, k, rt):
     q = atoms.positions
     n = len(atoms)
-    d = numpy.zeros((n, n, 3))
+    d = np.zeros((n, n, 3))
     get_d_array(d, q)
-    r = numpy.zeros((n, n))
+    r = np.zeros((n, n))
     get_r_array(r, d)
 
-    thresh = numpy.less(r, rt)
+    thresh = np.less(r, rt)
     for i in range(len(thresh)):
         thresh[i,i] = False
 
-    mag = numpy.zeros(r.shape)
+    mag = np.zeros(r.shape)
     mag[thresh] = k * (r[thresh]-rt)
 
-    energy = numpy.sum(mag[thresh]/2.*(r[thresh]-rt))
+    energy = np.sum(mag[thresh]/2.*(r[thresh]-rt))
     return energy
 
-@autojit
+# @autojit
 def spring_force(atoms, k, rt):
     q = atoms.positions
     n = len(atoms)
-    d = numpy.zeros((n, n, 3))
+    d = np.zeros((n, n, 3))
     get_d_array(d, q)
-    r = numpy.zeros((n, n))
+    r = np.zeros((n, n))
     get_r_array(r, d)
 
-    thresh = numpy.less(r, rt)
+    thresh = np.less(r, rt)
     for i in range(len(thresh)):
         thresh[i,i] = False
 
-    mag = numpy.zeros(r.shape)
+    mag = np.zeros(r.shape)
     mag[thresh] = k * (r[thresh]-rt)
 
-    direction = numpy.zeros(q.shape)
+    direction = np.zeros(q.shape)
     spring_force_kernel(direction, d, r, mag)
     return direction

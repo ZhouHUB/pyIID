@@ -36,10 +36,6 @@ def wrap_rw(gcalc, gobs):
         The Rw value in percent
     scale: float
         The scale factor between the observed and calculated PDF
-    pdf0:1darray
-        The atomic pair distributuion function
-    fq:1darray
-        The reduced structure function
     """
     rw, scale = get_rw(gobs, gcalc, weight=None)
     return rw, scale
@@ -250,6 +246,8 @@ if __name__ == '__main__':
     wrap_atoms(ideal_atoms)
 
     scat = Scatter()
+    print scat.get_grad_pdf(ideal_atoms)
+    AAA
     gobs = scat.get_pdf(ideal_atoms)
 
     # calc1 = PDFCalc(gobs=gobs, scatter=scat)

@@ -95,10 +95,10 @@ class Scatter(object):
             self.processor = processor
 
         elif processor == self.avail_pro[1] and check_multi_gpu() is True:
-            self.fq = node_0_gpu_wrap_fq
+            # self.fq = node_0_gpu_wrap_fq
             self.grad = node_0_gpu_wrap_fq_grad
 
-            # self.fq = flat_fq
+            self.fq = flat_fq
             # self.grad = flat_grad
             self.processor = processor
 
@@ -106,6 +106,11 @@ class Scatter(object):
             self.fq = cpu_wrap_fq
             self.grad = cpu_wrap_fq_grad
             self.processor = processor
+
+
+    # def wrap_check(self, atoms):
+    #     if atoms.get_array('scatter') is None:
+
 
     def get_fq(self, atoms):
         return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
@@ -155,8 +160,7 @@ class Scatter(object):
             rgrid,
             self.exp['qmin']
         )
-        return pdf_grad[:, :,
-               math.floor(self.exp['rmin'] / self.exp['rstep']):]
+        return pdf_grad
 
 
 if __name__ == '__main__':
@@ -174,17 +178,5 @@ if __name__ == '__main__':
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
     scat.set_processor('Multi-GPU')
-    # scat.set_processor('Serial-CPU')
-    # print 'start calc'
-    print scat.processor
-    print scat.get_grad_fq(atoms)
-    # raw_input()
-    # fq = scat.get_fq(atoms)
-    # plt.plot(fq)
-    # plt.show()
-
-    # pdf = scat.get_pdf(atoms)
-    # r = np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])
-    # print len(r)
-    # plt.plot(r, pdf)
-    # plt.show()
+    gfq = scat.get_grad_fq(atoms)
+    fq = scat.get_fq(atoms)

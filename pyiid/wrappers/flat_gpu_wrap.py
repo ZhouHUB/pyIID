@@ -122,12 +122,9 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
 
     # setup flat map
     il, jl = get_ij_lists(n)
-    # print il, jl
     k_max = len(il)
 
-    # AAA
     gpus, mem_list = get_gpus_mem()
-    # print gpus, mem_list
 
     fq_q = []
     k_cov = 0

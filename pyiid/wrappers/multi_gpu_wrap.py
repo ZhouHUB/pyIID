@@ -16,7 +16,9 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
         # Import and compile the GPU kernels
         from pyiid.kernels.multi_cuda import get_d_array, \
             get_normalization_array, get_r_array, \
-            get_fq_step_0, get_fq_step_1, gpu_reduce_3D_to_1D
+            get_fq_step_0, get_fq_step_1, gpu_reduce_3D_to_2D, gpu_reduce_2D_to_1D
+
+        from pyiid.kernels.multi_cuda import zero_3D
 
         stream = cuda.stream()
         stream2 = cuda.stream()
@@ -32,6 +34,7 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
                 bpg = 1
             assert (bpg * tpb >= e_dim)
             bpg_l_1.append(bpg)
+
         # NxQ
         elements_per_dim_2_q = [n, qmax_bin]
         tpb_l_2_q = [32, 32]
@@ -78,9 +81,9 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
 
         # Note that while direct allocation might be faster current kernels
         # depend on having zero values thus preventing using "empty" arrays
-        # dfq = cuda.device_array(data[3].shape, dtype=np.float32, stream=stream)
 
-        dfq = cuda.to_device(data[3], stream=stream)
+        dfq = cuda.device_array(data[3].shape, dtype=np.float32, stream=stream)
+        zero_3D[bpg_l_3, tpb_l_3, stream](dfq)
         dq = cuda.to_device(q, stream)
 
         get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
@@ -89,10 +92,14 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
         final = np.zeros(qmax_bin, dtype=np.float32)
         dfinal = cuda.to_device(final, stream2)
 
+        final2d = np.zeros((n, qmax_bin), dtype=np.float32)
+        dfinal2d = cuda.to_device(final2d, stream2)
+
         get_fq_step_0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
         get_fq_step_1[bpg_l_3, tpb_l_3, stream](dfq, dnorm)
 
-        gpu_reduce_3D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfq)
+        gpu_reduce_3D_to_2D[bpg_l_2_q, tpb_l_2_q, stream](dfinal2d, dfq)
+        gpu_reduce_2D_to_1D[bpg_l_1, tpb_l_1, stream](dfinal, dfinal2d)
 
         dfinal.to_host(stream)
         fq_q.append(final)
@@ -101,7 +108,6 @@ def sub_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, m, n_cov):
 
 
 def wrap_fq(atoms, qmax=25., qbin=.1):
-    # print 'start wrapper'
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -151,7 +157,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                     break
         assert n_cov == n
     else:
-        print 'start threading'
         # The total amount of work is greater than the sum of our GPUs, no
         # special distribution needed, just keep putting problems on GPUs until
         # finished.
@@ -179,11 +184,8 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
                     if n_cov >= n:
                         break
 
-    print 'start join'
     for value in p_dict.values():
-        print value
         value.join()
-    print 'finish threading'
     fq = np.zeros(qmax_bin)
     for ele in fq_q:
         fq[:] += ele
@@ -243,10 +245,8 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         dq = cuda.to_device(q, stream)
 
         get_d_array[bpg_l_2, tpb_l_2, stream](dd, dq, n_cov)
-        # get_d_array2[bpg_l_2, tpb_l_2, stream](dd, n_cov)
 
         get_r_array[bpg_l_2, tpb_l_2, stream](dr, dd)
-        # get_r_array2[bpg_l_2, tpb_l_2, stream](dr)
 
         '--------------------------------------------------------------'
         get_fq_step_0[bpg_l_3, tpb_l_3, stream](dfq, dr, qbin)
@@ -278,8 +278,7 @@ def sub_grad(gpu, q, scatter_array, grad_q, qmax_bin, qbin, m, n_cov,
         # cuda.synchronize()
 
         fq_grad_step_4[bpg_l_3, tpb_l_3, stream](dgrad_p, dcos_term)
-        dgrad_p.copy_to_host(data[4])
-        # print data[4]
+        # dgrad_p.copy_to_host(data[4])
         gpu_reduce_4D_to_3D[bpg_l_3, tpb_l_3, stream](dfinal, dgrad_p)
 
         dfinal.to_host()

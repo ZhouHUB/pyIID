@@ -264,6 +264,7 @@ def gpu_reduce_3D_to_2D(reduced, A):
         return
     reduced[threadi, threadj] = A[threadi, :, threadj].sum()
 
+
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def gpu_reduce_2D_to_1D(reduced, A):
 
@@ -271,15 +272,7 @@ def gpu_reduce_2D_to_1D(reduced, A):
 
     if threadi >= A.shape[1]:
         return
-
-    N = A.shape[0]
-
-    tmp = 0.0
-    # reduced[threadi] = 0.0
-    for k in range(N):
-        tmp += A[k, threadi]
-        # reduced[threadi] += A[k, threadi]
-    reduced[threadi] = tmp
+    reduced[threadi] = A[:, threadi].sum()
 
 
 @cuda.jit(argtypes=[f4[:,:,:], f4[:, :, :, :]])
@@ -291,3 +284,16 @@ def gpu_reduce_4D_to_3D(reduced, A):
     if i >= imax or j >= jmax or k >= kmax:
         return
     reduced[i, j, k] = A[i, :, j, k].sum()
+
+
+@cuda.jit(argtypes=[f4[:,:,:]])
+def zero_3D(A):
+    tx, ty, kq = cuda.grid(3)
+
+    m = A.shape[0]
+    n = A.shape[1]
+    qmax_bin = A.shape[2]
+    # r is zero for tx = ty, thus we don't calculate for it
+    if tx >= m or ty >= n or kq >= qmax_bin:
+        return
+    A[tx, ty, kq] = 0.0
