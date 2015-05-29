@@ -124,7 +124,6 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     return dfq_dq
 
 
-# @autojit
 def spring_nrg(atoms, k, rt):
     q = atoms.positions
     n = len(atoms)
@@ -135,7 +134,7 @@ def spring_nrg(atoms, k, rt):
 
     thresh = np.less(r, rt)
     for i in range(len(thresh)):
-        thresh[i,i] = False
+        thresh[i, i] = False
 
     mag = np.zeros(r.shape)
     mag[thresh] = k * (r[thresh]-rt)
@@ -143,7 +142,7 @@ def spring_nrg(atoms, k, rt):
     energy = np.sum(mag[thresh]/2.*(r[thresh]-rt))
     return energy
 
-# @autojit
+
 def spring_force(atoms, k, rt):
     q = atoms.positions
     n = len(atoms)
