@@ -1,6 +1,7 @@
 __author__ = 'christopher'
 import sys
 import inspect
+
 import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
 import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
 import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
@@ -13,13 +14,13 @@ def gpu_avail(n_nodes):
         args=[avail_loc],
         maxprocs=n_nodes
     )
-    ranks =  comm.gather(root=MPI.ROOT)
+    ranks = comm.gather(root=MPI.ROOT)
     mem_list = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
     return ranks, mem_list
 
 
-def mpi_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
+def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     from mpi4py import MPI
     kernel_loc = inspect.getfile(mpi_fq_worker)
     comm = MPI.COMM_WORLD.Spawn(
@@ -34,7 +35,8 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
         if m is StopIteration:
             msg = m
         else:
-            msg = (q, scatter_array, qmax_bin, qbin, m, n_cov)
+            msg = (q, scatter_array, qbin, m, n_cov)
+        # If the thread on the main node is done, or not started give a problem to it
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
     # print 'done master'
@@ -58,7 +60,7 @@ def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
         if m is StopIteration:
             msg = m
         else:
-            msg = (q, scatter_array, qmax_bin, qbin, m, n_cov)
+            msg = (q, scatter_array, qbin, m, n_cov)
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
 

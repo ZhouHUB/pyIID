@@ -8,7 +8,7 @@ sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.multi_cuda import *
 
-n = 600
+n = 60
 
 
 def set_up_gpu(n, qmax_bin=None):

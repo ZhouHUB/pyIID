@@ -24,19 +24,17 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    qmax_bin = int(qmax / qbin)
     scatter_array = atoms.get_array('scatter')
+    qmax_bin = scatter_array.shape[1]
+    # qmax_bin = int(qmax / qbin)
 
-    #get nodes used
+    # get  number of allocated nodes
     n_nodes = count_nodes()
     print 'nodes', n_nodes
 
     # get info on our gpu setup and memory requrements
     ranks, mem_list = gpu_avail(n_nodes)
-    gpu_total_mem = 0
-    for i in range(ranks[-1]+1):
-        print mem_list[i]
-        gpu_total_mem += mem_list[i]
+    gpu_total_mem = sum(mem_list)
     print gpu_total_mem
     total_req_mem = (2*qmax_bin*n*n+qmax_bin*n+4*n*n+3*n)*4
 
@@ -57,11 +55,14 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
             n_cov += m
             if n_cov >= n:
                 break
+    # Make certain that we have covered all the atoms
     assert sum(m_list) == n
+
     # The total amount of work is greater than the sum of our GPUs, no
     # special distribution needed, just keep putting problems on GPUs until
     # finished.
-    reports = mpi_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin)
+    reports = mpi_fq(n_nodes, m_list, q, scatter_array, qbin)
+
     # print reports
     fq = np.zeros(qmax_bin)
     for ele in reports:
@@ -206,8 +207,6 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     print gpu_total_mem
     total_req_mem = (6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n)*4
 
-    grad_q = []
-    index_list = []
     n_cov = 0
     m_list = []
     while n_cov < n:
@@ -224,31 +223,25 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
                 break
     assert sum(m_list) == n
 
+    # list of list of tuples, I think
     reports = mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin)
+    # list of tuples
+    flat_reports = [item for sublist in reports for item in sublist]
+    # seperate lists of grads and indices
+    grads, indices = [x[0] for x in flat_reports], [x[1] for x in flat_reports]
 
     # Sort grads to make certain indices are in order
-    sort_grads = [x for (y, x) in sorted(reports)]
-
-    len(sort_grads)
+    sort_grads = [x for (y, x) in sorted(zip(indices, grads))]
 
     # Stitch arrays together
     if len(sort_grads) > 1:
-        grad_p_final = np.concatenate(sort_grads, axis=0)
+        grad_p = np.concatenate(sort_grads, axis=0)
     else:
-        grad_p_final = sort_grads[0]
-
-    # sum down to 1D array
-    grad_p = grad_p_final
-
-    # sum reduce to 1D
+        grad_p = sort_grads[0]
     na = np.average(scatter_array, axis=0)**2 * n
 
     old_settings = np.seterr(all='ignore')
-    for tx in range(n):
-        for tz in range(3):
-            # grad_p[tx, tz, :qmin_bin] = 0.0
-            grad_p[tx, tz] = np.nan_to_num(
-                1 / na * grad_p[tx, tz])
+    grad_p[:, :] = np.nan_to_num(grad_p[:, :] / na)
     np.seterr(**old_settings)
     return grad_p
 
@@ -351,7 +344,7 @@ if __name__ == '__main__':
     # cProfile.run('''
     from ase.atoms import Atoms
     import os
-    from pyiid.wrappers.master_wrap import wrap_atoms
+    from pyiid.wrappers.scatter import wrap_atoms
     import matplotlib.pyplot as plt
     import sys
     sys.path.extend(['/mnt/work-data/dev/pyIID'])

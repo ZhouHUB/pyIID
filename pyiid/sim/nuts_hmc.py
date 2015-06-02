@@ -104,10 +104,9 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                 s = s_prime * (
                     span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
                         span.dot(pos_atoms.get_velocities().flatten()) >= 0)
-                # print 'iteration', m, 'depth', j, 'samples', 2**j
                 j += 1
                 print 'iteration', m, 'depth', j, 'samples', 2 ** j
-            samples_total += 2 ** (j + 1)
+                samples_total += 2**j
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 
@@ -116,11 +115,12 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
             m += 1
     except KeyboardInterrupt:
         pass
+    print '\n\n\n'
     print 'number of leapfrog samples', samples_total
     print 'number of successful leapfrog samples', len(traj)
-    print 'percent of good leapfrog samples', float(len(traj)) / samples_total
+    print 'percent of good leapfrog samples', float(len(traj)) / samples_total * 100, '%'
     print 'number of leapfrog per iteration, average', float(samples_total) / m
-    print 'print number of good leapfrog per iteration, average', len(traj) / m
+    print 'number of good leapfrog per iteration, average', float(len(traj)) / m
     return traj
 
 

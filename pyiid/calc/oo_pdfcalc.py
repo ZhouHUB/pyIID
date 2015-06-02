@@ -2,7 +2,7 @@ __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 
-from pyiid.wrappers.scatter import Scatter
+from pyiid.wrappers.scatter import Scatter, wrap_atoms
 from pyiid.kernels.master_kernel import get_rw, grad_pdf, get_grad_rw, \
     get_chi_sq, get_grad_chi_sq
 

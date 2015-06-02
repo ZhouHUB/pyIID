@@ -112,8 +112,10 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    qmax_bin = int(math.ceil(qmax / qbin))
     scatter_array = atoms.get_array('scatter')
+    # qmax_bin = scatter_array.shape[1]
+    qmax_bin = int(math.ceil(qmax / qbin))
+
 
     # get info on our gpu setup and memory requrements
     gpus = cuda.gpus.lst
@@ -389,7 +391,7 @@ if __name__ == '__main__':
     # import cProfile
     # cProfile.run('''
     from ase.atoms import Atoms
-    from pyiid.wrappers.master_wrap import wrap_atoms
+    from pyiid.wrappers.scatter import wrap_atoms
 
     n = 400
     pos = np.random.random((n, 3)) * 10.

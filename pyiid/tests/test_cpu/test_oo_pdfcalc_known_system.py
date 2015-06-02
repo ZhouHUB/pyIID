@@ -3,7 +3,7 @@ import numpy as np
 from ase.atoms import Atoms
 from numpy.testing import assert_allclose
 
-from pyiid.wrappers.scatter import Scatter
+from pyiid.wrappers.scatter import Scatter, wrap_atoms
 from pyiid.tests import generate_experiment
 from pyiid.testing.decorators import known_fail_if
 from pyiid.calc.oo_pdfcalc import PDFCalc
