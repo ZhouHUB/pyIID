@@ -241,8 +241,10 @@ def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
 
     n = len(grad_fq)
     grad_iter = []
-
-    p = Pool(cpu_count()-2)
+    pool_size = cpu_count()-2
+    if pool_size <= 0:
+        pool_size = 1
+    p = Pool(pool_size)
     for tx in range(n):
         for tz in range(3):
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
