@@ -61,7 +61,7 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
         The atomic pair distribution function
     """
     # Zero out F(Q) below qmin theshold
-    fpad[:int(math.ceil(qmin/qstep))] = 0.0
+    fpad[:int(math.ceil(qmin / qstep))] = 0.0
     # Expand F(Q)
     nfromdr = int(math.ceil(math.pi / rstep / qstep))
     if nfromdr > int(len(fpad)):
@@ -83,7 +83,7 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
         wplo = 1.0 - wphi
         pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
     pdf1 = pdf0 * 2
-    assert_allclose(pdf1.real**2, pdf1**2)
+    assert_allclose(pdf1.real ** 2, pdf1 ** 2)
     return pdf1.real
     # return gpad
 
@@ -131,11 +131,11 @@ def fft_gr_to_fq(g, rstep, rmin):
         The reduced structure factor
     """
     if g is None: return g
-    padrmin = int(round(rmin/rstep))
+    padrmin = int(round(rmin / rstep))
     npad1 = padrmin + len(g)
 
     # pad to the next power of 2 for fast Fourier transformation
-    npad2 = (1 << int(math.ceil(math.log(npad1, 2))))*2
+    npad2 = (1 << int(math.ceil(math.log(npad1, 2)))) * 2
     # sine transformations needs an odd extension
 
     npad4 = 4 * npad2
@@ -228,17 +228,30 @@ def get_chi_sq(gobs, gcalc):
         scale = 1
     return np.sum((gobs - scale * gcalc) ** 2
                   # /gobs
-    ).real, scale
+                  ).real, scale
 
 
 # Gradient test_kernels -------------------------------------------------------
-# @autojit(target=targ)
+from multiprocessing import Pool, cpu_count
+def grad_pdf_pool_worker(task):
+    grad_fq, rstep, qstep, rgrid, qmin = task
+    return get_pdf_at_qmin(grad_fq, rstep, qstep, rgrid, qmin)
+
+
 def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
+
+    grad_iter = []
+    p = Pool(cpu_count()-2)
     n = len(grad_fq)
     for tx in range(n):
         for tz in range(3):
-            pdf_grad[tx, tz] = get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep,
-                                               rgrid, qmin)
+            grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
+    pdf_grad_iter = p.map(grad_pdf_pool_worker, grad_iter)
+
+    # TODO: May want to recast as a np.reshape
+    for tx in range(n):
+        for tz in range(3):
+            pdf_grad[tx, tz] = pdf_grad_iter[tx+tz]
 
 
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
@@ -390,13 +403,15 @@ def simple_grad(grad_p, d, r):
                 for tz in range(3):
                     grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
 
+
 @autojit(target=targ)
 def spring_force_kernel(direction, d, r, mag):
     n = len(r)
     for i in range(n):
         for j in range(n):
             if i != j:
-                direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]
+                direction[i, :] += d[i, j, :] / r[i, j] * mag[i, j]
+
 
 if __name__ == '__main__':
     from pyiid.wrappers.scatter import Scatter, wrap_atoms
@@ -421,16 +436,15 @@ if __name__ == '__main__':
     r, gr = dpc(stru)
     srfq = dpc.fq
 
-
-    exp_dict = {'qmin': 0.5, 'qmax': 25., 'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0,
-                        'rmax': 45.0, 'rstep': .01}
+    exp_dict = {'qmin': 0.5, 'qmax': 25.,
+                'qbin': np.pi / (45 + 6 * 2 * np.pi / 25), 'rmin': 0.0,
+                'rmax': 45.0, 'rstep': .01}
 
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
     # scat.set_processor('Serial-CPU')
     fq = scat.get_fq(atoms)
     pdf = scat.get_pdf(atoms)
-
 
     assert_allclose(np.arange(0, 25, exp_dict['qbin']), dpc.qgrid, rtol=1e-4)
     assert_allclose(fq, srfq, atol=5e-3)
@@ -452,18 +466,19 @@ if __name__ == '__main__':
              label='srfit')
     # pdf2 = np.zeros(len(pdf))
     # pdf2[1:] = pdf[:-1]
-    plt.plot(r, pdf*scale,
+    plt.plot(r, pdf * scale,
              # 'go',
              label='scat')
-    plt.plot(r, mix*scale,
+    plt.plot(r, mix * scale,
              # 'bo',
              label='mix')
 
     from pyiid.calc.oo_pdfcalc import wrap_rw
+
     rw, scale = wrap_rw(pdf, gr)
-    print rw*100, scale
+    print rw * 100, scale
     rw, scale = wrap_rw(mix, gr)
-    print rw*100, scale
+    print rw * 100, scale
     plt.legend()
     plt.show()
     # plt.plot(r, dstpdf)
