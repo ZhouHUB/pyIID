@@ -36,7 +36,7 @@ class Scatter(object):
 
     def __init__(self, exp_dict=None):
         # Currently supported processor architectures
-        self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'Serial-CPU']
+        self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
 
         # Should be read in from the gr file, but if not here are some defaults
         if exp_dict is None or bool(exp_dict) is False:
@@ -53,7 +53,7 @@ class Scatter(object):
         # Just in case something blows up down the line
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
-        self.processor = 'Serial-CPU'
+        self.processor = 'CPU'
 
         # Get the fastest processor architecture available
         self.set_processor()
@@ -123,7 +123,7 @@ class Scatter(object):
         return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
 
     def get_pdf(self, atoms):
-        fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
+        fq = self.get_fq(atoms)
         # fq[:int(self.exp['qmin'] / self.exp['qbin'])] = 0
         r = np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep'])
         pdf0 = get_pdf_at_qmin(
@@ -138,7 +138,7 @@ class Scatter(object):
         return pdf0
 
     def get_sq(self, atoms):
-        fq = self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
+        fq = self.get_fq(atoms)
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
         sq = (fq / scatter_vector) + np.ones(scatter_vector.shape)
         sq[np.isinf(sq)] = 0.
@@ -152,7 +152,7 @@ class Scatter(object):
         return self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
-        fq_grad = self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
+        fq_grad = self.get_grad_fq(atoms)
         qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
         fq_grad[:, :, :qmin_bin] = 0.
         rgrid = np.arange(self.exp['rmin'], self.exp['rmax'],
@@ -209,6 +209,6 @@ if __name__ == '__main__':
     scat = Scatter(exp_dict)
 
     # fq = scat.get_fq(atoms)
-    gfq = scat.get_grad_fq(atoms)
+    # gfq = scat.get_grad_fq(atoms)
     # pdf = scat.get_pdf(atoms)
-    # gpdf = scat.get_grad_pdf(atoms)
+    gpdf = scat.get_grad_pdf(atoms)

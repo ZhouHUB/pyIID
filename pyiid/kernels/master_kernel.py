@@ -234,24 +234,21 @@ def get_chi_sq(gobs, gcalc):
 # Gradient test_kernels -------------------------------------------------------
 from multiprocessing import Pool, cpu_count
 def grad_pdf_pool_worker(task):
-    grad_fq, rstep, qstep, rgrid, qmin = task
-    return get_pdf_at_qmin(grad_fq, rstep, qstep, rgrid, qmin)
+    return get_pdf_at_qmin(*task)
 
 
 def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
 
-    grad_iter = []
-    p = Pool(cpu_count()-2)
     n = len(grad_fq)
+    grad_iter = []
+
+    p = Pool(cpu_count()-2)
     for tx in range(n):
         for tz in range(3):
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
     pdf_grad_iter = p.map(grad_pdf_pool_worker, grad_iter)
-
-    # TODO: May want to recast as a np.reshape
-    for tx in range(n):
-        for tz in range(3):
-            pdf_grad[tx, tz] = pdf_grad_iter[tx+tz]
+    np_iter = np.asarray(pdf_grad_iter)
+    pdf_grad = np.reshape(np_iter, pdf_grad.shape)
 
 
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):

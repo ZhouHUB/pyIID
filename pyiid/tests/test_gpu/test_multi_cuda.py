@@ -70,7 +70,7 @@ def test_get_d_array():
 
 def test_get_r_array():
     """
-    Test of get_r_array
+    Test of cuda get_r_array
     """
     from pyiid.kernels.cpu_kernel import get_r_array as comp
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
@@ -102,6 +102,9 @@ def test_get_r_array():
 
 
 def test_get_normalization_array():
+    """
+    Test of cuda normalization array
+    """
     from pyiid.kernels.cpu_kernel import get_normalization_array as comp
 
     Q = 250
@@ -123,6 +126,9 @@ def test_get_normalization_array():
 
 
 def test_get_fq_p0_1():
+    """
+    Test of the first part of cuda F(Q) computation
+    """
     Q = 250
     r = np.random.random((n, n)).astype(np.float32)
     qbin = .1
@@ -154,6 +160,9 @@ def test_get_fq_p0_1():
 
 
 def test_get_fq_p0_1_sum():
+    """
+    Test of the first part of cuda F(Q) computation summed
+    """
     Q = 250
     r = np.random.random((n, n)).astype(np.float32)
     # r = np.random.random((n, n)).astype(np.float64)

@@ -241,18 +241,23 @@ if __name__ == '__main__':
     import numpy as np
     import matplotlib.pyplot as plt
 
-    ideal_atoms = Octahedron('Au', 2)
-    ideal_atoms.pbc = False
-    wrap_atoms(ideal_atoms)
+    # ideal_atoms = Octahedron('Au', 2)
+    # ideal_atoms.pbc = False
+    # wrap_atoms(ideal_atoms)
+
+    n = 400
+    pos = np.random.random((n, 3)) * 10.
+    ideal_atoms = Atoms('Au' + str(n), pos)
+    exp_dict = {'qmin': 0.0, 'qmax': 25.,
+                'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
+                'rmax': 40.0, 'rstep': .01}
 
     scat = Scatter()
-    print scat.get_grad_pdf(ideal_atoms)
-    AAA
     gobs = scat.get_pdf(ideal_atoms)
 
     # calc1 = PDFCalc(gobs=gobs, scatter=scat)
     calc1 = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
     ideal_atoms.set_calculator(calc1)
     ideal_atoms.positions *= 1.5
-    print ideal_atoms.get_potential_energy()
+    # print ideal_atoms.get_potential_energy()
     print ideal_atoms.get_forces()

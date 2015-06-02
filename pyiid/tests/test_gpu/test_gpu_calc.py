@@ -16,19 +16,22 @@ def test_calc_rw():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
+        for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-            gpu = calc.calculate_energy(atoms2)
+            atoms2.set_calculator(calc)
+            gpu = atoms2.get_potential_energy()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-            cpu = calc.calculate_energy(atoms2)
+            calc.calculate_energy(atoms2)
+            atoms2.set_calculator(calc)
+            cpu = atoms2.get_potential_energy()
 
             assert_allclose(gpu, cpu)
 
@@ -42,19 +45,21 @@ def test_calc_chi_sq():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
+        for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
-            gpu = calc.calculate_energy(atoms2)
+            atoms2.set_calculator(calc)
+            gpu = atoms2.get_potential_energy()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
-            cpu = calc.calculate_energy(atoms2)
+            atoms2.set_calculator(calc)
+            cpu = atoms2.get_potential_energy()
 
             assert_allclose(gpu, cpu)
 
@@ -68,19 +73,21 @@ def test_calc_grad_rw():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
+        for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-            gpu = calc.calculate_forces(atoms2)
+            atoms2.set_calculator(calc)
+            gpu = atoms2.get_forces()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-            cpu = calc.calculate_forces(atoms2)
+            atoms2.set_calculator(calc)
+            cpu = atoms2.get_forces()
 
             assert_allclose(gpu, cpu)
 
@@ -94,19 +101,21 @@ def test_calc_grad_chi_sq():
             exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 4, 4):
+        for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
-            gpu = calc.calculate_forces(atoms2)
+            atoms2.set_calculator(calc)
+            gpu = atoms2.get_forces()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
-            cpu = calc.calculate_forces(atoms2)
+            atoms2.set_calculator(calc)
+            cpu = atoms2.get_forces()
 
             assert_allclose(gpu, cpu)
 
