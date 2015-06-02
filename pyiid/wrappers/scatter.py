@@ -59,9 +59,7 @@ class Scatter(object):
         self.set_processor()
 
     def check_scatter(self, atoms):
-        try:
-            atoms.get_array('scatter')
-        except KeyError:
+        if 'scatter' not in atoms.arrays.keys():
             wrap_atoms(atoms, self.exp)
 
     def set_processor(self, processor=None):
@@ -120,7 +118,7 @@ class Scatter(object):
 
     def get_fq(self, atoms):
         self.check_scatter(atoms)
-        return self.fq(atoms, self.exp['qmax'], self.exp['qbin'])
+        return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
         fq = self.get_fq(atoms)
@@ -149,7 +147,7 @@ class Scatter(object):
 
     def get_grad_fq(self, atoms):
         self.check_scatter(atoms)
-        return self.grad(atoms, self.exp['qmax'], self.exp['qbin'])
+        return self.grad(atoms, self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
         fq_grad = self.get_grad_fq(atoms)
@@ -192,6 +190,7 @@ def wrap_atoms(atoms, exp_dict=None):
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
     get_scatter_array(scatter_array, e_num, qbin)
     atoms.set_array('scatter', scatter_array)
+    # atoms.set_array('Q', np.arange(exp_dict['qmin'], exp_dict['qmax'], qbin))
 
 
 if __name__ == '__main__':
@@ -209,6 +208,6 @@ if __name__ == '__main__':
     scat = Scatter(exp_dict)
 
     # fq = scat.get_fq(atoms)
-    # gfq = scat.get_grad_fq(atoms)
+    gfq = scat.get_grad_fq(atoms)
     # pdf = scat.get_pdf(atoms)
-    gpdf = scat.get_grad_pdf(atoms)
+    # gpdf = scat.get_grad_pdf(atoms)

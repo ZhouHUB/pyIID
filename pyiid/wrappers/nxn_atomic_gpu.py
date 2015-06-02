@@ -3,6 +3,20 @@ import math
 
 import numpy as np
 from numba import cuda
+from numba import autojit
+
+
+@autojit
+def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
+    return int(math.floor(float(-4 * n * qmax_bin - 12 * n + .7 * mem) / (
+        4 * (6 * qmax_bin * n + 3 * qmax_bin + 4 * n))))
+
+
+@autojit
+def atoms_per_gpu_fq(n, qmax_bin, mem):
+    return int(math.floor(
+        float(-4 * n * qmax_bin - 12 * n - 4 * qmax_bin + .8 * mem) / (
+            8 * n * (qmax_bin + 2))))
 
 
 def atomic_fq(q, scatter_array, qbin, m, n_cov):
@@ -216,8 +230,7 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
 
     # start F(Q) calculations
     dscat = cuda.to_device(scatter_array, stream2)
-    dnorm = cuda.device_array((m, n), dtype=np.float32,
-                              stream=stream2)
+    dnorm = cuda.device_array((m, n, qmax_bin), dtype=np.float32, stream=stream2)
     get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
 
     dd = cuda.device_array((m, n, 3), dtype=np.float32, stream=stream)

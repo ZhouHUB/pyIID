@@ -27,8 +27,11 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     """
     q = atoms.get_positions()
 
+    # get scatter array
+    scatter_array = atoms.get_array('scatter')
     # define scatter_q information and initialize constants
-    qmax_bin = int(math.ceil(qmax / qbin))
+
+    qmax_bin = scatter_array.shape[1]
     n = len(q)
 
     # Get pair coordinate distance array
@@ -39,8 +42,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     r = np.zeros((n, n))
     get_r_array(r, d)
 
-    # get scatter array
-    scatter_array = atoms.get_array('scatter')
 
     # get non-normalized fq
     fq = np.zeros(qmax_bin)
@@ -66,7 +67,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     return fq
 
 
-def wrap_fq_grad(atoms, qmax=25., qbin=.1):
+def wrap_fq_grad(atoms, qbin=.1):
     """
     Generate the reduced structure function gradient
 
@@ -89,8 +90,11 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     """
     q = atoms.get_positions()
 
+    # get scatter array
+    scatter_array = atoms.get_array('scatter')
+
     # define scatter_q information and initialize constants
-    scatter_q = np.arange(0, qmax, qbin)
+    qmax_bin = scatter_array.shape[1]
     n = len(q)
 
     # Get pair coordinate distance array
@@ -101,18 +105,15 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
     r = np.zeros((n, n))
     get_r_array(r, d)
 
-    # get scatter array
-    scatter_array = atoms.get_array('scatter')
-
     # get non-normalized FQ
 
     #Normalize FQ
-    norm_array = np.zeros((n, n, len(scatter_q)))
+    norm_array = np.zeros((n, n, qmax_bin))
     get_normalization_array(norm_array, scatter_array)
     norm_array = norm_array.sum(axis=(0, 1))
     norm_array *= 1. / (scatter_array.shape[0] ** 2)
 
-    dfq_dq = np.zeros((n, 3, len(scatter_q)))
+    dfq_dq = np.zeros((n, 3, qmax_bin))
     fq_grad_position(dfq_dq, d, r, scatter_array, qbin)
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
