@@ -12,7 +12,8 @@ plugins = [KnownFailure]
 env = {"NOSE_WITH_COVERAGE": 1,
        'NOSE_COVER_PACKAGE': 'pyiid',
        'NOSE_COVER_HTML': 1,
-       'NOSE_VERBOSE': 2}
+       'NOSE_VERBOSE': 2,
+       'NOSE_PROCESS_TIMEOUT': 599}
 
 if gpu is False:
     env['NOSE_EXCLUDE_DIRS'] = 'old_files/;pyiid/tests/test_gpu'

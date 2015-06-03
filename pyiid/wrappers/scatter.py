@@ -51,8 +51,8 @@ class Scatter(object):
         self.set_processor()
 
     def check_scatter(self, atoms):
-        if 'scatter' not in atoms.arrays.keys() or np.any(
-                        atoms.info['Q'] != self.Q):
+        if 'scatter' not in atoms.arrays.keys() or np.array_equal(
+                        atoms.info['Q'], self.Q):
             wrap_atoms(atoms, self.exp)
 
     def update_experiment(self, exp_dict):
@@ -127,6 +127,7 @@ class Scatter(object):
 
     def get_fq(self, atoms):
         self.check_scatter(atoms)
+        print 'hi', self.processor
         return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
@@ -147,7 +148,9 @@ class Scatter(object):
     def get_sq(self, atoms):
         fq = self.get_fq(atoms)
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
+        old_settings = np.seterr(all='ignore')
         sq = (fq / scatter_vector) + np.ones(scatter_vector.shape)
+        np.seterr(**old_settings)
         sq[np.isinf(sq)] = 0.
         return sq
 
@@ -199,7 +202,7 @@ def wrap_atoms(atoms, exp_dict=None):
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
     get_scatter_array(scatter_array, e_num, qbin)
     atoms.set_array('scatter', scatter_array)
-    atoms.info['Q']= np.arange(exp_dict['qmin'], exp_dict['qmax'], qbin)
+    atoms.info['Q'] = np.arange(exp_dict['qmin'], exp_dict['qmax'], qbin)
 
 
 if __name__ == '__main__':
@@ -216,7 +219,8 @@ if __name__ == '__main__':
     # wrap_atoms(atoms, exp_dict)
     # scat = Scatter(exp_dict)
     scat = Scatter()
-    # fq = scat.get_fq(atoms)
-    gfq = scat.get_grad_fq(atoms)
+    fq = scat.get_fq(atoms)
+    # print fq
+    # gfq = scat.get_grad_fq(atoms)
     # pdf = scat.get_pdf(atoms)
     # gpdf = scat.get_grad_pdf(atoms)

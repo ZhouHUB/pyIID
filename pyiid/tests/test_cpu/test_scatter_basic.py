@@ -3,7 +3,13 @@ import numpy as np
 from pyiid.wrappers.scatter import Scatter
 from pyiid.tests import setup_atoms, generate_experiment
 from pyiid.testing.decorators import known_fail_if
+from numba import cuda
 
+try:
+    cuda.gpus.lst
+    gpus = True
+except:
+    gpus = False
 
 def test_scatter_fq_defaults():
         exp = None
@@ -173,7 +179,7 @@ def test_scatter_grad_pdf():
             # Check that all the values are not zero
             assert np.any(grad_pdf)
 
-@known_fail_if(True)
+@known_fail_if(not gpus)
 def test_gpu_scatter_fail():
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)

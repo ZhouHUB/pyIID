@@ -112,13 +112,13 @@ def subs_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, il, jl):
         del dfinal
 
 
-def wrap_fq(atoms, qmax=25., qbin=.1):
+def wrap_fq(atoms, qbin=.1):
     # set up atoms
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    qmax_bin = int(math.ceil(qmax / qbin))
     scatter_array = atoms.get_array('scatter')
+    qmax_bin = scatter_array.shape[1]
 
     # setup flat map
     il, jl = get_ij_lists(n)

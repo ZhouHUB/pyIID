@@ -4,18 +4,19 @@ from threading import Thread
 import numpy as np
 from numba import cuda
 
-from .nxn_atomic_gpu import atoms_per_gpu_fq, atoms_per_gpu_grad_fq
+from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, atoms_per_gpu_grad_fq
 
 
 def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
     with gpu:
-        from .nxn_atomic_gpu import atomic_fq
+        from pyiid.wrappers.nxn_atomic_gpu import atomic_fq
         final = atomic_fq(q, scatter_array, qbin, m, n_cov)
         fq_q.append(final)
         del final
 
 
 def wrap_fq(atoms, qbin=.1):
+    print 'hi2'
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -56,7 +57,7 @@ def wrap_fq(atoms, qbin=.1):
                 p = Thread(
                     target=sub_fq, args=(
                         gpu, q, scatter_array,
-                        fq_q, qmax_bin, qbin, m, n_cov))
+                        fq_q, qbin, m, n_cov))
                 p.start()
                 p_dict[gpu] = p
                 n_cov += m
@@ -78,7 +79,7 @@ def wrap_fq(atoms, qbin=.1):
 
 def sub_grad(gpu, q, scatter_array, grad_q, qbin, m, n_cov, index_list):
     with gpu:
-        from .nxn_atomic_gpu import atomic_grad_fq
+        from pyiid.wrappers.nxn_atomic_gpu import atomic_grad_fq
         final, _ = atomic_grad_fq(q, scatter_array, qbin, m, n_cov)
         grad_q.append(final)
         index_list.append(n_cov)
@@ -158,5 +159,6 @@ if __name__ == '__main__':
     wrap_atoms(atoms, None)
 
     fq = wrap_fq(atoms)
+    print fq
     # grad_fq = wrap_fq_grad(atoms)
     # print grad_fq

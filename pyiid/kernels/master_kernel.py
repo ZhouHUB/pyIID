@@ -191,7 +191,9 @@ def get_rw(gobs, gcalc, weight=None):
     """
     if weight is None:
         weight = np.ones(gcalc.shape)
+    old_settings = np.seterr(all='ignore')
     scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
+    np.seterr(**old_settings)
     if scale <= 0:
         return 1, -1
     else:
@@ -223,25 +225,28 @@ def get_chi_sq(gobs, gcalc):
     # Note: The scale is set to 1, having a variable scale seems to create
     # issues with the potential energy surface.
     # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
-    scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
+
+    old_settings = np.seterr(all='ignore')
+    scale = np.dot(gcalc.T, gobs) / np.dot(gcalc.T, gcalc)
+    np.seterr(**old_settings)
     if scale <= 0:
         scale = 1
     return np.sum((gobs - scale * gcalc) ** 2
                   # /gobs
                   ).real, scale
 
-
 # Gradient test_kernels -------------------------------------------------------
 from multiprocessing import Pool, cpu_count
+
+
 def grad_pdf_pool_worker(task):
     return get_pdf_at_qmin(*task)
 
 
 def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
-
     n = len(grad_fq)
     grad_iter = []
-    pool_size = cpu_count()-2
+    pool_size = cpu_count()
     if pool_size <= 0:
         pool_size = 1
     p = Pool(pool_size)
@@ -273,43 +278,47 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
         The current scale
     weight: nd array, optional
         The PDF weights
+
+    Notes
+    -----
+    '''
+    # Wolfram alpha
+    grad_rw[tx, tz] = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/(np.sum(gobs[:]**2) * rw)
+    grad_rw[tx, tz] = grad_rw[tx, tz].real
+    '''
+    '''
+    # Sympy
+    grad_rw[tx, tz] = rw * np.sum(
+        (gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :]) / np.sum(
+        (gobs[:] - gcalc[:]) ** 2)
+    '''
+    '''
+    # Previous version
+    part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
+    part2 = np.sum(scale * grad_pdf[tx, tz, :])
+    grad_rw[tx, tz] = rw.real / part1.real * part2.real
+    '''
+
     """
     if weight is None:
         weight = np.ones(gcalc.shape)
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
-            '''
-            # Wolfram alpha
-            grad_rw[tx, tz] = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/(np.sum(gobs[:]**2) * rw)
-            grad_rw[tx, tz] = grad_rw[tx, tz].real
-            '''
-            '''
-            # Sympy
-            grad_rw[tx, tz] = rw * np.sum(
-                (gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :]) / np.sum(
-                (gobs[:] - gcalc[:]) ** 2)
-            '''
-            '''
-            # Previous version
-            part1 = 1.0 / np.sum(weight[:] * (scale * gcalc[:] - gobs[:]))
-            part2 = np.sum(scale * grad_pdf[tx, tz, :])
-            grad_rw[tx, tz] = rw.real / part1.real * part2.real
-            '''
             # Sympy with scale
             # grad scale
             # '''
-            grad_a = 1. / np.dot(gcalc.T, gcalc) * (
-                -scale * 2 * np.dot(gcalc.T, grad_pdf[tx, tz, :]) + np.dot(
-                    gobs.T, grad_pdf[tx, tz, :]))
             if scale <= 0:
                 grad_a = 0
+            else:
+                grad_a = (-scale * 2 * np.dot(gcalc.T,
+                                              grad_pdf[tx, tz, :]) + np.dot(
+                    gobs.T, grad_pdf[tx, tz, :])) / np.dot(gcalc.T, gcalc)
 
             grad_rw[tx, tz] = rw / np.sum(
-                (gobs[:] - scale * gcalc[:]) ** 2) * \
-                              np.sum(-(scale * grad_pdf[tx, tz, :]
-                                       + gcalc[:] * grad_a) *
-                                     (gobs[:] - scale * gcalc))
+                (gobs[:] - scale * gcalc[:]) ** 2) * np.sum(
+                -(scale * grad_pdf[tx, tz, :] + gcalc[:] * grad_a) * (
+                    gobs[:] - scale * gcalc))
             # '''
 
 
@@ -484,4 +493,4 @@ if __name__ == '__main__':
     # plt.plot(r[argrelmax(gr)])
     # plt.plot(r[argrelmax(pdf)])
     # plt.plot((r[argrelmax(gr)] - r[argrelmax(pdf)])*100)
-    # plt.show()
+    # plt.sh
