@@ -166,7 +166,7 @@ def test_scatter_grad_pdf_defaults():
 
 
 def test_scatter_grad_pdf():
-    for i in range(3):
+    for i in range(2):
         exp = generate_experiment()
         scat = Scatter(exp_dict=exp)
         print exp
