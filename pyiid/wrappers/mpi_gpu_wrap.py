@@ -7,7 +7,7 @@ from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, atoms_per_gpu_grad_fq
 
 def count_nodes():
-    fileloc = os.getenv("$PBS_NODEFILE")
+    fileloc = os.getenv("PBS_NODEFILE")
     if fileloc is None:
         return None
     else:
@@ -17,7 +17,7 @@ def count_nodes():
         return len(node_set)
 
 
-def wrap_fq(atoms, qmax=25., qbin=.1):
+def wrap_fq(atoms, qbin=.1):
 
     # get information for FQ transformation
     q = atoms.get_positions()
@@ -25,7 +25,6 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     n = len(q)
     scatter_array = atoms.get_array('scatter')
     qmax_bin = scatter_array.shape[1]
-    # qmax_bin = int(qmax / qbin)
 
     # get  number of allocated nodes
     n_nodes = count_nodes()

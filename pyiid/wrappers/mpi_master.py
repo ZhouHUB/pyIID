@@ -2,19 +2,22 @@ __author__ = 'christopher'
 import sys
 import inspect
 from threading import Thread
+from numba import cuda
 
 import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
 import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
 import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
+from .multi_gpu_wrap import sub_fq
 
 
 def gpu_avail(n_nodes):
     from mpi4py import MPI
+
     avail_loc = inspect.getfile(mpi_gpu_avail)
     comm = MPI.COMM_WORLD.Spawn(sys.executable,
-        args=[avail_loc],
-        maxprocs=n_nodes
-    )
+                                args=[avail_loc],
+                                maxprocs=n_nodes
+                                )
     ranks = comm.gather(root=MPI.ROOT)
     mem_list = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
@@ -23,6 +26,7 @@ def gpu_avail(n_nodes):
 
 def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     from mpi4py import MPI
+
     kernel_loc = inspect.getfile(mpi_fq_worker)
     comm = MPI.COMM_WORLD.Spawn(
         sys.executable,
@@ -33,24 +37,34 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     status = MPI.Status()
     m_list += ([StopIteration] * n_nodes)
     p = None
+    thread_q = []
     for m in m_list:
         if m is StopIteration:
             msg = m
         else:
             msg = (q, scatter_array, qbin, m, n_cov)
+
         # If the thread on the main node is done, or not started give a problem to it
         if p is None or p.is_alive() is False:
-            p = Thread(target=None, args=msg)
+            p = Thread(
+                target=sub_fq, args=(
+                    cuda.get_current_device(), q, scatter_array, thread_q,
+                    qbin, m,
+                    n_cov))
+            p.start()
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
+    p.join()
     # print 'done master'
     reports = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
+    reports += thread_q
     return reports
 
 
 def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
     from mpi4py import MPI
+
     kernel_loc = inspect.getfile(mpi_grad_worker)
     comm = MPI.COMM_WORLD.Spawn(
         sys.executable,
@@ -69,4 +83,7 @@ def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
         comm.send(obj=msg, dest=status.Get_source())
 
     reports = comm.gather(root=MPI.ROOT)
-    return reports
+    return
+
+
+reports

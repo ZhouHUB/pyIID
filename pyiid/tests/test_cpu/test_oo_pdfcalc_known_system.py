@@ -18,6 +18,9 @@ def setup_atomic_configs():
 
 
 def test_rw():
+    """
+    Test two random systems against one another for Rw
+    """
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
     scat.set_processor('CPU')
@@ -30,6 +33,9 @@ def test_rw():
 
 
 def test_chi_sq():
+    """
+    Test two random systems against one another for $\chi^{2}$
+    """
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
     scat.set_processor('CPU')
@@ -43,6 +49,9 @@ def test_chi_sq():
 
 
 def test_grad_rw():
+    """
+    Test two random systems against one another for grad rw
+    """
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
     scat.set_processor('CPU')
@@ -59,6 +68,9 @@ def test_grad_rw():
 
 
 def test_grad_chi_sq():
+    """
+    Test two random systems against one another for grad $\chi^{2}$
+    """
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
     scat.set_processor('CPU')

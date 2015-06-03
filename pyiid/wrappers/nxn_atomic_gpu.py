@@ -251,11 +251,12 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
 
     dcos_term = cuda.device_array((m, n, qmax_bin), dtype=np.float32,
                                   stream=stream2)
-
+    zero_3D[bpg_l_3, tpb_l_3, stream2](dcos_term)
     fq_grad_step_0[bpg_l_3, tpb_l_3, stream3](dcos_term, dr, qbin)
     dgrad_p = cuda.device_array((m, n, 3, qmax_bin), dtype=np.float32,
                                 stream=stream2)
-    zero_4D[bpg_l_3, tpb_l_3, stream](dgrad_p)
+    zero_4D[bpg_l_3, tpb_l_3, stream2](dgrad_p)
+
     final = np.zeros((m, 3, qmax_bin), dtype=np.float32)
 
     dfinal = cuda.to_device(final, stream=stream2)

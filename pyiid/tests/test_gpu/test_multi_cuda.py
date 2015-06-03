@@ -43,7 +43,7 @@ def set_up_gpu(n, qmax_bin=None):
 
 def test_get_d_array():
     """
-    Test of cuda get_d_array
+    Test of CUDA vs. CPU displacement array
     """
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
@@ -70,7 +70,7 @@ def test_get_d_array():
 
 def test_get_r_array():
     """
-    Test of cuda get_r_array
+    Test of CUDA vs. CPU distance array
     """
     from pyiid.kernels.cpu_kernel import get_r_array as comp
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
@@ -103,7 +103,7 @@ def test_get_r_array():
 
 def test_get_normalization_array():
     """
-    Test of cuda normalization array
+    Test of CUDA vs. CPU normalization array
     """
     from pyiid.kernels.cpu_kernel import get_normalization_array as comp
 
@@ -127,7 +127,7 @@ def test_get_normalization_array():
 
 def test_get_fq_p0_1():
     """
-    Test of the first part of cuda F(Q) computation
+    Test of the first part of CUDA vs. CPU F(Q) computation
     """
     Q = 250
     r = np.random.random((n, n)).astype(np.float32)
@@ -161,7 +161,7 @@ def test_get_fq_p0_1():
 
 def test_get_fq_p0_1_sum():
     """
-    Test of the first part of cuda F(Q) computation summed
+    Test of the first part of CUDA vs. CPU F(Q) computation summed
     """
     Q = 250
     r = np.random.random((n, n)).astype(np.float32)
@@ -197,6 +197,9 @@ def test_get_fq_p0_1_sum():
 
 
 def test_get_fq_grad_p3():
+    """
+    Test of the first part of CUDA vs. CPU grad F(Q) computation
+    """
     Q = 250
     r = np.random.random((n, n)).astype(np.float32)
     # r = np.random.random((n, n)).astype(np.float64)
@@ -232,6 +235,9 @@ def test_get_fq_grad_p3():
 
 
 def test_get_fq_grad_p3_sum():
+    """
+    Test of the first part of CUDA vs. CPU grad F(Q) computation summed
+    """
     Q = 250
     r = np.random.random((n, n)).astype(np.float32)
     # r = np.random.random((n, n)).astype(np.float64)
@@ -269,6 +275,7 @@ def test_get_fq_grad_p3_sum():
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)
+    
     '''
     Q = 250
     n = 200

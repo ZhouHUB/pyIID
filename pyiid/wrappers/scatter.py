@@ -165,7 +165,6 @@ class Scatter(object):
 
         pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.exp['qbin'], rgrid,
                  self.exp['qmin'])
-        print pdf_grad.shape
         return pdf_grad
 
 

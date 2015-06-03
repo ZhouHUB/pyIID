@@ -58,6 +58,9 @@ def test_get_r_array():
 
 
 def test_fq_array():
+    """
+    Test serial F(Q)
+    """
     n = 60
     scatter_array = np.random.random((n, 250))
     r = np.random.random((n, n))
