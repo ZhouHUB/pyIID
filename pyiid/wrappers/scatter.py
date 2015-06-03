@@ -127,7 +127,6 @@ class Scatter(object):
 
     def get_fq(self, atoms):
         self.check_scatter(atoms)
-        print 'hi', self.processor
         return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
@@ -170,7 +169,7 @@ class Scatter(object):
 
         pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.exp['qbin'], rgrid,
                  self.exp['qmin'])
-        print pdf_grad
+        print pdf_grad.shape
         return pdf_grad
 
 

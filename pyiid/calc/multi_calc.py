@@ -95,10 +95,9 @@ class MultiCalc(Calculator):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from ase.visualize import view
-    from pyiid.calc.pdfcalc import PDFCalc
+    from pyiid.calc.oo_pdfcalc import PDFCalc
     from pyiid.calc.spring_calc import Spring
-    from pyiid.wrappers.master_wrap import wrap_pdf
-    from pyiid.wrappers.scatter import wrap_atoms
+    from pyiid.wrappers.scatter import wrap_atoms, Scatter
     from ase.cluster.octahedron import Octahedron
     from ase.calculators.lammpslib import LAMMPSlib
     import numpy as np
@@ -108,18 +107,10 @@ if __name__ == '__main__':
     # start_atoms = Atoms('Au4', [[0,0,0], [.9,0,0], [0, .9, 0], [.9,.9,0]])
     ideal_atoms = Octahedron('Au', 2)
     ideal_atoms.pbc = False
-    wrap_atoms(ideal_atoms, exp_dict)
-    # view(ideal_atoms)
+    s = Scatter()
 
-    gobs = wrap_pdf(ideal_atoms)
+    gobs = s.get_pdf(ideal_atoms)
 
-
-    # calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=.001,
-    # processor='cpu'
-    # )
-    # calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw')
-    # calc2 = EMT()
-    # calc2 = Spring(rt=2.5)
     pair_style = 'eam'
     Au_eam_file = '/mnt/work-data/dev/IID_data/examples/Au/736_atom/Au_sheng.eam'
 

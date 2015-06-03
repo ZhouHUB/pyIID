@@ -124,24 +124,18 @@ if __name__ == '__main__':
     import math
     from ase.atoms import Atoms
 
-    from pyiid.sim.hmc import run_hmc
-    from pyiid.wrappers.multi_gpu_wrap import wrap_rw, wrap_pdf
-    from pyiid.calc.pdfcalc import PDFCalc
-    from pyiid.wrappers.cpu_wrap import wrap_atoms
-    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, time_est
-    
+    from pyiid.wrappers.scatter import Scatter
+    from pyiid.calc.oo_pdfcalc import PDFCalc, wrap_rw
+    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, \
+        time_est
+
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    # start_atoms = Atoms('Au4', [[-1, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     start_atoms = dc(ideal_atoms)
     start_atoms.positions *= 1.05
-    
-    wrap_atoms(ideal_atoms)
-    wrap_atoms(start_atoms)
-    
-    gobs, fq = wrap_pdf(ideal_atoms, qbin=.1)
-    
-    calc = PDFCalc(gobs=gobs, qbin=.1, conv=100, potential='rw')
-    # calc = PDFCalc(gobs=gobs, conv=1000, qbin=.1)
+    s = Scatter()
+    gobs = s.get_pdf()
+
+    calc = PDFCalc(gobs=gobs, scatter=s, conv=100, potential='rw')
     start_atoms.set_calculator(calc)
     print start_atoms.get_potential_energy()
     
@@ -155,19 +149,21 @@ if __name__ == '__main__':
             f2 = f*2
         view(c)
 
-    # raw_input('')
     pe_list = []
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
         f = atoms.get_forces()
-        f2 = f*2
+        f2 = f * 2
     min_pe = np.argmin(pe_list)
     view(traj)
-    rw, scale, _, _ = wrap_rw(traj[-1], gobs)
-    print rw, scale
+    print traj[-1].get_potential_energy()
     r = np.arange(0, 40, .01)
-    plt.plot(r, gobs, label='gobs')
-    plt.plot(r, wrap_pdf(traj[0], qbin=.1)[0]*wrap_rw(traj[0],gobs, qbin=.1)[1], label='ginitial')
-    plt.plot(r, wrap_pdf(traj[min_pe], qbin=.1)[0]*wrap_rw(traj[min_pe],gobs, qbin=.1)[1], label='gfinal')
+    plt.plot(r, gobs, 'b-', label='ideal')
+    plt.plot(r, s.get_pdf(traj[0]) *
+             wrap_rw(s.get_pdf(traj[0]), gobs)[1], 'k-',
+             label='start')
+    plt.plot(r, s.get_pdf(traj[-1]) *
+             wrap_rw(s.get_pdf(traj[-1]), gobs)[1], 'r-',
+             label='final')
     plt.legend()
     plt.show()

@@ -94,33 +94,60 @@ class MultiCalc(Calculator):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from ase.visualize import view
-    from pyiid.calc.pdfcalc import PDFCalc
-    from pyiid.wrappers.multi_gpu_wrap import wrap_pdf
-    from pyiid.wrappers.cpu_wrap import wrap_atoms
+    from pyiid.calc.oo_pdfcalc import PDFCalc
+    from pyiid.calc.spring_calc import Spring
+    from pyiid.wrappers.scatter import wrap_atoms, Scatter
+    from ase.cluster.octahedron import Octahedron
+    from ase.calculators.lammpslib import LAMMPSlib
+    import numpy as np
+    import matplotlib.pyplot as plt
 
-    from asap3 import *
-    ideal_atoms = Atoms('Au4', [[0,0,0], [1,0,0], [0, 1, 0], [1,1,0]])
-    start_atoms = Atoms('Au4', [[0,0,0], [.9,0,0], [0, .9, 0], [.9,.9,0]])
+    # ideal_atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0, 3, 0], [3,3,0]])
+    # start_atoms = Atoms('Au4', [[0,0,0], [.9,0,0], [0, .9, 0], [.9,.9,0]])
+    ideal_atoms = Octahedron('Au', 2)
+    ideal_atoms.pbc = False
+    s = Scatter()
 
-    wrap_atoms(ideal_atoms)
-    wrap_atoms(start_atoms)
+    gobs = s.get_pdf(ideal_atoms)
 
-    gobs = wrap_pdf(ideal_atoms)[0]
+    pair_style = 'eam'
+    Au_eam_file = '/mnt/work-data/dev/IID_data/examples/Au/736_atom/Au_sheng.eam'
 
-    calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=1000, potential='rw',
-                    processor='cpu')
-    calc2 = PDFCalc(gobs=gobs, qbin=.1, conv=100, potential='rw',
-                    processor='cpu')
-    calc_list=[calc1, calc2]
-    calc = MultiCalc(calc_list=calc_list)
-    start_atoms.set_calculator(calc)
-    e = start_atoms.get_total_energy()
-    print e
-    f = start_atoms.get_forces()
-    print f
+    cmds = ["pair_style eam/alloy",
+            "pair_coeff * * " + str(Au_eam_file) + " " + "Au"]
 
-    start_atoms.positions *= 1.5
-    e = start_atoms.get_total_energy()
-    print e
-    f = start_atoms.get_forces()
-    print f
+    calc2 = LAMMPSlib(lmpcmds=cmds, logfile='test.log')
+    super_el = []
+    js = np.linspace(0, 150, 10)
+    for j in js:
+        print j
+        calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=j, potential='rw')
+        calc_list = [
+            calc1,
+            calc2
+        ]
+        el = []
+        calc = MultiCalc(calc_list=calc_list)
+        ideal_atoms.set_calculator(calc)
+        traj = []
+        for i in np.linspace(.75, 1.25, 101):
+            atoms = dc(ideal_atoms)
+            atoms.positions *= i
+            e = atoms.get_potential_energy()
+            el.append(e)
+            e2 = 2 * e
+            f = atoms.get_forces()
+            f2 = 2 * f
+            traj += [atoms]
+        super_el.append(el)
+        view(traj)
+        # plt.plot(np.linspace(.75, 1.25, 101), el, label=str(j))
+        # plt.legend()
+        # plt.show()
+    for el, conv in zip(super_el, js):
+        plt.plot(np.linspace(.75, 1.25, 101)*ideal_atoms.get_distance(0, 1), el/conv, label=conv)
+    plt.ylabel('normalized energy')
+    plt.xlabel('first bond distance')
+    plt.legend(title='PDF conversion factor')
+    plt.title('Au Octahedron expansion PES')
+    plt.show()

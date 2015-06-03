@@ -77,10 +77,6 @@ class Spring(Calculator):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from ase.visualize import view
-    from pyiid.calc.pdfcalc import PDFCalc
-    from pyiid.wrappers.multi_gpu_wrap import wrap_pdf
-    from pyiid.wrappers.cpu_wrap import wrap_atoms
-    from pyiid.kernels.cpu_kernel import get_r_array, get_d_array
 
     ideal_atoms = Atoms('Au4', [[0,0,0], [1,0,0], [0, 1, 0], [1,1,0]])
     start_atoms = Atoms('Au4', [[0,0,0], [2,0,0], [0, 2., 0], [2,2,0]])

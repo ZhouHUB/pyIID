@@ -12,7 +12,7 @@ def test_pdf0():
     pos = np.random.random((n, 3)) * 10.
     atoms = Atoms('Au' + str(n), pos)
 
-    wrap_atoms(atoms, exp_dict)
+    wrap_atoms(atoms)
 
     spdf = serial_pdf(atoms)[0]
     gpdf = gpu_pdf(atoms)[0]

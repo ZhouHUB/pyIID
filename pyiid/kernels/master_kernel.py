@@ -246,7 +246,6 @@ def grad_pdf_pool_worker(task):
 def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
 
     n = len(grad_fq)
-    end_shape = (n, 3, len(rgrid))
     grad_iter = []
     pool_size = cpu_count()
     if pool_size <= 0:
@@ -256,8 +255,8 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
         for tz in range(3):
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
     pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
-    pdf_grad = np.asarray(pdf_grad_l)
-    pdf_grad.reshape(end_shape)
+    pdf_grad_flat = np.asarray(pdf_grad_l)
+    pdf_grad = np.reshape(pdf_grad_flat, (n, 3, len(rgrid)))
     return pdf_grad
 
 
@@ -303,6 +302,7 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     '''
 
     """
+    print grad_pdf.shape
     if weight is None:
         weight = np.ones(gcalc.shape)
     n = len(grad_pdf)
@@ -427,7 +427,7 @@ def spring_force_kernel(direction, d, r, mag):
 if __name__ == '__main__':
     from pyiid.wrappers.scatter import Scatter, wrap_atoms
     from ase.atoms import Atoms
-    from pyiid.wrappers.master_wrap import wrap_atoms
+    from pyiid.wrappers.scatter import wrap_atoms
     import matplotlib.pyplot as plt
     from scipy.fftpack import dst, idst
     from scipy.signal import resample, argrelmax
@@ -453,7 +453,6 @@ if __name__ == '__main__':
 
     wrap_atoms(atoms, exp_dict)
     scat = Scatter(exp_dict)
-    # scat.set_processor('Serial-CPU')
     fq = scat.get_fq(atoms)
     pdf = scat.get_pdf(atoms)
 
@@ -461,16 +460,6 @@ if __name__ == '__main__':
     assert_allclose(fq, srfq, atol=5e-3)
 
     mix = get_pdf_at_qmin(srfq, dpc.rstep, dpc.qstep, dpc.rgrid, dpc.qmin)
-
-    # plt.plot(np.arange(0, 25, exp_dict['qbin']), fq, label='scat')
-    # plt.plot(dpc.qgrid,srfq, label='diffpy')
-    # plt.legend()
-    # plt.show()
-    # print len(srfq), len(fq)
-    # print dpc.qstep, np.pi / (45 + 6 * 2 * np.pi / 25)
-    # print len(r), len(gr), \
-    #     len(pdf)
-    # scale = np.max(gr)/np.max(mix)
     scale = 1
     plt.plot(r, gr,
              # 'ro',
@@ -492,8 +481,3 @@ if __name__ == '__main__':
     print rw * 100, scale
     plt.legend()
     plt.show()
-    # plt.plot(r, dstpdf)
-    # plt.plot(r[argrelmax(gr)])
-    # plt.plot(r[argrelmax(pdf)])
-    # plt.plot((r[argrelmax(gr)] - r[argrelmax(pdf)])*100)
-    # plt.sh
