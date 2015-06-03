@@ -104,7 +104,7 @@ def atomic_fq(q, scatter_array, qbin, m, n_cov):
 
     # start calculations
     dscat = cuda.to_device(scatter_array, stream2)
-    dnorm = cuda.device_array((m, n), dtype=np.float32,
+    dnorm = cuda.device_array((m, n, qmax_bin), dtype=np.float32,
                               stream=stream2)
     get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
 
@@ -135,9 +135,9 @@ def atomic_fq(q, scatter_array, qbin, m, n_cov):
 
     dfinal.to_host(stream)
     # clear the GPU memory after transfer back to host
-
-    del dscat, dnorm, dd, dq, dr, dfq, final, dfinal
+    del dscat, dnorm, dd, dq, dr, dfq, dfinal
     return final
+
 
 
 def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):

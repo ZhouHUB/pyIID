@@ -18,4 +18,6 @@ def generate_experiment():
                   (.005, .015)]
     for n, k in enumerate(exp_keys):
         exp_dict[k] = np.random.uniform(exp_ranges[n][0], exp_ranges[n][1])
+    exp_dict['qbin'] = np.pi / (exp_dict['rmax'] + 6 * 2 * np.pi /
+                                    exp_dict['qmax'])
     return exp_dict

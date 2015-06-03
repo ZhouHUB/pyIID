@@ -20,6 +20,7 @@ def setup_atomic_configs():
 def test_rw():
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
+    scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
     atoms2.set_calculator(calc)
@@ -31,6 +32,7 @@ def test_rw():
 def test_chi_sq():
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
+    scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
     atoms2.set_calculator(calc)
@@ -43,6 +45,7 @@ def test_chi_sq():
 def test_grad_rw():
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = Scatter()
+    scat.set_processor('CPU')
     scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')

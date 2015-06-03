@@ -39,7 +39,6 @@ class Scatter(object):
         # Currently supported processor architectures
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
         self.exp = None
-        self.Q = None
         self.update_experiment(exp_dict)
 
         # Just in case something blows up down the line
@@ -52,7 +51,7 @@ class Scatter(object):
 
     def check_scatter(self, atoms):
         if 'scatter' not in atoms.arrays.keys() or np.array_equal(
-                        atoms.info['Q'], self.Q):
+                        atoms.info['Qbin'], self.exp['qbin']):
             wrap_atoms(atoms, self.exp)
 
     def update_experiment(self, exp_dict):
@@ -66,9 +65,6 @@ class Scatter(object):
         # Technically we should use this for qbin:
         self.exp['qbin'] = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
                                     self.exp['qmax'])
-
-        self.Q = np.arange(exp_dict['qmin'], exp_dict['qmax'],
-                           exp_dict['qbin'])
 
     def set_processor(self, processor=None):
         """
@@ -194,7 +190,7 @@ def wrap_atoms(atoms, exp_dict=None):
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
     get_scatter_array(scatter_array, e_num, qbin)
     atoms.set_array('scatter', scatter_array)
-    atoms.info['Q'] = np.arange(exp_dict['qmin'], exp_dict['qmax'], qbin)
+    atoms.info['Qbin'] = qbin
 
 
 if __name__ == '__main__':

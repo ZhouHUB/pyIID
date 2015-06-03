@@ -16,14 +16,12 @@ def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
 
 
 def wrap_fq(atoms, qbin=.1):
-    print 'hi2'
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
     scatter_array = atoms.get_array('scatter')
     qmax_bin = scatter_array.shape[1]
-
 
     # get info on our gpu setup and memory requrements
     gpus = cuda.gpus.lst
@@ -41,13 +39,13 @@ def wrap_fq(atoms, qbin=.1):
     p_dict = {}
 
     # TODO: NEEDS WORK GIVES BAD RESULTS WITH EQUAL WEIGHTING
+
     # The total amount of work is greater than the sum of our GPUs, no
     # special distribution needed, just keep putting problems on GPUs until
     # finished.
-
     while n_cov < n:
         for gpu, mem in zip(sort_gpus, sort_gmem):
-            m = atoms_per_gpu_fq
+            m = atoms_per_gpu_fq(n, qmax_bin, mem)
             if m > n - n_cov:
                 m = n - n_cov
 

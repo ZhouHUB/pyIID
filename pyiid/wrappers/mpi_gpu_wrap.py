@@ -2,8 +2,6 @@ __author__ = 'christopher'
 import numpy as np
 import math
 import os
-from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
-    get_grad_rw, get_chi_sq, get_grad_chi_sq
 from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 
 

@@ -4,7 +4,7 @@ import numpy as np
 from numbapro import autojit
 
 
-def wrap_fq(atoms, qmax=25., qbin=.1):
+def wrap_fq(atoms, qbin=.1):
     """
     Generate the reduced structure function
 
