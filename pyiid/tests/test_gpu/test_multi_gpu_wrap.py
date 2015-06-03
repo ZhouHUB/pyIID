@@ -13,7 +13,7 @@ from pyiid.wrappers.multi_gpu_wrap import wrap_fq_grad as gpu_grad_fq
 from pyiid.wrappers.scatter import wrap_atoms
 from pyiid.tests import generate_experiment
 
-n = 1500
+n = 150
 
 
 def test_fq():
@@ -26,7 +26,7 @@ def test_fq():
 
     gfq_ave = gpu_fq(atoms, exp_dict['qbin'])
     sfq_ave = serial_fq(atoms, exp_dict['qbin'])
-    assert_allclose(sfq_ave, gfq_ave, rtol=1e-3, atol=.0000001)
+    assert_allclose(sfq_ave, gfq_ave, rtol=1e-2, atol=.0000001)
 
     return
 
@@ -41,6 +41,7 @@ def test_grad_fq():
 
     gfq = gpu_grad_fq(atoms, exp_dict['qbin'])
     sfq = serial_grad_fq(atoms, exp_dict['qbin'])
+    print n, np.sqrt(np.mean((sfq-gfq)**2))
     assert_allclose(sfq, gfq, rtol=1e-1, atol=.0000001)
 
     return
