@@ -2,8 +2,9 @@ __author__ = 'christopher'
 import numpy as np
 import math
 import os
-from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 
+from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
+from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, atoms_per_gpu_grad_fq
 
 def count_nodes():
     fileloc = os.getenv("$PBS_NODEFILE")
@@ -30,11 +31,8 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     n_nodes = count_nodes()
     print 'nodes', n_nodes
 
-    # get info on our gpu setup and memory requrements
+    # get info on our gpu setup and available memory
     ranks, mem_list = gpu_avail(n_nodes)
-    gpu_total_mem = sum(mem_list)
-    print gpu_total_mem
-    total_req_mem = (2*qmax_bin*n*n+qmax_bin*n+4*n*n+3*n)*4
 
     # starting buffers
     fq_q = []
@@ -43,8 +41,7 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
     m_list = []
     while n_cov < n:
         for mem in mem_list:
-            m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                    8 * n * (qmax_bin + 2))))
+            m = atoms_per_gpu_fq(n, qmax_bin, mem)
             if m > n - n_cov:
                 m = n - n_cov
             m_list.append(m)
@@ -53,15 +50,12 @@ def wrap_fq(atoms, qmax=25., qbin=.1):
             n_cov += m
             if n_cov >= n:
                 break
+
     # Make certain that we have covered all the atoms
     assert sum(m_list) == n
 
-    # The total amount of work is greater than the sum of our GPUs, no
-    # special distribution needed, just keep putting problems on GPUs until
-    # finished.
     reports = mpi_fq(n_nodes, m_list, q, scatter_array, qbin)
 
-    # print reports
     fq = np.zeros(qmax_bin)
     for ele in reports:
         fq[:] += ele

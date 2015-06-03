@@ -1,6 +1,7 @@
 __author__ = 'christopher'
 import sys
 import inspect
+from threading import Thread
 
 import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
 import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
@@ -31,12 +32,15 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     n_cov = 0
     status = MPI.Status()
     m_list += ([StopIteration] * n_nodes)
+    p = None
     for m in m_list:
         if m is StopIteration:
             msg = m
         else:
             msg = (q, scatter_array, qbin, m, n_cov)
         # If the thread on the main node is done, or not started give a problem to it
+        if p is None or p.is_alive() is False:
+            p = Thread(target=None, args=msg)
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
     # print 'done master'

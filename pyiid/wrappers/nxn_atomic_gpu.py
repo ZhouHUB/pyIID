@@ -174,7 +174,7 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
     # Grad kernels
     from pyiid.kernels.multi_cuda import fq_grad_step_0, \
         fq_grad_step_1, fq_grad_step_2, fq_grad_step_3, \
-        fq_grad_step_4, gpu_reduce_4D_to_3D
+        fq_grad_step_4, gpu_reduce_4D_to_3D, zero_4D
 
     # cuda stream init
     stream = cuda.stream()
@@ -255,7 +255,7 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
     fq_grad_step_0[bpg_l_3, tpb_l_3, stream3](dcos_term, dr, qbin)
     dgrad_p = cuda.device_array((m, n, 3, qmax_bin), dtype=np.float32,
                                 stream=stream2)
-
+    zero_4D[bpg_l_3, tpb_l_3, stream](dgrad_p)
     final = np.zeros((m, 3, qmax_bin), dtype=np.float32)
 
     dfinal = cuda.to_device(final, stream=stream2)
