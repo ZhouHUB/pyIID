@@ -302,15 +302,11 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     '''
 
     """
-    print grad_pdf.shape
     if weight is None:
         weight = np.ones(gcalc.shape)
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
-            # Sympy with scale
-            # grad scale
-            # '''
             if scale <= 0:
                 grad_a = 0
             else:
@@ -318,10 +314,10 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
                                               grad_pdf[tx, tz, :]) + np.dot(
                     gobs.T, grad_pdf[tx, tz, :])) / np.dot(gcalc.T, gcalc)
 
-            grad_rw[tx, tz] = rw / np.sum(
-                (gobs[:] - scale * gcalc[:]) ** 2) * np.sum(
+            grad_rw[tx, tz] = rw * np.sum(
                 -(scale * grad_pdf[tx, tz, :] + gcalc[:] * grad_a) * (
-                    gobs[:] - scale * gcalc))
+                    gobs[:] - scale * gcalc)) / np.sum(
+                (gobs[:] - scale * gcalc[:]) ** 2)
             # '''
 
 

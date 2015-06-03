@@ -10,7 +10,7 @@ from pyiid.calc.oo_pdfcalc import PDFCalc
 
 
 def setup_atomic_configs():
-    atoms1 = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
+    atoms1 = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     atoms2 = atoms1.copy()
     scale = .75
     atoms2.positions *= scale
@@ -67,8 +67,10 @@ def test_grad_chi_sq():
         print dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
+
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
 
     '''import matplotlib.pyplot as plt

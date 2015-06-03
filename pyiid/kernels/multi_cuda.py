@@ -297,3 +297,16 @@ def zero_3D(A):
     if tx >= m or ty >= n or kq >= qmax_bin:
         return
     A[tx, ty, kq] = 0.0
+
+@cuda.jit(argtypes=[f4[:,:,:,:]])
+def zero_4D(A):
+    tx, ty, kq = cuda.grid(3)
+
+    m = A.shape[0]
+    n = A.shape[1]
+    qmax_bin = A.shape[3]
+    # r is zero for tx = ty, thus we don't calculate for it
+    if tx >= m or ty >= n or kq >= qmax_bin:
+        return
+    for tz in range(3):
+        A[tx, ty, tz, kq] = 0.0
