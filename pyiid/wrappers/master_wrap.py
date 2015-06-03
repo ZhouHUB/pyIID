@@ -236,7 +236,7 @@ def wrap_grad_rw(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
         for tz in range(3):
             fq_grad[tx, tz, :qmin_bin] = 0.
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
-    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
+    grad_pdf(fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
     pdf_grad = pdf_grad[:,:, math.floor(rmin/rstep):]
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_rw(grad_rw, pdf_grad, gcalc, gobs, rw, scale, weight=None)
@@ -282,7 +282,7 @@ def wrap_grad_chi_sq(atoms, gobs, qmax=25., qmin=0.0, qbin=.1, rmin=0.0,
         for tz in range(3):
             fq_grad[tx, tz, :qmin_bin] = 0.
     pdf_grad = np.zeros((len(atoms), 3, rmax / rstep))
-    grad_pdf(pdf_grad, fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
+    grad_pdf(fq_grad, rstep, qbin, np.arange(0, rmax, rstep))
     pdf_grad = pdf_grad[:, :, math.floor(rmin / rstep):]
     grad_rw = np.zeros((len(atoms), 3))
     get_grad_chi_sq(grad_rw, pdf_grad, gcalc, gobs, scale)

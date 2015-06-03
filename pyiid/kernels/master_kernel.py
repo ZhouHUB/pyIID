@@ -243,8 +243,10 @@ def grad_pdf_pool_worker(task):
     return get_pdf_at_qmin(*task)
 
 
-def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
+def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
+
     n = len(grad_fq)
+    end_shape = (n, 3, len(rgrid))
     grad_iter = []
     pool_size = cpu_count()
     if pool_size <= 0:
@@ -253,9 +255,10 @@ def grad_pdf(pdf_grad, grad_fq, rstep, qstep, rgrid, qmin):
     for tx in range(n):
         for tz in range(3):
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
-    pdf_grad_iter = p.map(grad_pdf_pool_worker, grad_iter)
-    np_iter = np.asarray(pdf_grad_iter)
-    pdf_grad = np.reshape(np_iter, pdf_grad.shape)
+    pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
+    pdf_grad = np.asarray(pdf_grad_l)
+    pdf_grad.reshape(end_shape)
+    return pdf_grad
 
 
 def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):

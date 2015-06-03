@@ -167,17 +167,10 @@ class Scatter(object):
         fq_grad[:, :, :qmin_bin] = 0.
         rgrid = np.arange(self.exp['rmin'], self.exp['rmax'],
                           self.exp['rstep'])
-        pdf_grad = np.zeros(
-            (len(atoms), 3, len(rgrid)))
 
-        grad_pdf(
-            pdf_grad,
-            fq_grad,
-            self.exp['rstep'],
-            self.exp['qbin'],
-            rgrid,
-            self.exp['qmin']
-        )
+        pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.exp['qbin'], rgrid,
+                 self.exp['qmin'])
+        print pdf_grad
         return pdf_grad
 
 
@@ -219,8 +212,8 @@ if __name__ == '__main__':
     # wrap_atoms(atoms, exp_dict)
     # scat = Scatter(exp_dict)
     scat = Scatter()
-    fq = scat.get_fq(atoms)
-    # print fq
+    # fq = scat.get_fq(atoms)
     # gfq = scat.get_grad_fq(atoms)
     # pdf = scat.get_pdf(atoms)
-    # gpdf = scat.get_grad_pdf(atoms)
+    gpdf = scat.get_grad_pdf(atoms)
+    print gpdf
