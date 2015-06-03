@@ -152,11 +152,11 @@ def test_get_fq_p0_1():
 
     rtol = 5e-2
     print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
-    print 'mean', np.mean(kfq - cfq)
-    print 'median', np.median(kfq - cfq)
+    print 'mean difference', np.mean(kfq - cfq)
+    print 'median difference', np.median(kfq - cfq)
     print 'percent of errors', np.count_nonzero(
         kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
-    assert_allclose(kfq, cfq, rtol=rtol)
+    assert_allclose(kfq, cfq, rtol=rtol, atol=1e-7)
 
 
 def test_get_fq_p0_1_sum():
@@ -189,11 +189,11 @@ def test_get_fq_p0_1_sum():
 
     rtol = 5e-2
     print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
-    print 'mean', np.mean(kfq - cfq)
-    print 'median', np.median(kfq - cfq)
+    print 'mean difference', np.mean(kfq - cfq)
+    print 'median difference', np.median(kfq - cfq)
     print 'percent of errors', np.count_nonzero(
         kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
-    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol)
+    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol, atol=1e-7)
 
 
 def test_get_fq_grad_p3():
@@ -224,11 +224,11 @@ def test_get_fq_grad_p3():
 
     rtol = 5e-2
     print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
-    print 'mean', np.mean(kfq - cfq)
-    print 'median', np.median(kfq - cfq)
+    print 'mean difference', np.mean(kfq - cfq)
+    print 'median difference', np.median(kfq - cfq)
     print 'percent of errors', np.count_nonzero(
         kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
-    assert_allclose(kfq, cfq, rtol=rtol)
+    assert_allclose(kfq, cfq, rtol=rtol, atol=5e-5)
 
 
 def test_get_fq_grad_p3_sum():
@@ -259,11 +259,11 @@ def test_get_fq_grad_p3_sum():
 
     rtol = 5e-2
     print 'rms', np.sqrt(np.mean((kfq - cfq) ** 2))
-    print 'mean', np.mean(kfq - cfq)
-    print 'median', np.median(kfq - cfq)
+    print 'mean difference', np.mean(kfq - cfq)
+    print 'median difference', np.median(kfq - cfq)
     print 'percent of errors', np.count_nonzero(
         kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
-    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol)
+    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol, atol=1e-7)
 
 
 if __name__ == '__main__':
