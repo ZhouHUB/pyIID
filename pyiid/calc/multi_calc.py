@@ -60,6 +60,7 @@ class MultiCalc(Calculator):
         :return:
         """
         energy_list = []
+        # TODO: parallelism this
         for calculator in self.calc_list:
             atoms.set_calculator(calculator)
             energy_list.append(atoms.get_potential_energy())
@@ -73,6 +74,7 @@ class MultiCalc(Calculator):
         self.results['forces'] = np.zeros((len(atoms), 3))
         forces = np.zeros((len(atoms), 3))
 
+        # TODO: parallelism this
         for calculator in self.calc_list:
             atoms.set_calculator(calculator)
             forces[:, :] += atoms.get_forces()

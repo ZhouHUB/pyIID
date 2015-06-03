@@ -255,6 +255,7 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
         for tz in range(3):
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
     pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
+    p.close()
     pdf_grad_flat = np.asarray(pdf_grad_l)
     pdf_grad = np.reshape(pdf_grad_flat, (n, 3, len(rgrid)))
     return pdf_grad

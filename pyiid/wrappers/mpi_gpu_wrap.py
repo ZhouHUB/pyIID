@@ -34,9 +34,9 @@ def wrap_fq(atoms, qbin=.1):
     ranks, mem_list = gpu_avail(n_nodes)
 
     # starting buffers
-    fq_q = []
     n_cov = 0
 
+    # create list of tasks
     m_list = []
     while n_cov < n:
         for mem in mem_list:

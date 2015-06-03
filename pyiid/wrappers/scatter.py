@@ -167,6 +167,12 @@ class Scatter(object):
                  self.exp['qmin'])
         return pdf_grad
 
+    def get_scatter_vector(self):
+        return np.arange(self.exp['qmin'], self.exp['qmax'], self.exp['qbin'])
+
+    def get_r(self):
+        return np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep'])
+
 
 def wrap_atoms(atoms, exp_dict=None):
     """

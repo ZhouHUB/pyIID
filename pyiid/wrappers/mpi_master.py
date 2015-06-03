@@ -44,7 +44,8 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
         else:
             msg = (q, scatter_array, qbin, m, n_cov)
 
-        # If the thread on the main node is done, or not started give a problem to it
+        # If the thread on the main node is done, or not started:
+        # give a problem to it
         if p is None or p.is_alive() is False:
             p = Thread(
                 target=sub_fq, args=(
@@ -52,10 +53,14 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
                     qbin, m,
                     n_cov))
             p.start()
+
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
+        n_cov += m
     p.join()
-    # print 'done master'
+    # Make certain we have covered all the atoms
+    assert n_cov == len(q)
+
     reports = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
     reports += thread_q
@@ -83,7 +88,4 @@ def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
         comm.send(obj=msg, dest=status.Get_source())
 
     reports = comm.gather(root=MPI.ROOT)
-    return
-
-
-reports
+    return reports
