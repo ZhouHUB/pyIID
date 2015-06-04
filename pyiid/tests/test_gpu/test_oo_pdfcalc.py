@@ -8,7 +8,7 @@ from pyiid.tests import generate_experiment, setup_atoms
 from pyiid.testing.decorators import known_fail_if
 from pyiid.calc.oo_pdfcalc import PDFCalc
 
-n = 400
+n = 1000
 
 def test_rw():
     atoms1, atoms2 = setup_atoms(n), setup_atoms(n)

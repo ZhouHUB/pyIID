@@ -51,7 +51,7 @@ class Scatter(object):
 
     def check_scatter(self, atoms):
         if 'scatter' not in atoms.arrays.keys() or np.array_equal(
-                        atoms.info['Qbin'], self.exp['qbin']):
+                atoms.info['Qbin'], self.exp['qbin']):
             wrap_atoms(atoms, self.exp)
 
     def update_experiment(self, exp_dict):
@@ -163,8 +163,9 @@ class Scatter(object):
         rgrid = np.arange(self.exp['rmin'], self.exp['rmax'],
                           self.exp['rstep'])
 
-        pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.exp['qbin'], rgrid,
-                 self.exp['qmin'])
+        pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.exp['qbin'],
+                            rgrid,
+                            self.exp['qmin'])
         return pdf_grad
 
     def get_scatter_vector(self):
@@ -191,9 +192,17 @@ def wrap_atoms(atoms, exp_dict=None):
     n = len(atoms)
     qmax_bin = int(math.ceil(exp_dict['qmax'] / qbin))
     e_num = atoms.get_atomic_numbers()
+    e_set = set(e_num)
+    e_list = list(e_set)
+
+    set_scatter_array = np.zeros((len(e_set), qmax_bin), dtype=np.float32)
+    get_scatter_array(set_scatter_array, e_num, qbin)
 
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
-    get_scatter_array(scatter_array, e_num, qbin)
+    for i in range(len(e_set)):
+        scatter_array[
+        np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
+
     atoms.set_array('scatter', scatter_array)
     atoms.info['Qbin'] = qbin
 
@@ -217,3 +226,4 @@ if __name__ == '__main__':
     # pdf = scat.get_pdf(atoms)
     gpdf = scat.get_grad_pdf(atoms)
     print gpdf
+    from asap3 import LennardJones

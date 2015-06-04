@@ -28,8 +28,8 @@ def get_scatter_array(scatter_array, numbers, qbin):
     """
     n = len(scatter_array)
     qmax_bin = scatter_array.shape[1]
-    for tx in range(n):
-        for kq in range(0, qmax_bin):
+    for kq in range(0, qmax_bin):
+        for tx in range(n):
             # note xraylib uses q = sin(th/2)
             # as opposed to our q = 4pi sin(th/2)
             scatter_array[tx, kq] = xraylib.FF_Rayl(numbers[tx],

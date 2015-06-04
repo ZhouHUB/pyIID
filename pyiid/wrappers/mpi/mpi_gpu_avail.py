@@ -14,6 +14,5 @@ if __name__ == '__main__':
 
     cuda.close()
 
-    comm.gather(sendobj=rank, root=0)
     comm.gather(sendobj=meminfo, root=0)
     comm.Disconnect()

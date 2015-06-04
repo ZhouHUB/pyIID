@@ -2,6 +2,7 @@ __author__ = 'christopher'
 import numpy as np
 import math
 import os
+from numba import cuda
 
 from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, atoms_per_gpu_grad_fq
@@ -14,7 +15,8 @@ def count_nodes():
         with open(fileloc, 'r') as f:
             nodes = f.readlines()
         node_set = set(nodes)
-        return len(node_set)
+        # give back the number of nodes, not counting the head node
+        return len(node_set) - 1
 
 
 def wrap_fq(atoms, qbin=.1):
@@ -31,7 +33,8 @@ def wrap_fq(atoms, qbin=.1):
     print 'nodes', n_nodes
 
     # get info on our gpu setup and available memory
-    ranks, mem_list = gpu_avail(n_nodes)
+    mem_list = gpu_avail(n_nodes)
+    mem_list.append(cuda.current_context().get_memory_info()[0])
 
     # starting buffers
     n_cov = 0
@@ -81,14 +84,12 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1):
         print mem_list[i]
         gpu_total_mem += mem_list[i]
     print gpu_total_mem
-    total_req_mem = (6*qmax_bin*n*n + qmax_bin*n + 4*n*n + 3*n)*4
 
     n_cov = 0
     m_list = []
     while n_cov < n:
         for mem in mem_list:
-            m = int(math.floor(float(-4 * n * qmax_bin - 12 * n + .8 * mem) / (
-                    8 * n * (3 * qmax_bin + 2))))
+            m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
             if m > n - n_cov:
                 m = n - n_cov
             m_list.append(m)

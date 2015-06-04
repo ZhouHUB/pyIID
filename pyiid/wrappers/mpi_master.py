@@ -11,6 +11,18 @@ from .multi_gpu_wrap import sub_fq
 
 
 def gpu_avail(n_nodes):
+    """
+    For each node in the allocated nodes get the memory for each GPU
+
+    Parameters
+    ----------
+    n_nodes: int
+        Number of allocated nodes, not including the head node
+    Returns
+    -------
+    list of floats:
+        Amount of memory per GPU
+    """
     from mpi4py import MPI
 
     avail_loc = inspect.getfile(mpi_gpu_avail)
@@ -18,10 +30,9 @@ def gpu_avail(n_nodes):
                                 args=[avail_loc],
                                 maxprocs=n_nodes
                                 )
-    ranks = comm.gather(root=MPI.ROOT)
     mem_list = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
-    return ranks, mem_list
+    return mem_list
 
 
 def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
