@@ -310,3 +310,14 @@ def zero_4D(A):
         return
     for tz in range(3):
         A[tx, ty, tz, kq] = 0.0
+
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], f4[:,:], f4[:,:]])
+def spring_force(direction, d, r, mag):
+    tx, ty = cuda.grid(2)
+
+    n = len(r)
+    if tx >= n or ty >= n:
+        return
+    for tz in range(3):
+        direction[tx, ty, tz] = d[tx, ty, tz]/r[tx, ty] * mag[tx, ty]

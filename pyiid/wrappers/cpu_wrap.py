@@ -159,6 +159,11 @@ def spring_force(atoms, k, rt):
     mag = np.zeros(r.shape)
     mag[thresh] = k * (r[thresh]-rt)
 
-    direction = np.zeros(q.shape)
-    spring_force_kernel(direction, d, r, mag)
+    direction = np.zeros((n, n, 3))
+    old_settings = np.seterr(all='ignore')
+    for tz in range(3):
+        direction[thresh, tz] = d[thresh, tz]/r[thresh] * mag[thresh]
+    np.seterr(**old_settings)
+    direction[np.isnan(direction)] = 0.0
+    direction = np.sum(direction, axis=1)
     return direction

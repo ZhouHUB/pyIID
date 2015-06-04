@@ -104,7 +104,7 @@ def wrap_fq_grad(atoms, qbin=.1):
     index_list = []
     p_dict = {}
     n_cov = 0
-
+    # TODO: Re-code using thread pool from multiprocessing
     while n_cov < n:
         for gpu, mem in zip(sort_gpus, sort_gmem):
             m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
@@ -143,6 +143,13 @@ def wrap_fq_grad(atoms, qbin=.1):
     np.seterr(**old_settings)
     return grad_p
 
+
+def wrap_spring_force():
+    # setup data
+    # get d
+    # get r
+
+    pass
 
 if __name__ == '__main__':
     # import cProfile

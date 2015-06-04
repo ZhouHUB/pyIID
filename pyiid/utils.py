@@ -62,7 +62,7 @@ def update_stru(new_atoms, stru):
     return stru
 
 
-def load_gr_file(gr_file=None, skiplines=None):
+def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None):
     """
     Load gr files produced from PDFgetx3
     """
@@ -87,7 +87,19 @@ def load_gr_file(gr_file=None, skiplines=None):
                     skiplines=num+2
                     break
     data = np.loadtxt(gr_file, skiprows=skiplines)
-    return data[:, 0], data[:, 1], exp_dict
+    r = data[:, 0]
+    gr = data[:, 1]
+    if rmax is not None:
+        r = r[:math.ceil(rmax/exp_dict['rstep'])]
+        gr = gr[:math.ceil(rmax/exp_dict['rstep'])]
+        exp_dict['rmax'] = rmax
+
+    if rmin is not None:
+        r = r[math.ceil(rmin/exp_dict['rstep']):]
+        gr = gr[math.ceil(rmin/exp_dict['rstep']):]
+        exp_dict['rmix'] = rmin
+
+    return r, gr, exp_dict
 
 
 def convert_stru_to_atoms(stru):
