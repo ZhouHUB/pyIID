@@ -50,8 +50,8 @@ def get_r_array(r, d):
 
     if tx >= m or ty >= n:
         return
-    r[tx, ty] = math.sqrt(
-        d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
+    r[tx, ty] = float32(math.sqrt(
+        d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2))
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
@@ -77,7 +77,7 @@ def get_fq_step_0(fq, r, qbin):
     # r is zero for tx = ty, thus we don't calculate for it
     if tx >= m or ty >= n or kq >= qmax_bin or tx == ty:
         return
-    fq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[tx, ty]
+    fq[tx, ty, kq] = float32(math.sin(kq * qbin * r[tx, ty]) / r[tx, ty])
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])

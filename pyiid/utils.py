@@ -87,8 +87,8 @@ def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None):
                     skiplines=num+2
                     break
     data = np.loadtxt(gr_file, skiprows=skiplines)
-    r = data[:, 0]
-    gr = data[:, 1]
+    r = data[:-1, 0]
+    gr = data[:-1, 1]
     if rmax is not None:
         r = r[:math.ceil(rmax/exp_dict['rstep'])]
         gr = gr[:math.ceil(rmax/exp_dict['rstep'])]

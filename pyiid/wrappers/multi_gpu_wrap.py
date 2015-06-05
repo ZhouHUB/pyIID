@@ -157,13 +157,14 @@ if __name__ == '__main__':
     from ase.atoms import Atoms
     from pyiid.wrappers.scatter import wrap_atoms
 
-    n = 400
-    pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au' + str(n), pos)
-    # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    # n = 400
+    # pos = np.random.random((n, 3)) * 10.
+    # atoms = Atoms('Au' + str(n), pos)
+    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms, None)
 
-    fq = wrap_fq(atoms)
-    print fq
-    # grad_fq = wrap_fq_grad(atoms)
-    # print grad_fq
+    # fq = wrap_fq(atoms)
+    # print fq
+    grad_fq = wrap_fq_grad(atoms, atoms.info['Qbin'])
+    print grad_fq[:, :, 1]
+    # raw_input()

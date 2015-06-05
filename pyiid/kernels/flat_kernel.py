@@ -3,6 +3,7 @@ from numba import *
 import math
 import numpy as np
 
+
 @autojit()
 def get_ij_lists(n):
     i_list = []
@@ -12,7 +13,7 @@ def get_ij_lists(n):
             if j > i:
                 i_list.append(i)
                 j_list.append(j)
-    return np.asarray(i_list, dtype=np.int32), np.asarray(j_list, dtype=np.int32)
+    return np.asarray(i_list, dtype=np.uint32), np.asarray(j_list, dtype=np.uint32)
 
 
 def symmetric_reshape(out_data, in_data, i_list, j_list):
@@ -94,17 +95,6 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
         grad[k, w, qx] = (norm[k, qx] * qx * qbin * math.cos(qx * qbin * r[k]) - fq[k, qx]) / r[k] * d[k, w] / r[k]
 
 
-'''
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
-def get_grad_fq(grad, fq, r, d, norm, qbin):
-    k, qx = cuda.grid(2)
-
-    if k >= len(r) or qx > norm.shape[1]:
-        return
-    for w in range(3):
-        grad[k, w, qx] /= (norm[k, qx] * qx * qbin * math.cos(qx * qbin * r[k]) - fq[k, qx]) / r[k] * d[k, w] / r[k]
-'''
-
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def d2_to_d1_sum(d1, d2):
     qx = cuda.grid(1)
@@ -123,7 +113,7 @@ def d4_to_d2_sum(d3, d4):
     for l in range(N):
         d3[i, j, k] += d4[i, l, j, k]
 
-@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], i4[:], i4[:]])
+@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], u4[:], u4[:]])
 def construct_qij(qi, qj, q, il, jl):
 
     k = cuda.grid(1)
@@ -134,7 +124,7 @@ def construct_qij(qi, qj, q, il, jl):
         qi[k, tz] = q[il[k], tz]
         qj[k, tz] = q[jl[k], tz]
 
-@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], i4[:], i4[:]])
+@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], u4[:], u4[:]])
 def construct_scatij(scati, scatj, scat, il, jl):
 
     k, qx = cuda.grid(2)
@@ -144,63 +134,37 @@ def construct_scatij(scati, scatj, scat, il, jl):
     scati[k, qx] = scat[il[k], qx]
     scatj[k, qx] = scat[jl[k], qx]
 
-'''
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], i4[:], i4[:]])
+
+@cuda.jit(argtypes=[f4[:,:,:]])
+def zero_pseudo_3D(A):
+    tx, kq = cuda.grid(2)
+
+    n = A.shape[0]
+    qmax_bin = A.shape[2]
+
+    if tx >= n or kq >= qmax_bin:
+        return
+    for ty in range(3):
+        A[tx, ty, kq] = 0.0
+
+
+@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], u4[:], u4[:]])
 def flat_sum(new_grad, grad, il, jl):
-    k, n, qx = cuda.grid(3)
+    # Something goes wrong here, a race condition or something
+    # the CPU version of this code works fine.  I may need to move to atomic
+    # addition, although it is not currently supported by numba.
 
-    if n >= len(new_grad) or qx >= grad.shape[2] or k >= len(il):
+    qx = cuda.grid(1)
+    # k = cuda.grid(1)
+
+    if qx >= grad.shape[2]:
+    # if k >= len(il):
         return
 
-    if jl[k] == n:
-        sign = 1
-    elif il[k] == n:
-        sign = -1
-    else:
-        sign = 0
-    for tz in range(3):
-        new_grad[n, tz, qx] += grad[k, tz, qx] * sign
-
-
-
-'''
-
-
-# '''
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], i4[:, :]])
-def flat_sum(new_grad, grad, jil):
-    n, qx = cuda.grid(2)
-
-    if n >= len(new_grad) or qx >= grad.shape[2]:
-        return
-    tmp = cuda.shared.array(3, float32)
-    for tz in range(3):
-        tmp[tz] = 0.0
-        for tx in range(jil.shape[1]):
-            if tx < n:
-                tmp[tz] += grad[jil[n, tx], tz, qx]
-            if tx >= n:
-                tmp[tz] -= grad[jil[n, tx], tz, qx]
-        new_grad[n, tz, qx] = tmp[tz]
-# '''
-'''
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], i4[:]])
-def construct_jil(jil, jl, il):
-    n = cuda.grid(1)
-
-    if n >= len(jil):
-        return
-    jil[n, :] = jl[]
-# '''
-'''
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], i4[:], i4[:]])
-def flat_sum(new_grad, grad, il, jl):
-    k, qx = cuda.grid(2)
-
-    if qx >= grad.shape[2] or k >= len(il):
-        return
-
-    for tz in range(3):
-        new_grad[jl[k], tz, qx] -= grad[k, tz, qx]
-        new_grad[il[k], tz, qx] += grad[k, tz, qx]
-'''
+    for k in range(len(il)):
+    # for qx in range(grad.shape[2]):
+        ik = il[k]
+        jk = jl[k]
+        for tz in range(3):
+            new_grad[ik, tz, qx] -= grad[k, tz, qx]
+            new_grad[jk, tz, qx] += grad[k, tz, qx]

@@ -18,7 +18,7 @@ from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list
 # In short a proto-DB, possibly written in json.
 
 
-def plot_pdf(db_entry, save_file=None, show=True):
+def plot_pdf(db_entry, save_file=None, show=True, sl='last'):
     scatter = Scatter(db_entry['exp_dict'])
     if db_entry['exp_type'] == 'theory':
         ideal_atoms = aseio.read(str(db_entry['exp_files']))
@@ -26,15 +26,25 @@ def plot_pdf(db_entry, save_file=None, show=True):
     else:
         r, gobs, exp_dict = load_gr_file(str(db_entry['exp_files']))
 
-    final_atoms = aseio.read(db_entry['traj loc'])
+    traj = PickleTrajectory(db_entry['traj loc'])
+    start_atoms = traj[0]
+    print 'Start Rw', wrap_rw(scatter.get_pdf(start_atoms), gobs)[0] * 100, '%'
 
-    gcalc = scatter.get_pdf(final_atoms)
+    if sl == 'last':
+        atoms = traj[-1]
+    elif type(sl) is int:
+        atoms = traj[sl]
+    elif sl =='all':
+        atoms = traj
+
+    gcalc = scatter.get_pdf(atoms)
     r = scatter.get_r()
 
-    rw, scale = wrap_rw(gcalc, gobs)
-    print rw * 100, '%'
 
-    baseline = 1.5 * gobs.min()
+    rw, scale = wrap_rw(gcalc, gobs)
+    print 'Final Rw', rw * 100, '%'
+
+    baseline = -1 * np.abs(1.5 * gobs.min())
     gdiff = gobs - gcalc * scale
 
     plt.figure()
@@ -66,23 +76,27 @@ def plot_angle(db_entry, cut, save_file=None, show=True):
     for atoms in stru_l.values():
         tag_surface_atoms(atoms, cut)
 
-    symbols = set(stru_l[0].get_chemical_symbols)
+    symbols = set(stru_l['Start'].get_chemical_symbols())
     tags = {'Core': (0, '+'), 'Surface': (1, '*')}
-
+    for tag in tags.keys():
+        tagged_atoms = stru_l['Start'][[atom.index for atom in stru_l['Start'] if atom.tag == tags[tag][0]]]
+        if len(tagged_atoms) == 0:
+            del tags[tag]
+    colors = ['c', 'm', 'y', 'k']
     bins = np.linspace(0, 180, 100)
     # Bin the data
-    for key in stru_l.keys():
+    for n, key in enumerate(stru_l.keys()):
         for symbol in symbols:
             for tag in tags.keys():
-                a, b = get_angle_list(stru_l[key], cut, element=symbol,
-                                      tag=tags[tag][0], bins=bins)
-                if not np.alltrue(stru_l[key].pbc):
+                a, b = np.histogram(get_angle_list(stru_l[key], cut, element=symbol,
+                                      tag=tags[tag][0]), bins=bins)
+                if np.alltrue(stru_l[key].pbc):
                     # crystal
                     for y, x in zip(a, b[:-1]):
                         plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
                 else:
                     plt.plot(b[:-1], a, label=key+' '+symbol+' '+tag,
-                             marker=tags[tag][1], colors='b')
+                             marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond angle in Degrees')
     plt.xlim(0, 180)
     plt.ylabel('Angle Counts')
@@ -94,3 +108,8 @@ def plot_angle(db_entry, cut, save_file=None, show=True):
                     transparent='True')
     if show is True:
         plt.show()
+
+if __name__ == '__main__':
+    from pyiid.workflow.db_utils import load_db
+    db = load_db('/mnt/work-data/dev/IID_data/db_test/test.json')
+    plot_angle(db[-1], 3)

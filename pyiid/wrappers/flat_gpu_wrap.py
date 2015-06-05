@@ -1,14 +1,14 @@
 __author__ = 'christopher'
-import numpy as np
-from numba import cuda
 import math
 from threading import Thread
 import sys
 
+import numpy as np
+from numba import cuda
+
 sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
-from pyiid.kernels.flat_kernel import antisymmetric_reshape, symmetric_reshape, \
-    get_ij_lists
+from pyiid.kernels.flat_kernel import get_ij_lists
 
 
 def get_gpus_mem():
@@ -69,8 +69,8 @@ def subs_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, il, jl):
 
         dqi = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
         dqj = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dil = cuda.to_device(np.asarray(il, dtype=np.int32), stream=stream)
-        djl = cuda.to_device(np.asarray(jl, dtype=np.int32), stream=stream)
+        dil = cuda.to_device(np.asarray(il, dtype=np.uint32), stream=stream)
+        djl = cuda.to_device(np.asarray(jl, dtype=np.uint32), stream=stream)
         dq = cuda.to_device(q)
 
         # calculate kernels
@@ -169,11 +169,11 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
     with gpu:
         # load kernels
         from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
-            get_normalization_array, get_fq, d2_to_d1_sum, get_grad_fq, \
-            construct_scatij, construct_qij, flat_sum
+            get_normalization_array, get_fq, get_grad_fq, \
+            construct_scatij, construct_qij, flat_sum, zero_pseudo_3D
 
         elements_per_dim_1 = [len(il)]
-        tpb1 = [32]
+        tpb1 = [64]
         bpg1 = []
         for e_dim, tpb in zip(elements_per_dim_1, tpb1):
             bpg = int(math.ceil(float(e_dim) / tpb))
@@ -183,7 +183,7 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
             bpg1.append(bpg)
 
         elements_per_dim_q = [qmax_bin]
-        tpbq = [32]
+        tpbq = [64]
         bpgq = []
         for e_dim, tpb in zip(elements_per_dim_q, tpb1):
             bpg = int(math.ceil(float(e_dim) / tpb))
@@ -228,12 +228,11 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
 
         # transfer data
         dd = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-
-        dq = cuda.to_device(q)
+        dq = cuda.to_device(q, stream=stream)
         dqi = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
         dqj = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dil = cuda.to_device(np.asarray(il, dtype=np.int32), stream=stream)
-        djl = cuda.to_device(np.asarray(jl, dtype=np.int32), stream=stream)
+        dil = cuda.to_device(np.asarray(il, dtype=np.uint32), stream=stream)
+        djl = cuda.to_device(np.asarray(jl, dtype=np.uint32), stream=stream)
 
         construct_qij[bpg1, tpb1, stream](dqi, dqj, dq, dil, djl)
         dr = cuda.device_array(len(il), dtype=np.float32, stream=stream)
@@ -250,7 +249,7 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
                                    stream=stream2)
         dscatj = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
                                    stream=stream2)
-        dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
+        dscat = cuda.to_device(scatter_array, stream=stream2)
 
         construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
         get_normalization_array[bpg2, tpb2, stream2](dnorm, dscati, dscatj)
@@ -267,35 +266,28 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
 
         get_grad_fq[bpg2, tpb2, stream2](dgrad, dfq, dr, dd, dnorm, qbin)
 
+
         new_grad2 = np.zeros((len(q), 3, qmax_bin), dtype=np.float32)
-        dnew_grad = cuda.to_device(new_grad2, stream=stream2)
-        # dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32, stream=stream2)
 
-        # jil = np.zeros((len(q), len(q)-1), dtype=np.int32)
-        print min(il), min(jl), max(il), max(jl)
-        print '\n\n\n'
-        min_n = min([np.min(il), np.min(jl)])
+        dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32, stream=stream2)
+        zero_pseudo_3D[bpgnq, tpbnq, stream2](dnew_grad)
 
-        jil = np.zeros((n, n-1), dtype=np.int32)
-
-        for sn in range(n):
-            jil[sn, :] = np.concatenate([np.where(jl == sn)[0], np.where(il == sn)[0]])
-        print jil
-        djil = cuda.to_device(jil, stream2)
-        flat_sum[bpgnq, tpbnq, stream2](dnew_grad, dgrad, djil)
-        dnew_grad.to_host(stream2)
+        flat_sum[bpgq, tpbq, stream2](dnew_grad, dgrad, dil, djl)
+        # flat_sum[bpg1, tpb1, stream2](dnew_grad, dgrad, dil, djl)
+        dnew_grad.copy_to_host(new_grad2)
         del dd, dr, dnorm, dfq, dgrad, dil, djl
     grad_q.append(new_grad2)
     index_list.append(k_cov)
     del grad, k_cov, il, jl
 
 
-def wrap_fq_grad(atoms, qmax=25, qbin=.1):
+def wrap_fq_grad(atoms, qbin=.1):
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    qmax_bin = int(math.ceil(qmax / qbin))
     scatter_array = atoms.get_array('scatter')
+    qmax_bin = scatter_array.shape[1]
+    qbin = np.float32(qbin)
 
     # setup flat map
 
@@ -342,19 +334,8 @@ def wrap_fq_grad(atoms, qmax=25, qbin=.1):
     if len(sort_grads) > 1:
         # grads = np.concatenate(sort_grads, axis=)
         grad_p = np.sum(sort_grads, axis=0)
-        print grad_p.shape
     else:
         grad_p = sort_grads[0]
-    '''
-    jil = np.zeros((len(q), len(q)-1), dtype=np.int32)
-    for n in range(len(q)):
-        jil[n, :] = np.concatenate([np.where(jl == n)[0], np.where(il == n)[0]])
-    grad_p = np.zeros((len(q), 3, qmax_bin))
-    print jil
-    for n in range(len(q)):
-        grad_p[n, :, :] += grads[jil[n, :n], :, :].sum(axis=0)
-        grad_p[n, :, :] -= grads[jil[n, n:], :, :].sum(axis=0)
-    '''
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
@@ -368,16 +349,15 @@ if __name__ == '__main__':
     # import cProfile
     # cProfile.run('''
     from ase.atoms import Atoms
-    import os
     from pyiid.wrappers.scatter import wrap_atoms
-    import matplotlib.pyplot as plt
 
-    # n = 300
+    # n = 1500
     # pos = np.random.random((n, 3)) * 10.
     # atoms = Atoms('Au' + str(n), pos)
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms)
 
-    fq = wrap_fq(atoms)
-    grad_fq = wrap_fq_grad(atoms)
-    # print grad_fq
+    # fq = wrap_fq(atoms, atoms.info['Qbin'])
+    grad_fq = wrap_fq_grad(atoms, atoms.info['Qbin'])
+    print grad_fq[:, :, 1]
+    # raw_input()
