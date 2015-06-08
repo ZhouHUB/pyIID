@@ -260,7 +260,7 @@ if __name__ == '__main__':
         # {'name': 'FQ', 'kwargs': {'conv': 50, 'potential': 'rw'}},
         {'name': 'Spring', 'kwargs': {'k': 100, 'rt': exp_dict['rmin']}}
     ]
-    # '''
+    '''
     run_simulation(
         '/mnt/work-data/dev/IID_data/db_test/test.json',
         'theory',

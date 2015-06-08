@@ -273,7 +273,6 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
         zero_pseudo_3D[bpgnq, tpbnq, stream2](dnew_grad)
 
         flat_sum[bpgq, tpbq, stream2](dnew_grad, dgrad, dil, djl)
-        # flat_sum[bpg1, tpb1, stream2](dnew_grad, dgrad, dil, djl)
         dnew_grad.copy_to_host(new_grad2)
         del dd, dr, dnorm, dfq, dgrad, dil, djl
     grad_q.append(new_grad2)
