@@ -268,7 +268,7 @@ if __name__ == '__main__':
         'rstep': .01
     }
     calcs = [
-        {'name': 'PDF', 'kwargs': {'conv': 600, 'potential': 'rw'}},
+        {'name': 'PDF', 'kwargs': {'conv': 1000, 'potential': 'rw'}},
         # {'name': 'FQ', 'kwargs': {'conv': 50, 'potential': 'rw'}},
         # {'name': 'Spring', 'kwargs': {'k': 100, 'rt': exp_dict['rmin']}},
         {'name': 'LAMMPS', 'kwargs': {'lmpcmds':["pair_style eam/alloy", "pair_coeff * * "+'/mnt/work-data/dev/IID_data/examples/Au/Au_sheng.eam'+" "+"Au"], 'logfile':'test.log'}}
