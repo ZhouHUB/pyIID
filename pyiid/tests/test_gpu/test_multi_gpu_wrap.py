@@ -10,7 +10,7 @@ from pyiid.wrappers.cpu_wrap import wrap_fq_grad as serial_grad_fq
 from pyiid.wrappers.multi_gpu_wrap import wrap_fq as gpu_fq
 from pyiid.wrappers.multi_gpu_wrap import wrap_fq_grad as gpu_grad_fq
 
-from pyiid.wrappers.scatter import wrap_atoms
+from pyiid.wrappers.elasticscatter import wrap_atoms
 from pyiid.tests import generate_experiment
 
 n = 150

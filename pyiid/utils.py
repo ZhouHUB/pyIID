@@ -62,7 +62,7 @@ def update_stru(new_atoms, stru):
     return stru
 
 
-def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None):
+def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None, **kwargs):
     """
     Load gr files produced from PDFgetx3
     """
@@ -97,7 +97,7 @@ def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None):
     if rmin is not None:
         r = r[math.ceil(rmin/exp_dict['rstep']):]
         gr = gr[math.ceil(rmin/exp_dict['rstep']):]
-        exp_dict['rmix'] = rmin
+        exp_dict['rmin'] = rmin
 
     return r, gr, exp_dict
 
@@ -134,6 +134,7 @@ def build_sphere_np(file, radius):
                if np.sqrt(np.dot(atom.position, atom.position)) >=
                np.sqrt(radius**2)]]
     atoms.center()
+    atoms.set_pbc((False, False, False))
     return atoms
 
 
@@ -252,3 +253,19 @@ def get_coord_list(atoms, cutoff, element=None, tag = None):
     else:
         return a
 
+def get_bond_dist_list(atoms, cutoff, element=None, tag = None):
+    """
+    Get all the angles in the NP
+    :param atoms:
+    :param cutoff:
+    :return:
+    """
+    n_list = list(FullNeighborList(cutoff, atoms))
+    bonds = []
+    for i in range(len(atoms)):
+        for a in n_list[i]:
+            if (element is not None and atoms[i].symbol != element) or\
+                    (tag is not None and atoms[i].tag != tag):
+                break
+            bonds.append(atoms.get_distance(i, a))
+    return np.nan_to_num(np.asarray(bonds))

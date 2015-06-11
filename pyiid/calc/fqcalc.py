@@ -2,7 +2,7 @@ __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 
-from pyiid.wrappers.scatter import Scatter, wrap_atoms
+from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
 from pyiid.kernels.master_kernel import get_rw, grad_pdf, get_grad_rw, \
     get_chi_sq, get_grad_chi_sq
 
@@ -150,14 +150,14 @@ def wrap_grad_chi_sq(grad_gcalc, gcalc, gobs):
     return grad_chi_sq
 
 
-class PDFCalc(Calculator):
+class FQCalc(Calculator):
     """
     Class for doing PDF based RW/chi**2 calculations
     """
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 atoms=None, gobs=None, scatter=Scatter(), conv=1.,
+                 atoms=None, fobs=None, scatter=ElasticScatter(), conv=1.,
                  potential='chi_sq', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
@@ -165,8 +165,8 @@ class PDFCalc(Calculator):
         self.scatter = scatter
         self.rw_to_eV = conv
 
-        if gobs is not None:
-            self.gobs = gobs
+        if fobs is not None:
+            self.gobs = fobs
         else:
             raise NotImplementedError('Need an experimental PDF')
 
@@ -218,16 +218,15 @@ class PDFCalc(Calculator):
         :param atoms:
         :return:
         """
-        energy, scale = self.potential(self.scatter.get_pdf(atoms), self.gobs)
+        energy, scale = self.potential(self.scatter.get_fq(atoms), self.gobs)
         self.energy_free = energy * self.rw_to_eV
         self.energy_zero = energy * self.rw_to_eV
 
         self.results['energy'] = energy * self.rw_to_eV
 
     def calculate_forces(self, atoms):
-        # self.results['forces'] = np.zeros((len(atoms), 3))
-        forces = self.grad(self.scatter.get_grad_pdf(atoms),
-                           self.scatter.get_pdf(atoms),
+        forces = self.grad(self.scatter.get_grad_fq(atoms),
+                           self.scatter.get_fq(atoms),
         self.gobs) * self.rw_to_eV
 
         self.results['forces'] = forces
@@ -251,11 +250,11 @@ if __name__ == '__main__':
                 'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
                 'rmax': 40.0, 'rstep': .01}
 
-    scat = Scatter()
-    gobs = scat.get_pdf(ideal_atoms)
+    scat = ElasticScatter()
+    gobs = scat.get_fq(ideal_atoms)
 
     # calc1 = PDFCalc(gobs=gobs, scatter=scat)
-    calc1 = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+    calc1 = FQCalc(fobs=gobs, scatter=scat, potential='rw')
     ideal_atoms.set_calculator(calc1)
     ideal_atoms.positions *= 1.5
     # print ideal_atoms.get_potential_energy()

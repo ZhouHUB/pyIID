@@ -12,11 +12,11 @@ from ase.atoms import Atoms
 from ase.calculators.lammpslib import LAMMPSlib
 from ase.io.trajectory import PickleTrajectory
 
-from pyiid.wrappers.scatter import Scatter
+from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.multi_calc import MultiCalc
-from pyiid.calc.oo_pdfcalc import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.spring_calc import Spring
-from pyiid.calc.oo_fqcalc import FQCalc
+from pyiid.calc.fqcalc import FQCalc
 from pyiid.utils import load_gr_file
 
 
@@ -30,11 +30,13 @@ from pyiid.utils import load_gr_file
 
 def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
                    sim_dict=None, exp_dict=None, rattle=(.001, 42),
-                   comments=None):
+                   comments=None, rmin=None, rmax=None):
     db_path = os.path.split(db_name)[0]
     run_db = {'exp_type': exp_type, 'exp_files': exp_files, 'exp_dict':exp_dict,
-              'starting_structure': starting_structure, 'calcs': calcs,
-              'sim_dict': sim_dict, 'comments': comments, 'rattle': rattle}
+              'calcs': calcs, 'sim_dict': sim_dict, 'comments': comments,
+              'rattle': rattle}
+    if type(starting_structure) is str:
+        run_db['starting_structure']= starting_structure
     try:
         # Load in the "experimental" data to match against
         fobs = None
@@ -44,16 +46,17 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
             th_atoms = aseio.read(run_db['exp_files'])
 
             # Get Gobs, Fobs
-            s = Scatter(run_db['exp_dict'])
+            s = ElasticScatter(run_db['exp_dict'])
             gobs = s.get_pdf(th_atoms)
             fobs = s.get_fq(th_atoms)
 
         elif run_db['exp_type'] == 'x-ray total scatter':
             # TODO: load the data depending on extension
-            r, gobs, run_db['exp_dict'] = load_gr_file(run_db['exp_files'])
+            r, gobs, run_db['exp_dict'] = load_gr_file(run_db['exp_files'],
+                                                       rmin=rmin, rmax=rmax)
             # TODO: F(Q) loading not supported yet!
             # fobs, exp_dict_fq =
-            s = Scatter(run_db['exp_dict'])
+            s = ElasticScatter(run_db['exp_dict'])
 
         else:
             raise NotImplementedError
@@ -94,7 +97,7 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
             wtraj = PickleTrajectory(wtraj_name, 'w')
         else:
             raise NotImplementedError
-
+        print ID_number
         run_db['ID number'] = ID_number
         run_db['run path'] = os.getcwd()
         run_db['traj loc'] = wtraj_name
@@ -128,6 +131,21 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
         run_db['Start Potential Energy'] = start_atoms.get_potential_energy()
         run_db['Start Kinetic Energy'] = start_atoms.get_kinetic_energy()
 
+            # clean up NP arrays
+        for calc_dict in calcs:
+            if calc_dict['name'] in supported_calcs.keys():
+                if calc_dict['name'] is 'PDF':
+                    del calc_dict['kwargs']['gobs']
+                    del calc_dict['kwargs']['scatter']
+                if calc_dict['name'] is 'FQ' and fobs is not None:
+                    del calc_dict['kwargs']['scatter']
+                    del calc_dict['kwargs']['fobs']
+
+        pprint.pprint(run_db)
+        with open(db_name, 'a') as f:
+            f.write(json.dumps(run_db))
+            f.write('\n')
+
         if run_db['sim_dict'] is not None:
             # Prep the Simulation
             if run_db['sim_dict']['Simulation type'] == 'NUTS-HMC':
@@ -148,20 +166,7 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
                     'Final Kinetic Energy'] = traj[-1].get_kinetic_energy()
     except KeyboardInterrupt:
         pass
-    # clean up NP arrays
-    for calc_dict in calcs:
-        if calc_dict['name'] in supported_calcs.keys():
-            if calc_dict['name'] is 'PDF':
-                del calc_dict['kwargs']['gobs']
-                del calc_dict['kwargs']['scatter']
-            if calc_dict['name'] is 'FQ' and fobs is not None:
-                del calc_dict['kwargs']['scatter']
-                del calc_dict['kwargs']['fobs']
 
-    pprint.pprint(run_db)
-    with open(db_name, 'a') as f:
-        f.write(json.dumps(run_db))
-        f.write('\n')
 
 
 def restart_sim(db_name, db_entry):
@@ -175,7 +180,7 @@ def restart_sim(db_name, db_entry):
             th_atoms = aseio.read(run_db['exp_files'])
 
             # Get Gobs, Fobs
-            s = Scatter(run_db['exp_dict'])
+            s = ElasticScatter(run_db['exp_dict'])
             gobs = s.get_pdf(th_atoms)
             fobs = s.get_fq(th_atoms)
 
@@ -185,7 +190,7 @@ def restart_sim(db_name, db_entry):
             gobs, run_db['exp_dict'] = load_gr_file(run_db['exp_files'])
             # F(Q) loading not supported yet!
             # fobs, exp_dict_fq =
-            s = Scatter(run_db['exp_dict'])
+            s = ElasticScatter(run_db['exp_dict'])
 
         else:
             raise NotImplementedError
@@ -216,6 +221,20 @@ def restart_sim(db_name, db_entry):
         start_atoms.set_calculator(calc)
         print 'Total energy', start_atoms.get_total_energy()
 
+        for calc_dict in calcs:
+            if calc_dict['name'] in supported_calcs.keys():
+                if calc_dict['name'] is 'PDF':
+                    del calc_dict['kwargs']['gobs']
+                    del calc_dict['kwargs']['scatter']
+                if calc_dict['name'] is 'FQ' and fobs is not None:
+                    del calc_dict['kwargs']['scatter']
+                    del calc_dict['kwargs']['fobs']
+
+        pprint.pprint(run_db)
+        with open(db_name, 'a') as f:
+            f.write(json.dumps(run_db))
+            f.write('\n')
+
         if run_db['sim_dict'] is not None:
             # Prep the Simulation
             if run_db['sim_dict']['Simulation type'] == 'NUTS-HMC':
@@ -237,48 +256,45 @@ def restart_sim(db_name, db_entry):
     except KeyboardInterrupt:
         pass
 
-    for calc_dict in calcs:
-        if calc_dict['name'] in supported_calcs.keys():
-            if calc_dict['name'] is 'PDF':
-                del calc_dict['kwargs']['gobs']
-                del calc_dict['kwargs']['scatter']
-            if calc_dict['name'] is 'FQ' and fobs is not None:
-                del calc_dict['kwargs']['scatter']
-                del calc_dict['kwargs']['fobs']
-
-    pprint.pprint(run_db)
-    with open(db_name, 'a') as f:
-        f.write(json.dumps(run_db))
-        f.write('\n')
-
 if __name__ == '__main__':
     from pyiid.utils import build_sphere_np
-    exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 2.45,
-                'rmax': 25., 'rstep': .01}
+    exp_dict = {
+        'qmin': 0.0,
+        'qmax': 25.,
+        'qbin': .1,
+        'rmin': 2.6,
+        # 'rmin': 1.25,
+        'rmax': 12.,
+        'rstep': .01
+    }
     calcs = [
-        {'name': 'PDF', 'kwargs': {'conv': 300, 'potential': 'rw'}},
+        {'name': 'PDF', 'kwargs': {'conv': 600, 'potential': 'rw'}},
         # {'name': 'FQ', 'kwargs': {'conv': 50, 'potential': 'rw'}},
-        {'name': 'Spring', 'kwargs': {'k': 100, 'rt': exp_dict['rmin']}}
+        # {'name': 'Spring', 'kwargs': {'k': 100, 'rt': exp_dict['rmin']}},
+        {'name': 'LAMMPS', 'kwargs': {'lmpcmds':["pair_style eam/alloy", "pair_coeff * * "+'/mnt/work-data/dev/IID_data/examples/Au/Au_sheng.eam'+" "+"Au"], 'logfile':'test.log'}}
     ]
     '''
     run_simulation(
         '/mnt/work-data/dev/IID_data/db_test/test.json',
         'theory',
 
+        '/mnt/work-data/dev/IID_data/examples/Au/55_amorphous/Au55.xyz',
+        '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz',
+
         # '/mnt/work-data/dev/IID_data/examples/Au/736_atom/DFT_crystal_v_disorder/Au736_disordered.xyz',
         # '/mnt/work-data/dev/IID_data/examples/Au/736_atom/DFT_crystal_v_disorder/Au736_crystalline.xyz',
 
-        '/mnt/work-data/dev/IID_data/examples/Au/55_amorphous/Au55.300K_amorphous.xyz',
-        '/mnt/work-data/dev/IID_data/examples/Au/55_amorphous/Au55.xyz',
+        # '/mnt/work-data/dev/IID_data/examples/Au/55_amorphous/Au55.300K_amorphous.xyz',
+        # '/mnt/work-data/dev/IID_data/examples/Au/55_amorphous/Au55.xyz',
 
         # '/mnt/work-data/dev/IID_data/examples/C/buckyball/C60.xyz',
         # '/mnt/work-data/dev/IID_data/examples/C/buckyball/C60.xyz',
 
         calcs,
-        {'Simulation type': 'NUTS-HMC', 'Sim args': (.65, 100, 1)},
+        {'Simulation type': 'NUTS-HMC', 'Sim args': (.65, 100, 1.)},
         exp_dict,
-        rattle=(.001, 42),
-        comments='Au55 with Spring, Hot'
+        rattle=(.01, 42),
+        comments='Au55 with Spring, Surface relax'
     )
     '''
 
@@ -294,6 +310,7 @@ if __name__ == '__main__':
         {'Simulation type': 'NUTS-HMC', 'Sim args': (.65, 100, 1.)},
         exp_dict,
         rattle=(.1, 0),
-        comments='2nm Au with Spring'
+        comments='2nm Au with Spring',
+        rmin = 2.5, rmax = 25.
     )
         # '''

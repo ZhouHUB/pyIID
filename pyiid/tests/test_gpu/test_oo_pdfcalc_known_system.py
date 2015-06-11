@@ -3,10 +3,10 @@ import numpy as np
 from ase.atoms import Atoms
 from numpy.testing import assert_allclose
 
-from pyiid.wrappers.scatter import Scatter, wrap_atoms
+from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
 from pyiid.tests import generate_experiment
 from pyiid.testing.decorators import known_fail_if
-from pyiid.calc.oo_pdfcalc import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 
 
 def setup_atomic_configs():
@@ -19,7 +19,7 @@ def setup_atomic_configs():
 
 def test_rw():
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
     atoms2.set_calculator(calc)
@@ -30,7 +30,7 @@ def test_rw():
 
 def test_chi_sq():
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
     atoms2.set_calculator(calc)
@@ -42,7 +42,7 @@ def test_chi_sq():
 
 def test_grad_rw():
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
     atoms2.set_calculator(calc)
@@ -56,7 +56,7 @@ def test_grad_rw():
 
 def test_grad_chi_sq():
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
     atoms2.set_calculator(calc)

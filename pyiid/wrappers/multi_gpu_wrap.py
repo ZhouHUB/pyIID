@@ -15,12 +15,15 @@ def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
         del final
 
 
-def wrap_fq(atoms, qbin=.1):
+def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
     qmax_bin = scatter_array.shape[1]
 
     # get info on our gpu setup and memory requrements
@@ -83,12 +86,15 @@ def sub_grad(gpu, q, scatter_array, grad_q, qbin, m, n_cov, index_list):
         index_list.append(n_cov)
 
 
-def wrap_fq_grad(atoms, qbin=.1):
+def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
     qmax_bin = scatter_array.shape[1]
 
     gpus = cuda.gpus.lst
@@ -104,7 +110,7 @@ def wrap_fq_grad(atoms, qbin=.1):
     index_list = []
     p_dict = {}
     n_cov = 0
-    # TODO: Re-code using thread pool from multiprocessing
+    # TODO: Re-code using thread pool from multiprocessing, need a way to manage memory
     while n_cov < n:
         for gpu, mem in zip(sort_gpus, sort_gmem):
             m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
@@ -155,7 +161,7 @@ if __name__ == '__main__':
     # import cProfile
     # cProfile.run('''
     from ase.atoms import Atoms
-    from pyiid.wrappers.scatter import wrap_atoms
+    from pyiid.wrappers.elasticscatter import wrap_atoms
 
     # n = 400
     # pos = np.random.random((n, 3)) * 10.

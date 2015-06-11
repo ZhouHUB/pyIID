@@ -1,6 +1,6 @@
 __author__ = 'christopher'
 from numpy.testing import assert_allclose
-from pyiid.wrappers.scatter import Scatter
+from pyiid.wrappers.elasticscatter import ElasticScatter
 
 from pyiid.tests import generate_experiment, setup_atoms
 from ase.atoms import Atoms
@@ -13,7 +13,7 @@ def test_fq():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             scat.set_processor('Multi-GPU')
@@ -34,7 +34,7 @@ def test_pdf():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             scat.set_processor('Multi-GPU')
@@ -55,7 +55,7 @@ def test_grad_fq():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
             scat.set_processor('Multi-GPU')
@@ -76,7 +76,7 @@ def test_grad_pdf():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
 

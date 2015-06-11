@@ -3,10 +3,10 @@ import numpy as np
 from ase.atoms import Atoms
 from numpy.testing import assert_allclose
 
-from pyiid.wrappers.scatter import Scatter, wrap_atoms
+from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
 from pyiid.tests import generate_experiment
 from pyiid.testing.decorators import known_fail_if
-from pyiid.calc.oo_pdfcalc import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 
 
 def setup_atomic_configs():
@@ -22,7 +22,7 @@ def test_rw():
     Test two random systems against one another for Rw
     """
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
@@ -37,7 +37,7 @@ def test_chi_sq():
     Test two random systems against one another for $\chi^{2}$
     """
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
@@ -53,7 +53,7 @@ def test_grad_rw():
     Test two random systems against one another for grad rw
     """
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
@@ -72,7 +72,7 @@ def test_grad_chi_sq():
     Test two random systems against one another for grad $\chi^{2}$
     """
     atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
+    scat = ElasticScatter()
     scat.set_processor('CPU')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')

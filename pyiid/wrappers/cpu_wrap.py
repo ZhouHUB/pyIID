@@ -4,7 +4,7 @@ import numpy as np
 from numbapro import autojit
 
 
-def wrap_fq(atoms, qbin=.1):
+def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     """
     Generate the reduced structure function
 
@@ -28,7 +28,10 @@ def wrap_fq(atoms, qbin=.1):
     q = atoms.get_positions()
 
     # get scatter array
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
     # define scatter_q information and initialize constants
 
     qmax_bin = scatter_array.shape[1]
@@ -67,7 +70,7 @@ def wrap_fq(atoms, qbin=.1):
     return fq
 
 
-def wrap_fq_grad(atoms, qbin=.1):
+def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     """
     Generate the reduced structure function gradient
 
@@ -91,7 +94,10 @@ def wrap_fq_grad(atoms, qbin=.1):
     q = atoms.get_positions()
 
     # get scatter array
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
 
     # define scatter_q information and initialize constants
     qmax_bin = scatter_array.shape[1]

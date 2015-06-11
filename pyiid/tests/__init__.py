@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 import numpy as np
 from ase.atoms import Atoms
-from pyiid.wrappers.scatter import wrap_atoms
+from pyiid.wrappers.elasticscatter import wrap_atoms
 
 
 def setup_atoms(n, exp_dict=None):

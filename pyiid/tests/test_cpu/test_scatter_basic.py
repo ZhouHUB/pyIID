@@ -1,6 +1,6 @@
 __author__ = 'christopher'
 import numpy as np
-from pyiid.wrappers.scatter import Scatter
+from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.tests import setup_atoms, generate_experiment
 from pyiid.testing.decorators import known_fail_if
 from numba import cuda
@@ -17,7 +17,7 @@ def test_scatter_fq_defaults():
     experimental scattering values, for the CPU implementation
     """
     exp = None
-    scat = Scatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp)
     scat.set_processor('CPU')
     # Test a set of different sized ensembles
     for n in np.logspace(1, 3, 3):
@@ -36,7 +36,7 @@ def test_scatter_fq():
     """
     for i in range(3):
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
         print exp
         for n in np.logspace(1, 3, 3):
@@ -55,7 +55,7 @@ def test_scatter_sq_defaults():
     experimental scattering values, for the CPU implementation
     """
     exp = None
-    scat = Scatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp)
     scat.set_processor('CPU')
     # Test a set of different sized ensembles
     for n in np.logspace(1, 3, 3):
@@ -74,7 +74,7 @@ def test_scatter_sq():
     """
     for i in range(3):
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
         print exp
         # Test a set of different sized ensembles
@@ -93,7 +93,7 @@ def test_scatter_iq_defaults():
     experimental scattering values, for the CPU implementation
     """
     exp = None
-    scat = Scatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp)
     scat.set_processor('CPU')
     # Test a set of different sized ensembles
     for n in np.logspace(1, 3, 3):
@@ -112,7 +112,7 @@ def test_scatter_iq():
     """
     for i in range(3):
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
         print exp
         # Test a set of different sized ensembles
@@ -131,7 +131,7 @@ def test_scatter_pdf_defaults():
     experimental scattering values, for the CPU implementation
     """
     exp = None
-    scat = Scatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp)
     scat.set_processor('CPU')
     # Test a set of different sized ensembles
     for n in np.logspace(1, 3, 3):
@@ -150,7 +150,7 @@ def test_scatter_pdf():
     """
     for i in range(3):
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
@@ -168,7 +168,7 @@ def test_scatter_grad_fq_defaults():
     experimental scattering values, for the CPU implementation
     """
     exp = None
-    scat = Scatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp)
     scat.set_processor('CPU')
     # Test a set of different sized ensembles
     for n in np.logspace(1, 3, 3):
@@ -187,7 +187,7 @@ def test_scatter_grad_fq():
     """
     for i in range(3):
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
         print exp
         # Test a set of different sized ensembles
@@ -206,7 +206,7 @@ def test_scatter_grad_pdf_defaults():
     experimental scattering values, for the CPU implementation
     """
     exp = None
-    scat = Scatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp)
     scat.set_processor('CPU')
     # Test a set of different sized ensembles
     for n in np.logspace(1, 3, 3):
@@ -225,7 +225,7 @@ def test_scatter_grad_pdf():
     """
     for i in range(2):
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
         print exp
         # Test a set of different sized ensembles
@@ -240,7 +240,7 @@ def test_scatter_grad_pdf():
 @known_fail_if(not gpus)
 def test_gpu_scatter_fail():
         exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('Multi-GPU')
         assert scat.processor == 'Multi-GPU'
 

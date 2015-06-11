@@ -19,13 +19,16 @@ def count_nodes():
         return len(node_set) - 1
 
 
-def wrap_fq(atoms, qbin=.1):
+def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
     qmax_bin = scatter_array.shape[1]
 
     # get  number of allocated nodes
@@ -68,13 +71,16 @@ def wrap_fq(atoms, qbin=.1):
     return fq
 
 
-def wrap_fq_grad(atoms, qmax=25., qbin=.1):
+def wrap_fq_grad(atoms, qmax=25., qbin=.1, sum_type='fq'):
     # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    qmax_bin = int(qmax / qbin)
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
+    qmax_bin = scatter_array.shape[1]
 
     n_nodes = count_nodes()
 
@@ -127,7 +133,7 @@ if __name__ == '__main__':
     # cProfile.run('''
     from ase.atoms import Atoms
     import os
-    from pyiid.wrappers.scatter import wrap_atoms
+    from pyiid.wrappers.elasticscatter import wrap_atoms
     import matplotlib.pyplot as plt
     import sys
     sys.path.extend(['/mnt/work-data/dev/pyIID'])

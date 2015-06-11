@@ -422,9 +422,9 @@ def spring_force_kernel(direction, d, r, mag):
 
 
 if __name__ == '__main__':
-    from pyiid.wrappers.scatter import Scatter, wrap_atoms
+    from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
     from ase.atoms import Atoms
-    from pyiid.wrappers.scatter import wrap_atoms
+    from pyiid.wrappers.elasticscatter import wrap_atoms
     import matplotlib.pyplot as plt
     from scipy.fftpack import dst, idst
     from scipy.signal import resample, argrelmax
@@ -449,7 +449,7 @@ if __name__ == '__main__':
                 'rmax': 45.0, 'rstep': .01}
 
     wrap_atoms(atoms, exp_dict)
-    scat = Scatter(exp_dict)
+    scat = ElasticScatter(exp_dict)
     fq = scat.get_fq(atoms)
     pdf = scat.get_pdf(atoms)
 
@@ -470,7 +470,7 @@ if __name__ == '__main__':
              # 'bo',
              label='mix')
 
-    from pyiid.calc.oo_pdfcalc import wrap_rw
+    from pyiid.calc.pdfcalc import wrap_rw
 
     rw, scale = wrap_rw(pdf, gr)
     print rw * 100, scale

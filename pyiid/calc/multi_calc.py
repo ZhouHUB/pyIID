@@ -97,9 +97,9 @@ class MultiCalc(Calculator):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from ase.visualize import view
-    from pyiid.calc.oo_pdfcalc import PDFCalc
+    from pyiid.calc.pdfcalc import PDFCalc
     from pyiid.calc.spring_calc import Spring
-    from pyiid.wrappers.scatter import wrap_atoms, Scatter
+    from pyiid.wrappers.elasticscatter import wrap_atoms, ElasticScatter
     from ase.cluster.octahedron import Octahedron
     from ase.calculators.lammpslib import LAMMPSlib
     import numpy as np
@@ -109,7 +109,7 @@ if __name__ == '__main__':
     # start_atoms = Atoms('Au4', [[0,0,0], [.9,0,0], [0, .9, 0], [.9,.9,0]])
     ideal_atoms = Octahedron('Au', 2)
     ideal_atoms.pbc = False
-    s = Scatter()
+    s = ElasticScatter()
 
     gobs = s.get_pdf(ideal_atoms)
 

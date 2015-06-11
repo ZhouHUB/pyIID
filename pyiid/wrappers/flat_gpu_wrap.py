@@ -112,16 +112,21 @@ def subs_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, il, jl):
         del dfinal
 
 
-def wrap_fq(atoms, qbin=.1):
+def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # set up atoms
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
     qmax_bin = scatter_array.shape[1]
 
     # setup flat map
-    il, jl = get_ij_lists(n)
+    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    get_ij_lists(il, jl, n)
     k_max = len(il)
 
     gpus, mem_list = get_gpus_mem()
@@ -183,7 +188,7 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
             bpg1.append(bpg)
 
         elements_per_dim_q = [qmax_bin]
-        tpbq = [64]
+        tpbq = [16]
         bpgq = []
         for e_dim, tpb in zip(elements_per_dim_q, tpb1):
             bpg = int(math.ceil(float(e_dim) / tpb))
@@ -272,7 +277,7 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
         dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32, stream=stream2)
         zero_pseudo_3D[bpgnq, tpbnq, stream2](dnew_grad)
 
-        flat_sum[bpgq, tpbq, stream2](dnew_grad, dgrad, dil, djl)
+        flat_sum[[1, bpgq[0]], [4, tpbq[0]], stream2](dnew_grad, dgrad, dil, djl)
         dnew_grad.copy_to_host(new_grad2)
         del dd, dr, dnorm, dfq, dgrad, dil, djl
     grad_q.append(new_grad2)
@@ -280,17 +285,21 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
     del grad, k_cov, il, jl
 
 
-def wrap_fq_grad(atoms, qbin=.1):
+def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     q = atoms.get_positions()
     q = q.astype(np.float32)
     n = len(q)
-    scatter_array = atoms.get_array('scatter')
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
     qmax_bin = scatter_array.shape[1]
     qbin = np.float32(qbin)
 
     # setup flat map
-
-    il, jl = get_ij_lists(n)
+    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    get_ij_lists(il, jl, n)
     # print il, jl
     k_max = len(il)
 
@@ -348,7 +357,7 @@ if __name__ == '__main__':
     # import cProfile
     # cProfile.run('''
     from ase.atoms import Atoms
-    from pyiid.wrappers.scatter import wrap_atoms
+    from pyiid.wrappers.elasticscatter import wrap_atoms
 
     # n = 1500
     # pos = np.random.random((n, 3)) * 10.

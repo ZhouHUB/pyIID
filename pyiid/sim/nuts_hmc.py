@@ -44,9 +44,11 @@ def find_step_size(input_atoms):
 
     atoms_prime = leapfrog(atoms, step_size)
 
-    a = 2 * (np.exp(-1 * atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
+    a = 2 * (np.exp(
+        -1 * atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
 
-    while (np.exp(-1 * atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
+    while (np.exp(
+                    -1 * atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:
         print 'initial step size', a
         step_size *= 2 ** a
         atoms_prime = leapfrog(atoms, step_size)
@@ -106,7 +108,7 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                         span.dot(pos_atoms.get_velocities().flatten()) >= 0)
                 j += 1
                 print 'iteration', m, 'depth', j, 'samples', 2 ** j
-                samples_total += 2**j
+                samples_total += 2 ** j
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 
@@ -118,9 +120,11 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     print '\n\n\n'
     print 'number of leapfrog samples', samples_total
     print 'number of successful leapfrog samples', len(traj)
-    print 'percent of good leapfrog samples', float(len(traj)) / samples_total * 100, '%'
+    print 'percent of good leapfrog samples', float(
+        len(traj)) / samples_total * 100, '%'
     print 'number of leapfrog per iteration, average', float(samples_total) / m
-    print 'number of good leapfrog per iteration, average', float(len(traj)) / m
+    print 'number of good leapfrog per iteration, average', float(
+        len(traj)) / m
     return traj
 
 
@@ -183,15 +187,15 @@ if __name__ == '__main__':
     import math
     from ase.atoms import Atoms
 
-    from pyiid.wrappers.scatter import Scatter
-    from pyiid.calc.oo_pdfcalc import PDFCalc, wrap_rw
+    from pyiid.wrappers.elasticscatter import ElasticScatter
+    from pyiid.calc.pdfcalc import PDFCalc, wrap_rw
     from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, \
         time_est
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     start_atoms = dc(ideal_atoms)
     start_atoms.positions *= 1.05
-    s = Scatter()
+    s = ElasticScatter()
     gobs = s.get_pdf()
 
     calc = PDFCalc(gobs=gobs, scatter=s, conv=100, potential='rw')

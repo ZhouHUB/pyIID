@@ -1,3 +1,4 @@
+import setuptools
 from distutils.core import setup
 
 setup(
@@ -11,5 +12,6 @@ setup(
     license='',
     author='Christopher J. Wright',
     author_email='wright1@email.sc.edu',
-    description='', requires=['numba', 'numpy', 'ase', 'nose', 'mpi4py']
+    description='',
+    requires=['numba', 'numpy', 'ase', 'nose', 'mpi4py']
 )

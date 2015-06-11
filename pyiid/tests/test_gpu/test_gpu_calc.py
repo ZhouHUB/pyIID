@@ -2,9 +2,9 @@ __author__ = 'christopher'
 from numpy.testing import assert_allclose
 import numpy as np
 
-from pyiid.wrappers.scatter import Scatter
+from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.tests import setup_atoms, generate_experiment
-from pyiid.calc.oo_pdfcalc import PDFCalc
+from pyiid.calc.pdfcalc import PDFCalc
 
 
 def test_calc_rw():
@@ -14,7 +14,7 @@ def test_calc_rw():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
@@ -43,7 +43,7 @@ def test_calc_chi_sq():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
@@ -71,7 +71,7 @@ def test_calc_grad_rw():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)
@@ -99,7 +99,7 @@ def test_calc_grad_chi_sq():
             exp = None
         else:
             exp = generate_experiment()
-        scat = Scatter(exp_dict=exp)
+        scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)

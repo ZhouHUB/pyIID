@@ -27,7 +27,7 @@ def check_multi_gpu():
         return False
 
 
-class Scatter(object):
+class ElasticScatter(object):
     """
     Scatter contains all the methods associated with producing theoretical
     diffraction patterns and PDFs from atomic configurations.  It does not
@@ -39,6 +39,7 @@ class Scatter(object):
         # Currently supported processor architectures
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
         self.exp = None
+        self.pdf_qbin = None
         self.update_experiment(exp_dict)
 
         # Just in case something blows up down the line
@@ -49,10 +50,15 @@ class Scatter(object):
         # Get the fastest processor architecture available
         self.set_processor()
 
+        # Flag for scatter, if True update atoms
+        self.scatter_needs_update = True
+
     def check_scatter(self, atoms):
-        if 'scatter' not in atoms.arrays.keys() or np.array_equal(
-                atoms.info['Qbin'], self.exp['qbin']):
+        if self.scatter_needs_update is True \
+                or 'exp' not in atoms.info.keys() \
+                or atoms.info['exp'] != self.exp:
             wrap_atoms(atoms, self.exp)
+            self.scatter_needs_update = False
 
     def update_experiment(self, exp_dict):
         # Should be read in from the gr file, but if not here are some defaults
@@ -63,8 +69,9 @@ class Scatter(object):
 
         self.exp = exp_dict
         # Technically we should use this for qbin:
-        self.exp['qbin'] = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
+        self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
                                     self.exp['qmax'])
+        self.scatter_needs_update = True
 
     def set_processor(self, processor=None):
         """
@@ -126,18 +133,17 @@ class Scatter(object):
         return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
-        fq = self.get_fq(atoms)
-        # fq[:int(self.exp['qmin'] / self.exp['qbin'])] = 0
-        r = np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep'])
+        self.check_scatter(atoms)
+        fq = self.fq(atoms, self.pdf_qbin, 'PDF')
+        r = self.get_r()
         pdf0 = get_pdf_at_qmin(
             fq,
             self.exp['rstep'],
-            self.exp['qbin'],
+            self.pdf_qbin,
             r,
             self.exp['qmin']
         )
 
-        # pdf = pdf0[int(self.exp['rmin'] / self.exp['rstep']):int(self.exp['rmax'] / self.exp['rstep'])]
         return pdf0
 
     def get_sq(self, atoms):
@@ -150,20 +156,20 @@ class Scatter(object):
         return sq
 
     def get_iq(self, atoms):
-        return self.get_sq(atoms) * np.average(atoms.get_array('scatter')) ** 2
+        return self.get_sq(atoms) * np.average(atoms.get_array('F(Q) scatter')) ** 2
 
     def get_grad_fq(self, atoms):
         self.check_scatter(atoms)
         return self.grad(atoms, self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
-        fq_grad = self.get_grad_fq(atoms)
-        qmin_bin = int(self.exp['qmin'] / self.exp['qbin'])
+        self.check_scatter(atoms)
+        fq_grad = self.grad(atoms, self.pdf_qbin, 'PDF')
+        qmin_bin = int(self.exp['qmin'] / self.pdf_qbin)
         fq_grad[:, :, :qmin_bin] = 0.
-        rgrid = np.arange(self.exp['rmin'], self.exp['rmax'],
-                          self.exp['rstep'])
+        rgrid = self.get_r()
 
-        pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.exp['qbin'],
+        pdf_grad = grad_pdf(fq_grad, self.exp['rstep'], self.pdf_qbin,
                             rgrid,
                             self.exp['qmin'])
         return pdf_grad
@@ -188,40 +194,61 @@ def wrap_atoms(atoms, exp_dict=None):
     if exp_dict is None:
         exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
                     'rmax': 40.0, 'rstep': .01}
-    qbin = np.pi / (exp_dict['rmax'] + 6 * 2 * np.pi / exp_dict['qmax'])
+    if 'qbin' not in exp_dict.keys():
+        exp_dict['qbin'] = .1
     n = len(atoms)
-    qmax_bin = int(math.ceil(exp_dict['qmax'] / qbin))
     e_num = atoms.get_atomic_numbers()
     e_set = set(e_num)
     e_list = list(e_set)
-
+    # F(Q) version
+    qmax_bin = int(math.ceil(exp_dict['qmax'] / exp_dict['qbin']))
     set_scatter_array = np.zeros((len(e_set), qmax_bin), dtype=np.float32)
-    get_scatter_array(set_scatter_array, e_num, qbin)
-
+    get_scatter_array(set_scatter_array, e_num, exp_dict['qbin'])
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
     for i in range(len(e_set)):
         scatter_array[
         np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
 
-    atoms.set_array('scatter', scatter_array)
-    atoms.info['Qbin'] = qbin
+    atoms.set_array('F(Q) scatter', scatter_array)
+
+    # PDF version
+    qbin = np.pi / (exp_dict['rmax'] + 6 * 2 * np.pi / exp_dict['qmax'])
+    qmax_bin = int(math.ceil(exp_dict['qmax'] / qbin))
+    set_scatter_array = np.zeros((len(e_set), qmax_bin), dtype=np.float32)
+    get_scatter_array(set_scatter_array, e_num, qbin)
+    scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
+    for i in range(len(e_set)):
+        scatter_array[
+        np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
+
+    atoms.set_array('PDF scatter', scatter_array)
+    atoms.info['exp'] = exp_dict
+
 
 
 if __name__ == '__main__':
     from ase.atoms import Atoms
+    import ase.io as aseio
     import matplotlib.pyplot as plt
 
+    atoms = aseio.read('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz',)
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    n = 1500
-    pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au' + str(n), pos)
-    exp_dict = {'qmin': 0.0, 'qmax': 25.,
-                'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
-                'rmax': 40.0, 'rstep': .01}
-    # wrap_atoms(atoms, exp_dict)
-    # scat = Scatter(exp_dict)
-    scat = Scatter()
+    # n = 1500
+    # pos = np.random.random((n, 3)) * 10.
+    # atoms = Atoms('Au' + str(n), pos)
+    exp_dict = {
+        'qmin': 0.0,
+        'qmax': 25.,
+        'qbin': .1,
+        'rmin': 2.45,
+        'rmax': 20.,
+        'rstep': .01
+    }
+    scat = ElasticScatter(exp_dict)
     # fq = scat.get_fq(atoms)
-    gfq = scat.get_grad_fq(atoms)
-    # pdf = scat.get_pdf(atoms)
+    # gfq = scat.get_grad_fq(atoms)
+    pdf = scat.get_pdf(atoms)
+    r = scat.get_r()
     # gpdf = scat.get_grad_pdf(atoms)
+    plt.plot(r, pdf)
+    plt.show()

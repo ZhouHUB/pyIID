@@ -5,15 +5,15 @@ import numpy as np
 
 
 @autojit()
-def get_ij_lists(n):
-    i_list = []
-    j_list = []
+def get_ij_lists(il, jl, n):
+    k = 0
     for i in xrange(n):
         for j in xrange(n):
             if j > i:
-                i_list.append(i)
-                j_list.append(j)
-    return np.asarray(i_list, dtype=np.uint32), np.asarray(j_list, dtype=np.uint32)
+                il[k] = i
+                jl[k] = j
+                k += 1
+    return il, jl
 
 
 def symmetric_reshape(out_data, in_data, i_list, j_list):
@@ -154,17 +154,57 @@ def flat_sum(new_grad, grad, il, jl):
     # the CPU version of this code works fine.  I may need to move to atomic
     # addition, although it is not currently supported by numba.
 
-    qx = cuda.grid(1)
+    tz, qx = cuda.grid(2)
     # k = cuda.grid(1)
 
-    if qx >= grad.shape[2]:
+    if qx >= grad.shape[2] or tz >= 3:
     # if k >= len(il):
         return
 
     for k in range(len(il)):
     # for qx in range(grad.shape[2]):
-        ik = il[k]
-        jk = jl[k]
-        for tz in range(3):
-            new_grad[ik, tz, qx] -= grad[k, tz, qx]
-            new_grad[jk, tz, qx] += grad[k, tz, qx]
+    #     ik = il[k]
+    #     jk = jl[k]
+        new_grad[il[k], tz, qx] -= grad[k, tz, qx]
+        new_grad[jl[k], tz, qx] += grad[k, tz, qx]
+
+'''
+def shared_flat_sum(new_grad, grad, il, jl, npk, noffset):
+    """
+    The idea behind this kernel is that for each k range in the block there is
+    some finite N which will be covered, thus we can create a local array which
+    is the size of this N per K block, named npk.  The shared array is filled
+    via the standard triangle inverse map.  Once the block is finished filling
+    the shared array, we then add these numbers to the new_grad.
+    :param new_grad:
+    :param grad:
+    :param il:
+    :param jl:
+    :param npk: the number of atoms N which are covered by this K block
+    npk = np.zeros(k blocks per grid)
+    noffset = np.zeros(k blocks per grid)
+    for i in range(k blocks per grid):
+        kmin = i*(k threads per block)
+        kmax = (i+1)*(k threads per block)
+        npk[i] = max(il[kmin:kmax], jl[kmin:kmax]) - min(il[kmin:kmax], jl[kmin:kmax])
+        noffset[i] = min(il[kmin:kmax], jl[kmin:kmax])
+
+    :param noffset:
+    :return:
+    """
+
+    k, tz, qx = cuda.grid(3)
+    kblock = cuda.blockIdx.x
+    kid = cuda.threadIdx.x
+
+    if qx >= grad.shape[2] or tz >= 3 or k >= grad.shape[0]:
+        return
+    sa = cuda.shared.array(npk[kblock], f4)
+    sa[il[k]] -= grad[k, tz, qx]
+    sa[jl[k]] += grad[k, tz, qx]
+
+    cuda.syncthreads()
+    if kid >= npk[kblock]:
+        return
+    new_grad[kid + noffset, tz, qx] += sa[kid]
+    '''
