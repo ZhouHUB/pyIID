@@ -268,7 +268,7 @@ if __name__ == '__main__':
         'rstep': .01
     }
     calcs = [
-        {'name': 'PDF', 'kwargs': {'conv': 1000, 'potential': 'rw'}},
+        {'name': 'PDF', 'kwargs': {'conv': 300, 'potential': 'rw'}},
         # {'name': 'FQ', 'kwargs': {'conv': 50, 'potential': 'rw'}},
         # {'name': 'Spring', 'kwargs': {'k': 100, 'rt': exp_dict['rmin']}},
         {'name': 'LAMMPS', 'kwargs': {'lmpcmds':["pair_style eam/alloy", "pair_coeff * * "+'/mnt/work-data/dev/IID_data/examples/Au/Au_sheng.eam'+" "+"Au"], 'logfile':'test.log'}}
@@ -299,8 +299,8 @@ if __name__ == '__main__':
     '''
 
     # 2nm Au
-    atomsio = build_sphere_np('/mnt/work-data/dev/IID_data/examples/Au/2_nm/1100138.cif', 20/2.)
-
+    # atomsio = build_sphere_np('/mnt/work-data/dev/IID_data/examples/Au/2_nm/1100138.cif', 20/2.)
+    atomsio = aseio.read('/mnt/work-data/dev/IID_data/db_test/PDF_Spring_1541.traj')
     run_simulation(
         '/mnt/work-data/dev/IID_data/db_test/test.json',
         'x-ray total scatter',
@@ -309,8 +309,9 @@ if __name__ == '__main__':
         calcs,
         {'Simulation type': 'NUTS-HMC', 'Sim args': (.65, 100, 1.)},
         exp_dict,
-        rattle=(.1, 0),
-        comments='2nm Au with Spring',
+        # rattle=(.001, 0),
+        rattle=None,
+        comments='2nm Au using spring starting and lammps',
         rmin = 2.5, rmax = 25.
     )
         # '''

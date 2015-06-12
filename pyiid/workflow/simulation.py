@@ -11,48 +11,63 @@ from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.fqcalc import FQCalc
 from pyiid.calc.spring_calc import Spring
 from ase.calculators.lammpslib import LAMMPSlib
+
 from simdb.odm_templates import Simulation
+from simdb.search import *
+
 
 def run_simulation(Simulation):
 
     # Load info from simulation request
-    params = Simulation.params
+    sim_params, = find_simulation_parameter_document(_id=Simulation.params.id)
 
     #TODO: Throw in some statments about timeouts etc.
-    iterations = params.iterations
-    target_acceptance = params.targe_acceptance
-    ensamble_temp = params.ensamble_temp
+    iterations = sim_params.iterations
+    target_acceptance = sim_params.targe_acceptance
+    ensamble_temp = sim_params.ensamble_temp
 
     # Load Atoms
-    # Also create wtraj or pull this from the database?
-    atoms_entry = Simulation.atoms
-    if params.continue_sim:
+    atoms_entry, = find_atomic_config_document(_id=id(Simulation.atoms))
+    traj = atoms_entry.file_payload
+
+    # now we have 3 options:
+    # 1) we want to continue an existing simulation, which is a traj
+    # 2) we want a new simulation, based on the first position of an
+    #       existing traj
+    # 3) we want a new simulation, based on an atomic configuration
+
+    # if we are going to continue the simulation, and there is a simulation to
+    # continue (more than one atomic configurations in the trajectory)
+
+    # 1)
+    if sim_params.continue_sim and type(traj) == list:
         # Give back the final configuration
-        atomic_config = atoms_entry.atomic_config
-        wtraj = PickleTrajectory(atomic_config.filename, 'a')
-    else:
+        atoms = traj[-1]
+        # Search filestore and get the file_location
+        wtraj = PickleTrajectory(atoms_file_location, 'a')
+    # 2)
+    elif type(traj) == list and not sim_params.continue_sim:
         # Give back the initial config
-        atomic_config = atoms_entry.atomic_config
-        wtraj = PickleTrajectory(atomic_config.filename, 'w')
+        atoms = traj[0]
+        # Generate new file location and save it to filestore
+        wtraj = PickleTrajectory(new_file_location, 'w')
+    # 3)
+    else:
+        atoms = traj
+        # Search filestore and get the file_location
+        wtraj = PickleTrajectory(atoms_file_location, 'a')
 
     # Create Calculators
-    master_calc_list = []
-    pes = Simulation.pes
-    for calc in pes:
-        # load the calculator with its kwargs
-        # append it to the master_calc_list
-        master_calc_list.append(calc)
-
-        pass
-    # Create MultiCalc
-    master_calc = MultiCalc(calc_list=master_calc_list)
+    pes, = find_pes_document(_id=Simulation.pes.id)
+    master_calc = pes.payload
 
     # Attach MulitCalc to atoms
-    atomic_config.append(master_calc)
+    atoms.append(master_calc)
     # Rattle atoms if built from scratch
-
+    atoms.rattle()
     # Simulate
-    out_traj = nuts(atomic_config, target_acceptance, iterations,
+    # TODO: eventually support different simulation engines
+    out_traj = nuts(atoms, target_acceptance, iterations,
                     ensamble_temp, wtraj)
 
 # Write info to DB

@@ -4,12 +4,19 @@ from ase.io.trajectory import PickleTrajectory
 import matplotlib.pyplot as plt
 import numpy as np
 from ase.visualize import view
+import matplotlib
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import wrap_rw
 from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
 
+
+font = {'family': 'normal',
+        # 'weight' : 'bold',
+        'size': 18}
+
+matplotlib.rc('font', **font)
 plt.ion()
 
 
@@ -95,10 +102,12 @@ def plot_angle(db_entry, cut, save_file=None, show=True):
                 a, b = np.histogram(
                     get_angle_list(stru_l[key], cut, element=symbol,
                                    tag=tags[tag][0]), bins=bins)
-                if np.alltrue(stru_l[key].pbc):
+                if False:
+                    pass
+                # if np.alltrue(stru_l[key].pbc):
                     # crystal
-                    for y, x in zip(a, b[:-1]):
-                        plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
+                    # for y, x in zip(a, b[:-1]):
+                    #     plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
                 else:
                     plt.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
                              marker=tags[tag][1], color=colors[n])
