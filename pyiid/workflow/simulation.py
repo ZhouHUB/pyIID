@@ -23,8 +23,8 @@ def run_simulation(Simulation):
 
     #TODO: Throw in some statments about timeouts etc.
     iterations = sim_params.iterations
-    target_acceptance = sim_params.targe_acceptance
-    ensamble_temp = sim_params.ensamble_temp
+    target_acceptance = sim_params.target_acceptance
+    ensemble_temp = sim_params.temperature
 
     # Load Atoms
     atoms_entry, = find_atomic_config_document(_id=id(Simulation.atoms))
@@ -44,6 +44,7 @@ def run_simulation(Simulation):
         # Give back the final configuration
         atoms = traj[-1]
         # Search filestore and get the file_location
+
         wtraj = PickleTrajectory(atoms_file_location, 'a')
     # 2)
     elif type(traj) == list and not sim_params.continue_sim:
@@ -68,6 +69,6 @@ def run_simulation(Simulation):
     # Simulate
     # TODO: eventually support different simulation engines
     out_traj = nuts(atoms, target_acceptance, iterations,
-                    ensamble_temp, wtraj)
+                    ensemble_temp, wtraj)
 
 # Write info to DB
