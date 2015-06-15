@@ -157,12 +157,16 @@ class PDFCalc(Calculator):
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 atoms=None, gobs=None, scatter=ElasticScatter(), conv=1.,
-                 potential='chi_sq', **kwargs):
+                 atoms=None,
+                 gobs=None, scatter=None, exp_dict=None,
+                 conv=1., potential='rw', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
-        self.scatter = scatter
+        if scatter is None:
+            self.scatter = ElasticScatter(exp_dict)
+        else:
+            self.scatter = scatter
         self.rw_to_eV = conv
 
         if gobs is not None:
