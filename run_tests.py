@@ -3,11 +3,15 @@ import nose
 from pyiid.testing.noseclasses import KnownFailure
 from numba import cuda
 from nose_exclude import NoseExclude
+import os
 try:
     cuda.get_current_device()
     gpu = True
+    os.environ['GPU_TESTING'] = 1
 except:
     gpu = False
+    os.environ['GPU_TESTING'] = 1
+
 
 plugins = [KnownFailure, NoseExclude]
 env = {"NOSE_WITH_COVERAGE": 1,
