@@ -7,10 +7,10 @@ import os
 try:
     cuda.get_current_device()
     gpu = True
-    os.environ['GPU_TESTING'] = 1
+    os.environ['GPU_TESTING'] = '1'
 except:
     gpu = False
-    os.environ['GPU_TESTING'] = 1
+    os.environ['GPU_TESTING'] = '0'
 
 
 plugins = [KnownFailure, NoseExclude]

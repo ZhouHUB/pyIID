@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
-from tests import setup_atomic_configs
+from pyiid.tests import setup_atomic_configs
 
 
 def test_rw():

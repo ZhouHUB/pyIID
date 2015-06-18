@@ -1,4 +1,4 @@
-from tests import setup_atomic_configs
+from pyiid.tests import setup_atomic_configs
 
 __author__ = 'christopher'
 import numpy as np

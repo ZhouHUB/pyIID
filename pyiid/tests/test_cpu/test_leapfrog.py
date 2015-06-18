@@ -22,7 +22,7 @@ def test_leapfrog_momentum():
     assert_allclose(atoms.positions, atoms2.positions - atoms.get_velocities())
 
 
-def test_leapfrog_reversability():
+def test_leapfrog_reversibility():
     atoms, _, _ = setup_atomic_configs()
     calc = Spring(rt=1, k=100)
     atoms.set_momenta(np.ones((len(atoms), 3)))
