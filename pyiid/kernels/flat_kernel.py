@@ -13,7 +13,6 @@ def get_ij_lists(il, jl, n):
                 il[k] = i
                 jl[k] = j
                 k += 1
-    return il, jl
 
 
 def symmetric_reshape(out_data, in_data, i_list, j_list):

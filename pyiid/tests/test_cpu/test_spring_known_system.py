@@ -34,7 +34,7 @@ def test_grad_spring():
     com = atoms2.get_center_of_mass()
     for i in range(len(atoms2)):
         dist = atoms2[i].position - com
-        print i, dist, forces[i], np.cross(dist, forces[i])
+        # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
 

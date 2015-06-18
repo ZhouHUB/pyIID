@@ -48,7 +48,7 @@ def test_get_r_array():
 
     # kernel version
     get_r_array(kr, d)
-    # print nr-kr
+    # # print nr-kr
     assert (type(kr) == type(nr))
     assert_allclose(nr, kr, rtol=1e-6)
 

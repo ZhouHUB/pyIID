@@ -1,5 +1,4 @@
 __author__ = 'christopher'
-import numpy as np
 from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 from numba import cuda
@@ -49,9 +48,10 @@ def test_get_d():
     serial_get_d_array(cd, q)
 
     # kernel version
-
-    il, jl = get_ij_lists(n)
-    # print len(il), len(jl)
+    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    get_ij_lists(il, jl,n)
+    # # print len(il), len(jl)
     stream, bpg, tpb = set_up_gpu(len(il))
     qi = q[il]
     qj = q[jl]
@@ -84,8 +84,11 @@ def test_get_r():
 
     # kernel version
 
-    il, jl = get_ij_lists(n)
-    # print len(il), len(jl)
+    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    get_ij_lists(il, jl,n)
+
+    # # print len(il), len(jl)
     stream, bpg, tpb = set_up_gpu(len(il))
     qi = q[il]
     qj = q[jl]

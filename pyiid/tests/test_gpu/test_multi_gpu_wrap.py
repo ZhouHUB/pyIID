@@ -26,9 +26,9 @@ def test_fq():
 
     gfq = gpu_fq(atoms, exp_dict['qbin'])
     sfq = serial_fq(atoms, exp_dict['qbin'])
-    print 'rms', np.sqrt(np.mean((gfq - sfq) ** 2))
-    print 'mean difference', np.mean(gfq - sfq)
-    print 'median difference', np.median(gfq - sfq)
+    # print 'rms', np.sqrt(np.mean((gfq - sfq) ** 2))
+    # print 'mean difference', np.mean(gfq - sfq)
+    # print 'median difference', np.median(gfq - sfq)
     assert_allclose(sfq, gfq, rtol=1e-2, atol=.0000001)
 
     return
@@ -44,9 +44,9 @@ def test_grad_fq():
 
     gfq = gpu_grad_fq(atoms, exp_dict['qbin'])
     sfq = serial_grad_fq(atoms, exp_dict['qbin'])
-    print 'rms', np.sqrt(np.mean((gfq - sfq) ** 2))
-    print 'mean difference', np.mean(gfq - sfq)
-    print 'median difference', np.median(gfq - sfq)
+    # print 'rms', np.sqrt(np.mean((gfq - sfq) ** 2))
+    # print 'mean difference', np.mean(gfq - sfq)
+    # print 'median difference', np.median(gfq - sfq)
     assert_allclose(sfq, gfq, rtol=1e-1, atol=.0000001)
 
     return

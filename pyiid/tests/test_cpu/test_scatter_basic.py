@@ -39,11 +39,11 @@ def test_scatter_fq():
         exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        print exp
+        # print exp
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n), exp)
             fq = scat.get_fq(atoms)
-            print fq.shape
+            # print fq.shape
             # Check that Scatter gave back something
             assert fq is not None
             # Check that all the values are not zero
@@ -77,7 +77,7 @@ def test_scatter_sq():
         exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
-        print exp
+        # print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n), exp)
@@ -115,7 +115,7 @@ def test_scatter_iq():
         exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
-        print exp
+        # print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n), exp)
@@ -152,7 +152,7 @@ def test_scatter_pdf():
     for i in range(3):
         exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
-        print exp
+        # print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n), exp)
@@ -190,7 +190,7 @@ def test_scatter_grad_fq():
         exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
-        print exp
+        # print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 3, 3):
             atoms = setup_atoms(int(n), exp)
@@ -228,7 +228,7 @@ def test_scatter_grad_pdf():
         exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
         scat.set_processor('CPU')
-        print exp
+        # print exp
         # Test a set of different sized ensembles
         for n in np.logspace(1, 2, 2):
             atoms = setup_atoms(int(n), exp)

@@ -17,7 +17,7 @@ def test_rw():
     calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
     atoms2.set_calculator(calc)
     rw = atoms2.get_potential_energy()
-    print rw
+    # print rw
     assert rw != 0.0
 
 
@@ -28,7 +28,7 @@ def test_chi_sq():
     calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
     atoms2.set_calculator(calc)
     chi_sq = atoms2.get_potential_energy()
-    print chi_sq
+    # print chi_sq
     assert chi_sq != 0.0
     # assert False
 
@@ -56,7 +56,7 @@ def test_grad_chi_sq():
     com = atoms2.get_center_of_mass()
     for i in range(len(atoms2)):
         dist = atoms2[i].position - com
-        print dist, forces[i], np.cross(dist, forces[i])
+        # print dist, forces[i], np.cross(dist, forces[i])
         np.alltrue(np.cross(dist, forces[i]) != np.zeros(3))
 
 
@@ -64,21 +64,3 @@ if __name__ == '__main__':
     import nose
 
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
-
-    '''import matplotlib.pyplot as plt
-    from pyiid.calc.oo_pdfcalc import wrap_rw
-    from ase.visualize import view
-
-    atoms1, atoms2 = setup_atoms(n), setup_atoms(n)
-    scat = Scatter()
-    gobs = scat.get_pdf(atoms1)
-    gcalc = scat.get_pdf(atoms2)
-    rw, scale = wrap_rw(gcalc, gobs)
-    print rw, scale
-    calc = calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-    atoms2.set_calculator(calc)
-    print atoms2.get_forces().shape
-    print atoms2.get_forces()
-    plt.plot(gobs)
-    plt.plot(gcalc*scale)
-    # plt.show()'''

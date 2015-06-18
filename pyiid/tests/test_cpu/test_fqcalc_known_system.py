@@ -18,7 +18,7 @@ def test_rw():
     calc = FQCalc(obs_data=gobs, scatter=scat, potential='rw')
     atoms2.set_calculator(calc)
     rw = atoms2.get_potential_energy()
-    print rw
+    # print rw
     assert rw >= .9
 
 
@@ -33,7 +33,7 @@ def test_chi_sq():
     calc = FQCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
     atoms2.set_calculator(calc)
     chi_sq = atoms2.get_potential_energy()
-    print chi_sq
+    # print chi_sq
     assert chi_sq >= 100
     # assert False
 
@@ -53,7 +53,7 @@ def test_grad_rw():
     com = atoms2.get_center_of_mass()
     for i in range(len(atoms2)):
         dist = atoms2[i].position - com
-        print i, dist, forces[i], np.cross(dist, forces[i])
+        # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
 
@@ -71,7 +71,7 @@ def test_grad_chi_sq():
     com = atoms2.get_center_of_mass()
     for i in range(len(atoms2)):
         dist = atoms2[i].position - com
-        print i, dist, forces[i], np.cross(dist, forces[i])
+        # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
 if __name__ == '__main__':
