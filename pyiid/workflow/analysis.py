@@ -7,7 +7,7 @@ from ase.visualize import view
 import matplotlib
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
-from pyiid.calc.pdfcalc import wrap_rw
+from pyiid.calc import wrap_rw
 from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
 
@@ -19,14 +19,6 @@ font = {'family': 'normal',
 
 matplotlib.rc('font', **font)
 plt.ion()
-
-
-# We would like to have a way to setup and run the simulation, collecting
-# metadata along the way, analyze the results, keep track of comments, and
-# where all the files went/are going.  This should be loadable, giving us the
-# ability to restart simulations, run the same simulation over again, and
-# quickly grab the analysis figures/data.
-# In short a proto-DB, possibly written in json.
 
 
 def plot_pdf(sim, save_file=None, show=True, sl='last'):
@@ -49,7 +41,8 @@ def plot_pdf(sim, save_file=None, show=True, sl='last'):
     elif type(sl) is int:
         atoms = traj[sl]
     elif sl == 'all':
-        atoms = traj
+        raise NotImplementedError
+        # atoms = traj
 
     gcalc = scatter.get_pdf(atoms)
     r = scatter.get_r()
@@ -121,7 +114,8 @@ def plot_angle(sim, cut, save_file=None, show=True):
                     # for y, x in zip(a, b[:-1]):
                     #     plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
                 else:
-                    plt.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
+                    total = np.sum(a)
+                    plt.plot(b[:-1], a, label='{0} {1} {2}, total: {3}'.format(key, symbol, tag, total),
                              marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond angle in Degrees')
     plt.xlim(0, 180)
@@ -195,8 +189,9 @@ def plot_coordination(sim, cut, save_file=None, show=True):
                 print coord
                 a, b = np.histogram(coord, bins=bins)
                 print b[:-1]
+                total = np.sum(a)
                 ax.bar(b[:-1] + n * offset, a, width, bottom=bottoms[:-1],
-                       color=colors[n], label=key + ' ' + symbol + ' ' + tag,
+                       color=colors[n], label='{0} {1} {2}, total: {3}'.format(key, symbol, tag, total),
                        hatch=hatch)
                 j += 1
                 bottoms[:-1] += a

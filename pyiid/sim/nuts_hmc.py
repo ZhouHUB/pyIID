@@ -31,8 +31,10 @@ def find_step_size(input_atoms):
 
 
 def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
-    atoms.set_momenta(np.random.normal(0, p_scale, (len(atoms), 3)))
     if wtraj is not None:
+        atoms.set_momenta(np.random.normal(0, p_scale, (len(atoms), 3)))
+        atoms.get_forces()
+        atoms.get_potential_energy()
         wtraj.write(atoms)
     traj = [atoms]
 
@@ -73,6 +75,8 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                                                               n_prime * 1. / n):
                     traj += [atoms_prime]
                     if wtraj is not None:
+                        atoms_prime.get_forces()
+                        atoms_prime.get_potential_energy()
                         wtraj.write(atoms_prime)
                     atoms = atoms_prime
                 n = n + n_prime
@@ -159,7 +163,8 @@ if __name__ == '__main__':
     from ase.atoms import Atoms
 
     from pyiid.wrappers.elasticscatter import ElasticScatter
-    from pyiid.calc.pdfcalc import PDFCalc, wrap_rw
+    from pyiid.calc.pdfcalc import PDFCalc
+    from pyiid.calc import wrap_rw
 
     ideal_atoms = Atoms('Sn2O2', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     ideal_atoms.set_masses([1, 1, 1, 1])

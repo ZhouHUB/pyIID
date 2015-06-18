@@ -3,18 +3,9 @@ import numpy as np
 from ase.atoms import Atoms
 from numpy.testing import assert_allclose
 
-from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
-from pyiid.tests import generate_experiment
-from pyiid.testing.decorators import known_fail_if
+from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
-
-
-def setup_atomic_configs():
-    atoms1 = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
-    atoms2 = atoms1.copy()
-    scale = .75
-    atoms2.positions *= scale
-    return atoms1, atoms2, scale
+from pyiid.tests.test_cpu import setup_atomic_configs
 
 
 def test_rw():
@@ -84,25 +75,8 @@ def test_grad_chi_sq():
         print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
+
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
-
-    '''import matplotlib.pyplot as plt
-    from pyiid.calc.oo_pdfcalc import wrap_rw
-    from ase.visualize import view
-
-    atoms1, atoms2, scale = setup_atomic_configs()
-    scat = Scatter()
-    gobs = scat.get_pdf(atoms1)
-    gcalc = scat.get_pdf(atoms2)
-    rw, scale = wrap_rw(gcalc, gobs)
-    print rw, scale
-    calc = calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-    atoms2.set_calculator(calc)
-    print atoms2.get_forces().shape
-    print atoms2.get_forces()
-    plt.plot(gobs)
-    plt.plot(gcalc*scale)
-    # plt.show()
-    '''

@@ -46,7 +46,8 @@ if __name__ == '__main__':
     from ase.atoms import Atoms
 
     from pyiid.wrappers.elasticscatter import ElasticScatter
-    from pyiid.calc.pdfcalc import PDFCalc, wrap_rw
+    from pyiid.calc.pdfcalc import PDFCalc
+    from pyiid.calc import wrap_rw
     from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, \
         time_est
 

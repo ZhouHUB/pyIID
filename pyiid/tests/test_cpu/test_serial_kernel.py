@@ -3,7 +3,6 @@ __author__ = 'christopher'
 import numpy as np
 from numpy.testing import assert_allclose
 from pyiid.kernels.cpu_kernel import *
-from pyiid.kernels.master_kernel import get_scatter_array
 
 
 def test_get_d_array():
@@ -56,7 +55,6 @@ def test_get_r_array():
     return
 
 
-
 def test_fq_array():
     """
     Test serial F(Q)
@@ -72,10 +70,8 @@ def test_fq_array():
         for ty in range(n):
             if tx != ty:
                 for kq in range(0, qmax_bin):
-                    fq[kq] += scatter_array[tx, kq] * \
-                              scatter_array[ty, kq] / \
-                              r[tx, ty] * \
-                              math.sin(kq * qbin * r[tx, ty])
+                    fq[kq] += scatter_array[tx, kq] * scatter_array[ty, kq] / \
+                              r[tx, ty] * math.sin(kq * qbin * r[tx, ty])
     kfq = np.zeros(fq.shape)
     get_fq_array(kfq, r, scatter_array, qbin)
     assert_allclose(kfq, fq)

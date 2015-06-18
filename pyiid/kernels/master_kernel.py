@@ -471,7 +471,7 @@ if __name__ == '__main__':
              # 'bo',
              label='mix')
 
-    from pyiid.calc.pdfcalc import wrap_rw
+    from pyiid.calc import wrap_rw
 
     rw, scale = wrap_rw(pdf, gr)
     print rw * 100, scale

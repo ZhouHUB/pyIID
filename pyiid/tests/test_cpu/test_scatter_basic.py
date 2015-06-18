@@ -11,6 +11,7 @@ try:
 except:
     gpus = False
 
+
 def test_scatter_fq_defaults():
     """
     Test that F(Q) from scatter gives back non-zero numbers for default
@@ -236,6 +237,7 @@ def test_scatter_grad_pdf():
             assert grad_pdf is not None
             # Check that all the values are not zero
             assert np.any(grad_pdf)
+
 
 @known_fail_if(not gpus)
 def test_gpu_scatter_fail():

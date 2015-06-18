@@ -7,7 +7,7 @@ from ase.visualize import view
 import matplotlib
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
-from pyiid.calc.pdfcalc import wrap_rw
+from pyiid.calc import wrap_rw
 from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
 

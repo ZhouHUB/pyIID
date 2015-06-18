@@ -2,162 +2,17 @@ __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 
-from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
-from pyiid.kernels.master_kernel import get_rw, grad_pdf, get_grad_rw, \
-    get_chi_sq, get_grad_chi_sq
-
-
-def wrap_rw(gcalc, gobs):
-    """
-    Generate the Rw value
-
-    Parameters
-    -----------
-    :param gcalc:
-    atoms: ase.Atoms
-        The atomic configuration
-    gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
-
-    Returns
-    -------
-
-    rw: float
-        The Rw value in percent
-    scale: float
-        The scale factor between the observed and calculated PDF
-    """
-    rw, scale = get_rw(gobs, gcalc, weight=None)
-    return rw, scale
-
-
-def wrap_chi_sq(gcalc, gobs):
-    """
-    Generate the Rw value
-
-    Parameters
-    -----------
-    atoms: ase.Atoms
-        The atomic configuration
-    gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
-
-    Returns
-    -------
-
-    rw: float
-        The Rw value in percent
-    scale: float
-        The scale factor between the observed and calculated PDF
-    pdf0:1darray
-        The atomic pair distributuion function
-    fq:1darray
-        The reduced structure function
-    """
-    rw, scale = get_chi_sq(gobs, gcalc)
-    return rw, scale
-
-
-def wrap_grad_rw(grad_gcalc, gcalc, gobs):
-    """
-    Generate the Rw value gradient
-
-    Parameters
-    -----------
-    :param grad_gcalc:
-    atoms: ase.Atoms
-        The atomic configuration
-    gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
-
-    Returns
-    -------
-
-    grad_rw: float
-        The gradient of the Rw value with respect to the atomic positions,
-        in percent
-
-    """
-    rw, scale = wrap_rw(gcalc, gobs)
-    grad_rw = np.zeros((len(grad_gcalc), 3))
-    get_grad_rw(grad_rw, grad_gcalc, gcalc, gobs, rw, scale, weight=None)
-    return grad_rw
-
-
-def wrap_grad_chi_sq(grad_gcalc, gcalc, gobs):
-    """
-    Generate the Rw value gradient
-
-    Parameters
-    -----------
-    :param gcalc:
-    atoms: ase.Atoms
-        The atomic configuration
-    gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
-
-    Returns
-    -------
-
-    grad_chi_sq: float
-        The gradient of the Rw value with respect to the atomic positions,
-        in percent
-
-    """
-    chi_sq, scale = wrap_chi_sq(gcalc, gobs)
-    grad_chi_sq = np.zeros((len(grad_gcalc), 3))
-    get_grad_chi_sq(grad_chi_sq, grad_gcalc, gcalc, gobs, scale)
-    return grad_chi_sq
-
+from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
+from pyiid.wrappers.elasticscatter import ElasticScatter
 
 class FQCalc(Calculator):
     """
-    Class for doing PDF based RW/chi**2 calculations
+    Class for doing FQ PES calculations
     """
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 atoms=None, fobs=None, scatter=ElasticScatter(), conv=1.,
+                 atoms=None, obs_data=None, scatter=ElasticScatter(), conv=1.,
                  potential='chi_sq', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
@@ -165,8 +20,8 @@ class FQCalc(Calculator):
         self.scatter = scatter
         self.rw_to_eV = conv
 
-        if fobs is not None:
-            self.gobs = fobs
+        if obs_data is not None:
+            self.gobs = obs_data
         else:
             raise NotImplementedError('Need an experimental PDF')
 
@@ -230,32 +85,3 @@ class FQCalc(Calculator):
         self.gobs) * self.rw_to_eV
 
         self.results['forces'] = forces
-
-
-if __name__ == '__main__':
-    from ase.atoms import Atoms
-    from ase.visualize import view
-    from ase.cluster.octahedron import Octahedron
-    import numpy as np
-    import matplotlib.pyplot as plt
-
-    # ideal_atoms = Octahedron('Au', 2)
-    # ideal_atoms.pbc = False
-    # wrap_atoms(ideal_atoms)
-
-    n = 400
-    pos = np.random.random((n, 3)) * 10.
-    ideal_atoms = Atoms('Au' + str(n), pos)
-    exp_dict = {'qmin': 0.0, 'qmax': 25.,
-                'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
-                'rmax': 40.0, 'rstep': .01}
-
-    scat = ElasticScatter()
-    gobs = scat.get_fq(ideal_atoms)
-
-    # calc1 = PDFCalc(gobs=gobs, scatter=scat)
-    calc1 = FQCalc(fobs=gobs, scatter=scat, potential='rw')
-    ideal_atoms.set_calculator(calc1)
-    ideal_atoms.positions *= 1.5
-    # print ideal_atoms.get_potential_energy()
-    print ideal_atoms.get_forces()

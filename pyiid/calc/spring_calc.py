@@ -5,7 +5,7 @@ import numpy as np
 
 class Spring(Calculator):
     """
-    Class for doing PDF based RW calculations
+    Spring Repulsion Potential Energy Surface
     """
     implemented_properties = ['energy', 'forces']
 
@@ -24,7 +24,7 @@ class Spring(Calculator):
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
                                   'pbc', 'charges', 'magmoms']):
-        """PDF Calculator
+        """Spring Calculator
 
         atoms: Atoms object
             Contains positions, unit-cell, ...
@@ -72,47 +72,3 @@ class Spring(Calculator):
         forces = self.f_func(atoms, self.k, self.rt)
 
         self.results['forces'] = forces
-
-
-if __name__ == '__main__':
-    from ase.atoms import Atoms
-    from ase.visualize import view
-
-    ideal_atoms = Atoms('Au4', [[0,0,0], [1,0,0], [0, 1, 0], [1,1,0]])
-    start_atoms = Atoms('Au4', [[0,0,0], [2,0,0], [0, 2., 0], [2,2,0]])
-    # ideal_atoms = Atoms('Au2', [[0,0,0], [2.0,0,0]])
-    rt = 2.5
-    k = 10
-
-    '''q = start_atoms.positions
-    n = len(ideal_atoms)
-    d = np.zeros((n, n, 3))
-    get_d_array(d, q)
-    r = np.zeros((n, n))
-    get_r_array(r, d)
-
-    thresh = np.less(r, rt)
-    for i in range(len(thresh)):
-        thresh[i,i] = False
-
-
-    mag = np.zeros(r.shape)
-    mag[thresh] = k * (r[thresh]-rt)
-    # print mag
-    direction = np.zeros(q.shape)
-    for i in range(len(q)):
-        for j in range(len(q)):
-            if i != j:
-                direction[i,:] += d[i,j,:]/r[i,j] * mag[i, j]
-
-    print direction
-
-    nrg = np.sum(mag[thresh]/2.*(r[thresh]-rt))
-    print nrg'''
-
-    calc = Spring(k=k, rt=rt)
-    start_atoms.set_calculator(calc)
-    f = start_atoms.get_forces()
-    start_atoms.get_potential_energy()
-    print f
-    view(start_atoms)

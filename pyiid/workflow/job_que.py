@@ -7,7 +7,7 @@ i = 0
 print 'Start job queue'
 while True:
     print 'search for simulations to be run'
-    sims = list(find_simulation_document(ran=False, skip=False))
+    sims = list(find_simulation_document(ran=False, skip=False, error=False))
     if len(sims) == 0:
         # we didn't find anything, implying that there were no more un-run simulations
         print "Didn't find anything yet, waiting 10 seconds"
@@ -19,12 +19,13 @@ while True:
 
     else:
         print 'Found {0} simulation enteries which have not been ran or flagged' \
-              'to be skipped'.format(len(sims))
+              ' to be skipped'.format(len(sims))
         for sim in sims:
             print 'start simulation number ', sim.id
             try:
                 run_simulation(sim)
             except:
+                print 'Simulation number {} has errored'.format(sim)
                 sim.errored = True
                 sim.save()
                 pass
