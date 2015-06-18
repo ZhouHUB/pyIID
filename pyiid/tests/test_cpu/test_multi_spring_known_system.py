@@ -1,4 +1,4 @@
-from tests.test_cpu import setup_atomic_configs
+from tests import setup_atomic_configs
 
 __author__ = 'christopher'
 import numpy as np

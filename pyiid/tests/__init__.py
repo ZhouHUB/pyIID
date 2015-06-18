@@ -1,3 +1,5 @@
+from ase import Atoms
+
 __author__ = 'christopher'
 import numpy as np
 from ase.atoms import Atoms
@@ -21,3 +23,11 @@ def generate_experiment():
     exp_dict['qbin'] = np.pi / (exp_dict['rmax'] + 6 * 2 * np.pi /
                                     exp_dict['qmax'])
     return exp_dict
+
+
+def setup_atomic_configs():
+    atoms1 = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    atoms2 = atoms1.copy()
+    scale = .75
+    atoms2.positions *= scale
+    return atoms1, atoms2, scale

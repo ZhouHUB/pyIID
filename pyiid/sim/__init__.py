@@ -27,4 +27,5 @@ def leapfrog(atoms, step):
     latoms.positions += step * latoms.get_velocities()
 
     latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
+
     return latoms
