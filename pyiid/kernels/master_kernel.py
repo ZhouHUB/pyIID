@@ -244,7 +244,6 @@ def grad_pdf_pool_worker(task):
 
 
 def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
-
     n = len(grad_fq)
     grad_iter = []
     pool_size = cpu_count()

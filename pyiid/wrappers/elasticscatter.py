@@ -70,7 +70,7 @@ class ElasticScatter(object):
         self.exp = exp_dict
         # Technically we should use this for qbin:
         self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
-                                    self.exp['qmax'])
+                                 self.exp['qmax'])
         self.scatter_needs_update = True
 
     def set_processor(self, processor=None):
@@ -156,7 +156,8 @@ class ElasticScatter(object):
         return sq
 
     def get_iq(self, atoms):
-        return self.get_sq(atoms) * np.average(atoms.get_array('F(Q) scatter')) ** 2
+        return self.get_sq(atoms) * np.average(
+            atoms.get_array('F(Q) scatter')) ** 2
 
     def get_grad_fq(self, atoms):
         self.check_scatter(atoms)
@@ -228,13 +229,13 @@ def wrap_atoms(atoms, exp_dict=None):
     atoms.info['exp'] = exp_dict
 
 
-
 if __name__ == '__main__':
     from ase.atoms import Atoms
     import ase.io as aseio
     import matplotlib.pyplot as plt
 
-    atoms = aseio.read('/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz',)
+    atoms = aseio.read(
+        '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz', )
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     # n = 1500
     # pos = np.random.random((n, 3)) * 10.

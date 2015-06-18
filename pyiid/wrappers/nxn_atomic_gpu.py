@@ -139,7 +139,6 @@ def atomic_fq(q, scatter_array, qbin, m, n_cov):
     return final
 
 
-
 def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
     """
     This function wraps the GPU $\vec{\nabla}F(Q)$ kernels,
@@ -230,7 +229,8 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
 
     # start F(Q) calculations
     dscat = cuda.to_device(scatter_array, stream2)
-    dnorm = cuda.device_array((m, n, qmax_bin), dtype=np.float32, stream=stream2)
+    dnorm = cuda.device_array((m, n, qmax_bin), dtype=np.float32,
+                              stream=stream2)
     get_normalization_array[bpg_l_3, tpb_l_3, stream2](dnorm, dscat, n_cov)
 
     dd = cuda.device_array((m, n, 3), dtype=np.float32, stream=stream)

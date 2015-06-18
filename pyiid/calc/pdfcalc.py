@@ -28,9 +28,12 @@ class PDFCalc(Calculator):
         self.rw_to_eV = conv
 
         if obs_data is not None and exp_dict is not None:
-            if len(np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])) < len(obs_data):
-                obs_data = obs_data[:self.exp_dict['rmax']/self.exp_dict['rstep']]
-                obs_data = obs_data[self.exp_dict['rmin']/self.exp_dict['rstep']:]
+            if len(np.arange(exp_dict['rmin'], exp_dict['rmax'],
+                             exp_dict['rstep'])) < len(obs_data):
+                obs_data = obs_data[
+                           :self.exp_dict['rmax'] / self.exp_dict['rstep']]
+                obs_data = obs_data[
+                           self.exp_dict['rmin'] / self.exp_dict['rstep']:]
             self.gobs = obs_data
         elif obs_data is not None:
             self.gobs = obs_data
@@ -96,9 +99,9 @@ class PDFCalc(Calculator):
         # self.results['forces'] = np.zeros((len(atoms), 3))
         forces = self.grad(self.scatter.get_grad_pdf(atoms),
                            self.scatter.get_pdf(atoms),
-        self.gobs) * self.rw_to_eV
+                           self.gobs) * self.rw_to_eV
 
-        self.results['forces'] = forces #* atoms.get_masses().reshape(-1, 1)
+        self.results['forces'] = forces  # * atoms.get_masses().reshape(-1, 1)
 
 
 if __name__ == '__main__':

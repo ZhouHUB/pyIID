@@ -13,5 +13,6 @@ setup(
     author='Christopher J. Wright',
     author_email='wright1@email.sc.edu',
     description='',
-    requires=['numba', 'numpy', 'ase', 'nose', 'mpi4py']
+    requires=['numba', 'numpy', 'ase', 'nose', 'mpi4py', 'simdb', 'matplotlib',
+              'matplotlib']
 )

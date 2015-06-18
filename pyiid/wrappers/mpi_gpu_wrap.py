@@ -5,7 +5,9 @@ import os
 from numba import cuda
 
 from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
-from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, atoms_per_gpu_grad_fq
+from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
+    atoms_per_gpu_grad_fq
+
 
 def count_nodes():
     fileloc = os.getenv("PBS_NODEFILE")
@@ -20,7 +22,6 @@ def count_nodes():
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
-
     # get information for FQ transformation
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -64,7 +65,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     fq = np.zeros(qmax_bin)
     for ele in reports:
         fq[:] += ele
-    na = np.average(scatter_array, axis=0)**2 * n
+    na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / na * fq)
     np.seterr(**old_settings)
@@ -86,7 +87,7 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1, sum_type='fq'):
 
     ranks, mem_list = gpu_avail(n_nodes)
     gpu_total_mem = 0
-    for i in range(ranks[-1]+1):
+    for i in range(ranks[-1] + 1):
         print mem_list[i]
         gpu_total_mem += mem_list[i]
     print gpu_total_mem
@@ -121,12 +122,13 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1, sum_type='fq'):
         grad_p = np.concatenate(sort_grads, axis=0)
     else:
         grad_p = sort_grads[0]
-    na = np.average(scatter_array, axis=0)**2 * n
+    na = np.average(scatter_array, axis=0) ** 2 * n
 
     old_settings = np.seterr(all='ignore')
     grad_p[:, :] = np.nan_to_num(grad_p[:, :] / na)
     np.seterr(**old_settings)
     return grad_p
+
 
 if __name__ == '__main__':
     # import cProfile
@@ -136,12 +138,13 @@ if __name__ == '__main__':
     from pyiid.wrappers.elasticscatter import wrap_atoms
     import matplotlib.pyplot as plt
     import sys
+
     sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
     # n = 400
     # pos = np.random.random((n, 3)) * 10.
     # atoms = Atoms('Au' + str(n), pos)
-    atoms = Atoms('Au4', [[0,0,0],[3,0,0],[0,3,0],[3,3,0]])
+    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms, exp_dict)
 
     # fq = wrap_fq(atoms)

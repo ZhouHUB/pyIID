@@ -51,7 +51,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     get_fq_array(fq, r, scatter_array, qbin)
 
 
-    #Normalize fq
+    # Normalize fq
     # norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
     # get_normalization_array(norm_array, scatter_array)
 
@@ -113,7 +113,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 
     # get non-normalized FQ
 
-    #Normalize FQ
+    # Normalize FQ
     norm_array = np.zeros((n, n, qmax_bin))
     get_normalization_array(norm_array, scatter_array)
     norm_array = norm_array.sum(axis=(0, 1))
@@ -144,9 +144,9 @@ def spring_nrg(atoms, k, rt):
         thresh[i, i] = False
 
     mag = np.zeros(r.shape)
-    mag[thresh] = k * (r[thresh]-rt)
+    mag[thresh] = k * (r[thresh] - rt)
 
-    energy = np.sum(mag[thresh]/2.*(r[thresh]-rt))
+    energy = np.sum(mag[thresh] / 2. * (r[thresh] - rt))
     return energy
 
 
@@ -160,15 +160,15 @@ def spring_force(atoms, k, rt):
 
     thresh = np.less(r, rt)
     for i in range(len(thresh)):
-        thresh[i,i] = False
+        thresh[i, i] = False
 
     mag = np.zeros(r.shape)
-    mag[thresh] = k * (r[thresh]-rt)
+    mag[thresh] = k * (r[thresh] - rt)
 
     direction = np.zeros((n, n, 3))
     old_settings = np.seterr(all='ignore')
     for tz in range(3):
-        direction[thresh, tz] = d[thresh, tz]/r[thresh] * mag[thresh]
+        direction[thresh, tz] = d[thresh, tz] / r[thresh] * mag[thresh]
     np.seterr(**old_settings)
     direction[np.isnan(direction)] = 0.0
     direction = np.sum(direction, axis=1)

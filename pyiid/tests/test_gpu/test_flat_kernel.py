@@ -2,6 +2,7 @@ __author__ = 'christopher'
 from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 from numba import cuda
+
 cuda.select_device(0)
 from pyiid.kernels.flat_kernel import *
 
@@ -18,7 +19,7 @@ def set_up_gpu(n, qmax_bin=None):
             bpg = int(math.ceil(float(e_dim) / tpb))
             if bpg < 1:
                 bpg = 1
-            assert(bpg*tpb >= e_dim)
+            assert (bpg * tpb >= e_dim)
             bpg_l_1.append(bpg)
         return stream, bpg_l_1, tpb_l_1
 
@@ -31,7 +32,7 @@ def set_up_gpu(n, qmax_bin=None):
             bpg = int(math.ceil(float(e_dim) / tpb))
             if bpg < 1:
                 bpg = 1
-            assert(bpg*tpb >= e_dim)
+            assert (bpg * tpb >= e_dim)
             bpg_l_2.append(bpg)
         return stream, bpg_l_2, tpb_l_2
 
@@ -48,9 +49,9 @@ def test_get_d():
     serial_get_d_array(cd, q)
 
     # kernel version
-    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
-    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
-    get_ij_lists(il, jl,n)
+    il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    get_ij_lists(il, jl, n)
     # # print len(il), len(jl)
     stream, bpg, tpb = set_up_gpu(len(il))
     qi = q[il]
@@ -84,9 +85,9 @@ def test_get_r():
 
     # kernel version
 
-    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
-    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
-    get_ij_lists(il, jl,n)
+    il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    get_ij_lists(il, jl, n)
 
     # # print len(il), len(jl)
     stream, bpg, tpb = set_up_gpu(len(il))
@@ -111,13 +112,15 @@ def test_get_r():
     dr.to_host()
 
     sr = np.zeros((n, n))
-    cpur = np.zeros((n,n))
+    cpur = np.zeros((n, n))
     symmetric_reshape(sr, r, il, jl)
 
     serial_get_r_array(cpur, cd)
     assert_allclose(sr, cpur)
     return
 
+
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)

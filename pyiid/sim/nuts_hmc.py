@@ -18,7 +18,8 @@ def find_step_size(input_atoms):
     atoms_prime = leapfrog(atoms, step_size)
 
     a = 2 * (np.exp(
-        -1 * atoms_prime.get_total_energy() + atoms.get_total_energy()) > 0.5) - 1
+        -1 * atoms_prime.get_total_energy() + atoms.get_total_energy()
+    ) > 0.5) - 1
 
     while (np.exp(
                     -1 * atoms_prime.get_total_energy() + atoms.get_total_energy())) ** a > 2 ** -a:

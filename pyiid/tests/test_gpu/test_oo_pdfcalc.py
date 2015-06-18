@@ -10,6 +10,7 @@ from pyiid.calc.pdfcalc import PDFCalc
 
 n = 1000
 
+
 def test_rw():
     atoms1, atoms2 = setup_atoms(n), setup_atoms(n)
     scat = ElasticScatter()

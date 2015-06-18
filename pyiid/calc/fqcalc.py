@@ -5,6 +5,7 @@ import numpy as np
 from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
 from pyiid.wrappers.elasticscatter import ElasticScatter
 
+
 class FQCalc(Calculator):
     """
     Class for doing FQ PES calculations
@@ -82,6 +83,6 @@ class FQCalc(Calculator):
     def calculate_forces(self, atoms):
         forces = self.grad(self.scatter.get_grad_fq(atoms),
                            self.scatter.get_fq(atoms),
-        self.gobs) * self.rw_to_eV
+                           self.gobs) * self.rw_to_eV
 
         self.results['forces'] = forces

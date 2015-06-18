@@ -17,7 +17,7 @@ def test_get_scatter_array():
 
 
 def test_get_rw():
-    x = np.arange(0, 2*np.pi, .1)
+    x = np.arange(0, 2 * np.pi, .1)
     a = np.sin(x)
     b = np.cos(x)
     assert_allclose(get_rw(a, b)[0], 1)
@@ -25,7 +25,7 @@ def test_get_rw():
 
 
 def test_get_rw2():
-    x = np.arange(0, 2*np.pi, .1)
+    x = np.arange(0, 2 * np.pi, .1)
     a = np.sin(x)
     b = np.sin(x)
     assert_allclose(0, get_rw(a, b)[0], atol=1e-15)
@@ -33,7 +33,7 @@ def test_get_rw2():
 
 
 def test_get_chi_sq():
-    x = np.arange(0, 2*np.pi, .1)
+    x = np.arange(0, 2 * np.pi, .1)
     a = np.sin(x)
     b = np.cos(x)
     assert_allclose(get_chi_sq(a, b)[0], 63.01399)
@@ -41,11 +41,12 @@ def test_get_chi_sq():
 
 
 def test_get_chi_sq2():
-    x = np.arange(0, 2*np.pi, .1)
+    x = np.arange(0, 2 * np.pi, .1)
     a = np.sin(x)
     b = np.sin(x)
     assert_allclose(0, get_chi_sq(a, b)[0], atol=1e-15)
     return
+
 
 if __name__ == '__main__':
     import nose

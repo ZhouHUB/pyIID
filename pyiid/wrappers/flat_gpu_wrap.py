@@ -26,7 +26,7 @@ def get_gpus_mem():
 def subs_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, il, jl):
     # set up GPU
     with gpu:
-    # load kernels
+        # load kernels
         from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
             get_normalization_array, get_fq, d2_to_d1_sum, construct_qij, \
             construct_scatij
@@ -89,7 +89,8 @@ def subs_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, il, jl):
                                    stream=stream2)
         dscatj = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
                                    stream=stream2)
-        dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
+        dscat = cuda.to_device(scatter_array.astype(np.float32),
+                               stream=stream2)
 
         construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
 
@@ -124,8 +125,8 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     qmax_bin = scatter_array.shape[1]
 
     # setup flat map
-    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
-    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
     get_ij_lists(il, jl, n)
     k_max = len(il)
 
@@ -138,7 +139,8 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     while k_cov < k_max:
         for gpu, mem in zip(gpus, mem_list):
             m = int(math.floor(
-                    float(mem-4*qmax_bin-4*qmax_bin*n-12*n) / (16*(qmax_bin + 3))))
+                float(mem - 4 * qmax_bin - 4 * qmax_bin * n - 12 * n) / (
+                    16 * (qmax_bin + 3))))
 
             if m > k_max - k_cov:
                 m = k_max - k_cov
@@ -147,8 +149,8 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
                     break
                 p = Thread(target=subs_fq, args=(
                     gpu, q, scatter_array, fq_q, qmax_bin, qbin,
-                    il[k_cov:k_cov+m],
-                    jl[k_cov:k_cov+m],
+                    il[k_cov:k_cov + m],
+                    jl[k_cov:k_cov + m],
                 ))
                 p.start()
                 p_dict[gpu] = p
@@ -168,7 +170,8 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     return 2 * final
 
 
-def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, index_list):
+def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov,
+                 index_list):
     # set up GPU
     n = len(q)
     with gpu:
@@ -206,7 +209,6 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
                 bpg = 1
             assert (bpg * tpb >= e_dim)
             bpg2.append(bpg)
-
 
         elements_per_dim_nq = [len(q), qmax_bin]
         tpbnq = [16, 4]
@@ -268,16 +270,16 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov, i
         grad = np.zeros((len(il), 3, qmax_bin), dtype=np.float32)
         dgrad = cuda.device_array(grad.shape, dtype=np.float32, stream=stream2)
 
-
         get_grad_fq[bpg2, tpb2, stream2](dgrad, dfq, dr, dd, dnorm, qbin)
-
 
         new_grad2 = np.zeros((len(q), 3, qmax_bin), dtype=np.float32)
 
-        dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32, stream=stream2)
+        dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32,
+                                      stream=stream2)
         zero_pseudo_3D[bpgnq, tpbnq, stream2](dnew_grad)
 
-        flat_sum[[1, bpgq[0]], [4, tpbq[0]], stream2](dnew_grad, dgrad, dil, djl)
+        flat_sum[[1, bpgq[0]], [4, tpbq[0]], stream2](dnew_grad, dgrad, dil,
+                                                      djl)
         dnew_grad.copy_to_host(new_grad2)
         del dd, dr, dnorm, dfq, dgrad, dil, djl
     grad_q.append(new_grad2)
@@ -297,8 +299,8 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     qbin = np.float32(qbin)
 
     # setup flat map
-    il = np.zeros((n**2 - n)/2., dtype=np.uint32)
-    jl = np.zeros((n**2 - n)/2., dtype=np.uint32)
+    il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
     get_ij_lists(il, jl, n)
     # print il, jl
     k_max = len(il)
@@ -312,7 +314,8 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     while k_cov < k_max:
         for gpu, mem in zip(gpus, mem_list):
             m = int(math.floor(
-                float(mem - 4*qmax_bin*n - 12*n)/(4*(7*qmax_bin + 12))))
+                float(mem - 4 * qmax_bin * n - 12 * n) / (
+                    4 * (7 * qmax_bin + 12))))
             # m = 2
             if m > k_max - k_cov:
                 m = k_max - k_cov
@@ -322,8 +325,8 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
                 # print float(k_cov+m)/k_max * 100, '%'
                 p = Thread(target=subs_grad_fq, args=(
                     gpu, q, scatter_array, grad_q, qmax_bin, qbin,
-                    il[k_cov:k_cov+m],
-                    jl[k_cov:k_cov+m],
+                    il[k_cov:k_cov + m],
+                    jl[k_cov:k_cov + m],
                     k_cov,
                     index_list,
                 ))
@@ -333,7 +336,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 
                 if k_cov >= k_max:
                     break
-        #TODO: sum arrays during processing to cut down on memory
+                    # TODO: sum arrays during processing to cut down on memory
     for value in p_dict.values():
         value.join()
 

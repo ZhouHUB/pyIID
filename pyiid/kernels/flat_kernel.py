@@ -32,7 +32,7 @@ def asr_gpu(new_grad, grad, il, jl):
         return
     for tz in range(3):
         new_grad[jl[k], il[k], tz, qx] = grad[k, tz, qx]
-        new_grad[il[k], jl[k], tz, qx] = -1*grad[k, tz, qx]
+        new_grad[il[k], jl[k], tz, qx] = -1 * grad[k, tz, qx]
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
@@ -84,6 +84,7 @@ def get_fq(fq, r, norm, qbin):
         return
     fq[k, qx] = norm[k, qx] * math.sin(qbin * qx * r[k]) / r[k]
 
+
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
 def get_grad_fq(grad, fq, r, d, norm, qbin):
     k, qx = cuda.grid(2)
@@ -91,7 +92,10 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
     if k >= len(grad) or qx > norm.shape[1]:
         return
     for w in range(3):
-        grad[k, w, qx] = (norm[k, qx] * qx * qbin * math.cos(qx * qbin * r[k]) - fq[k, qx]) / r[k] * d[k, w] / r[k]
+        grad[k, w, qx] = (
+                             norm[k, qx] * qx * qbin * math.cos(
+                                 qx * qbin * r[k]) -
+                             fq[k, qx]) / r[k] * d[k, w] / r[k]
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
@@ -112,9 +116,9 @@ def d4_to_d2_sum(d3, d4):
     for l in range(N):
         d3[i, j, k] += d4[i, l, j, k]
 
-@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], u4[:], u4[:]])
-def construct_qij(qi, qj, q, il, jl):
 
+@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], u4[:], u4[:]])
+def construct_qij(qi, qj, q, il, jl):
     k = cuda.grid(1)
 
     if k >= len(il):
@@ -123,9 +127,9 @@ def construct_qij(qi, qj, q, il, jl):
         qi[k, tz] = q[il[k], tz]
         qj[k, tz] = q[jl[k], tz]
 
-@cuda.jit(argtypes=[f4[:,:], f4[:,:], f4[:,:], u4[:], u4[:]])
-def construct_scatij(scati, scatj, scat, il, jl):
 
+@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], u4[:], u4[:]])
+def construct_scatij(scati, scatj, scat, il, jl):
     k, qx = cuda.grid(2)
 
     if k >= len(il) or qx >= scat.shape[1]:
@@ -134,7 +138,7 @@ def construct_scatij(scati, scatj, scat, il, jl):
     scatj[k, qx] = scat[jl[k], qx]
 
 
-@cuda.jit(argtypes=[f4[:,:,:]])
+@cuda.jit(argtypes=[f4[:, :, :]])
 def zero_pseudo_3D(A):
     tx, kq = cuda.grid(2)
 
@@ -147,7 +151,7 @@ def zero_pseudo_3D(A):
         A[tx, ty, kq] = 0.0
 
 
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], u4[:], u4[:]])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], u4[:], u4[:]])
 def flat_sum(new_grad, grad, il, jl):
     # Something goes wrong here, a race condition or something
     # the CPU version of this code works fine.  I may need to move to atomic
@@ -157,15 +161,16 @@ def flat_sum(new_grad, grad, il, jl):
     # k = cuda.grid(1)
 
     if qx >= grad.shape[2] or tz >= 3:
-    # if k >= len(il):
+        # if k >= len(il):
         return
 
     for k in range(len(il)):
-    # for qx in range(grad.shape[2]):
-    #     ik = il[k]
-    #     jk = jl[k]
+        # for qx in range(grad.shape[2]):
+        #     ik = il[k]
+        #     jk = jl[k]
         new_grad[il[k], tz, qx] -= grad[k, tz, qx]
         new_grad[jl[k], tz, qx] += grad[k, tz, qx]
+
 
 '''
 def shared_flat_sum(new_grad, grad, il, jl, npk, noffset):

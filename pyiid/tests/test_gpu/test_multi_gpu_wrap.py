@@ -17,9 +17,8 @@ n = 150
 
 
 def test_fq():
-    
     pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au'+str(n), pos)
+    atoms = Atoms('Au' + str(n), pos)
 
     exp_dict = generate_experiment()
     wrap_atoms(atoms, exp_dict)
@@ -35,9 +34,8 @@ def test_fq():
 
 
 def test_grad_fq():
-    
     pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au'+str(n), pos)
+    atoms = Atoms('Au' + str(n), pos)
 
     exp_dict = generate_experiment()
     wrap_atoms(atoms, exp_dict)
@@ -54,4 +52,5 @@ def test_grad_fq():
 
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)

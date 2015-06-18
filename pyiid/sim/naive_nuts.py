@@ -12,26 +12,26 @@ def nuts(atoms, e, M, wtraj=None):
     try:
         for m in range(M):
             # XXX ERRORR HERE
-            #initialize momenta
+            # initialize momenta
             rand_momenta = np.random.normal(0, 1, (len(atoms), 3))
             atoms.set_momenta(rand_momenta)
 
-            #get slice variable
-            u = np.random.uniform(0, np.exp(-1*traj[-1].get_total_energy()))
+            # get slice variable
+            u = np.random.uniform(0, np.exp(-1 * traj[-1].get_total_energy()))
             # u = np.random.uniform(0, traj[-1].get_total_energy())
             # print u
 
-            #initialize negative and positive directions
+            # initialize negative and positive directions
             neg_atoms = dc(traj[-1])
             pos_atoms = dc(traj[-1])
 
             C = [dc(traj[-1])]
             j, s = 0, 1
             while s == 1:
-                print 'depth', j, 'samples', 2**j
+                print 'depth', j, 'samples', 2 ** j
                 v = np.random.choice([-1, 1])
                 if v == -1:
-                    #build tree in negative direction
+                    # build tree in negative direction
                     neg_atoms, _, Cp, sp = buildtree(neg_atoms, u, v, j, e)
                 else:
                     _, pos_atoms, Cp, sp = buildtree(pos_atoms, u, v, j, e)
@@ -39,12 +39,17 @@ def nuts(atoms, e, M, wtraj=None):
                 if sp == 1:
                     C += Cp
                 datoms = pos_atoms.positions - neg_atoms.positions
-                s = sp * (np.dot(datoms.flatten(), neg_atoms.get_momenta().flatten()) >= 0) * (np.dot(datoms.flatten(), pos_atoms.get_momenta().flatten()) >= 0)
+                s = sp * (np.dot(datoms.flatten(),
+                                 neg_atoms.get_momenta().flatten()) >= 0) * (
+                        np.dot(datoms.flatten(),
+                               pos_atoms.get_momenta().flatten()) >= 0)
                 j += 1
             print m, len(C)
             C_list.append(C)
             energies = np.asarray([atoms.get_total_energy() for atoms in C])
-            sample_pos = np.random.choice(range(len(C)), p=np.exp(-energies)/np.exp(-energies).sum())
+            sample_pos = np.random.choice(range(len(C)),
+                                          p=np.exp(-energies) / np.exp(
+                                              -energies).sum())
             # sample_pos = np.random.choice(range(len(C)))
             # sample_pos = np.argmin(energies)
             # XXX ERROR HERE
@@ -59,9 +64,9 @@ def nuts(atoms, e, M, wtraj=None):
 
 def buildtree(input_atoms, u, v, j, e):
     if j == 0:
-        atomsp = leapfrog(input_atoms, v*e)
+        atomsp = leapfrog(input_atoms, v * e)
         if u <= np.exp(-atomsp.get_total_energy()):
-        # if u <= atomsp.get_total_energy():
+            # if u <= atomsp.get_total_energy():
             Cp = [atomsp]
         else:
             # print 'Fail MH'
@@ -73,13 +78,17 @@ def buildtree(input_atoms, u, v, j, e):
             pass
         return atomsp, atomsp, Cp, sp
     else:
-        neg_atoms, pos_atoms, Cp, sp = buildtree(input_atoms, u, v, j-1, e)
+        neg_atoms, pos_atoms, Cp, sp = buildtree(input_atoms, u, v, j - 1, e)
         if v == -1:
-            neg_atoms, _, Cpp, spp = buildtree(neg_atoms, u, v, j-1, e)
+            neg_atoms, _, Cpp, spp = buildtree(neg_atoms, u, v, j - 1, e)
         else:
-            _,pos_atoms, Cpp, spp = buildtree(pos_atoms, u, v, j-1, e)
+            _, pos_atoms, Cpp, spp = buildtree(pos_atoms, u, v, j - 1, e)
         datoms = pos_atoms.positions - neg_atoms.positions
-        sp = sp*spp*(np.dot(datoms.flatten(), neg_atoms.get_momenta().flatten()) >= 0) * (np.dot(datoms.flatten(), pos_atoms.get_momenta().flatten()) >= 0)
+        sp = sp * spp * (
+            np.dot(datoms.flatten(),
+                   neg_atoms.get_momenta().flatten()) >= 0) * (
+                 np.dot(datoms.flatten(),
+                        pos_atoms.get_momenta().flatten()) >= 0)
         Cp += Cpp
         return neg_atoms, pos_atoms, Cp, sp
 
@@ -102,7 +111,7 @@ def leapfrog(atoms, step):
         The new atomic positions and velocities
     """
     latoms = dc(atoms)
-    
+
     latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
 
     latoms.positions += step * latoms.get_velocities()
@@ -134,20 +143,20 @@ if __name__ == '__main__':
     start_atoms = dc(ideal_atoms)
     start_atoms.positions *= 1.05
     s = ElasticScatter()
-    gobs = s.get_pdf()
+    gobs = s.get_pdf(ideal_atoms)
 
     calc = PDFCalc(obs_data=gobs, scatter=s, conv=100, potential='rw')
     start_atoms.set_calculator(calc)
     print start_atoms.get_potential_energy()
-    
+
     e = .8e-2
     M = 10
-    
+
     traj, C_list = nuts(start_atoms, e, M)
     for c in C_list:
         for atoms in c:
             f = atoms.get_forces()
-            f2 = f*2
+            f2 = f * 2
         view(c)
 
     pe_list = []

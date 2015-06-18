@@ -52,7 +52,7 @@ def simulate_dynamics(atoms, stepsize, n_steps):
     atoms.set_positions(
         atoms.get_positions() + stepsize * atoms.get_velocities())
 
-    #do n leapfrog steps
+    # do n leapfrog steps
     for n in range(n_steps):
         leapfrog(atoms, stepsize)
 
@@ -122,7 +122,7 @@ def hmc_move(atoms, stepsize, n_steps, T):
 
 def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             avg_acceptance_rate, target_acceptance_rate, stepsize_inc,
-            stepsize_dec, stepsize_min, stepsize_max, T=1, wtraj = None):
+            stepsize_dec, stepsize_min, stepsize_max, T=1, wtraj=None):
     """
     Wrapper for running Hamiltonian (Hybrid) Monte Carlo refinements,
     using a dynamic step size refinement, based on whether moves are

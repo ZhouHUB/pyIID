@@ -115,7 +115,7 @@ def test_get_normalization_array():
     # compiled
     comp(c_norm, scat)
 
-    #kernel
+    # kernel
     stream, bpg, tpb = set_up_gpu(n, 250)
     dnorm = cuda.to_device(k_norm)
     dscat = cuda.to_device(scat)
@@ -142,7 +142,7 @@ def test_get_fq_p0_1():
                     cfq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[
                         tx, ty]
 
-    #kernel
+    # kernel
     kfq = np.zeros((n, n, Q), dtype=np.float32)
     dfq = cuda.to_device(kfq)
     dr = cuda.to_device(r)
@@ -178,7 +178,7 @@ def test_get_fq_p0_1_sum():
                     cfq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[
                         tx, ty]
 
-    #kernel
+    # kernel
     # kfq = np.zeros((n, n, Q), dtype=np.float64)
     kfq = np.zeros((n, n, Q), dtype=np.float32)
     dfq = cuda.to_device(kfq)
@@ -193,7 +193,8 @@ def test_get_fq_p0_1_sum():
     # print 'median difference', np.median(kfq - cfq)
     # print 'percent of errors', np.count_nonzero(
     #     kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
-    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol, atol=1e-7)
+    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol,
+                    atol=1e-7)
 
 
 def test_get_fq_grad_p3():
@@ -216,7 +217,7 @@ def test_get_fq_grad_p3():
                         kq * qbin * r[tx, ty]) * kq * qbin / r[
                                           tx, ty]
 
-    #kernel
+    # kernel
     # kfq = np.zeros((n, n, Q), dtype=np.float64)
     kfq = np.zeros((n, n, Q), dtype=np.float32)
     dfq = cuda.to_device(kfq)
@@ -254,7 +255,7 @@ def test_get_fq_grad_p3_sum():
                         kq * qbin * r[tx, ty]) * kq * qbin / r[
                                           tx, ty]
 
-    #kernel
+    # kernel
     # kfq = np.zeros((n, n, Q), dtype=np.float64)
     kfq = np.zeros((n, n, Q), dtype=np.float32)
     dfq = cuda.to_device(kfq)
@@ -269,13 +270,15 @@ def test_get_fq_grad_p3_sum():
     # print 'median difference', np.median(kfq - cfq)
     # print 'percent of errors', np.count_nonzero(
     #     kfq - cfq > cfq * rtol) / float(kfq.size) * 100, '%'
-    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol, atol=1e-7)
+    assert_allclose(kfq.sum(axis=(0, 1)), cfq.sum(axis=(0, 1)), rtol=rtol,
+                    atol=1e-7)
 
 
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)
-    
+
     '''
     Q = 250
     n = 200

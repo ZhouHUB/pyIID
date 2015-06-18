@@ -11,7 +11,6 @@ from pyiid.calc import wrap_rw
 from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
 
-
 font = {'family': 'normal',
         # 'weight' : 'bold',
         'size': 18}
@@ -34,7 +33,8 @@ def plot_pdf(db_entry, save_file=None, show=True, sl='last'):
         ideal_atoms = aseio.read(str(db_entry['exp_files']))
         gobs = scatter.get_pdf(ideal_atoms)
     else:
-        r, gobs, exp_dict = load_gr_file(str(db_entry['exp_files']), **db_entry['exp_dict'])
+        r, gobs, exp_dict = load_gr_file(str(db_entry['exp_files']),
+                                         **db_entry['exp_dict'])
 
     traj = PickleTrajectory(db_entry['traj loc'])
     start_atoms = traj[0]
@@ -104,7 +104,7 @@ def plot_angle(db_entry, cut, save_file=None, show=True):
                                    tag=tags[tag][0]), bins=bins)
                 if False:
                     pass
-                # if np.alltrue(stru_l[key].pbc):
+                    # if np.alltrue(stru_l[key].pbc):
                     # crystal
                     # for y, x in zip(a, b[:-1]):
                     #     plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
@@ -156,7 +156,7 @@ def plot_coordination(db_entry, cut, save_file=None, show=True):
     if b_min == b_max:
         bins = np.asarray([b_min, b_max])
     else:
-        bins = np.arange(b_min, b_max+2)
+        bins = np.arange(b_min, b_max + 2)
     print bins
     width = 3. / 4 / len(stru_l)
     offset = .3 * 3 / len(stru_l)
@@ -222,10 +222,10 @@ def plot_bonds(db_entry, cut, save_file=None, show=True):
         for symbol in symbols:
             for tag in tags.keys():
                 bonds = get_bond_dist_list(stru_l[key], cut, element=symbol,
-                                   tag=tags[tag][0])
+                                           tag=tags[tag][0])
                 a, b = np.histogram(bonds, bins=10)
                 plt.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
-                             marker=tags[tag][1], color=colors[n])
+                         marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond distance in angstrom')
     plt.ylabel('Bond Counts')
     plt.legend(loc='best')

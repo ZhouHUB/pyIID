@@ -6,7 +6,8 @@ from diffpy.Structure.atom import Atom as dAtom
 from ase.atoms import Atoms as AAtoms
 import ase.io as aseio
 from ase.lattice.surface import add_adsorbate
-from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, GetLayerNumbers
+from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
+    GetLayerNumbers
 from itertools import combinations
 
 import math
@@ -15,7 +16,6 @@ from pyiid.kernels.cpu_kernel import get_d_array
 from copy import deepcopy as dc
 import time
 import datetime
-
 
 
 def convert_atoms_to_stru(atoms):
@@ -35,7 +35,7 @@ def convert_atoms_to_stru(atoms):
     tags = atoms.get_tags()
     for symbol, xyz, tag, in zip(symbols, q, tags):
         d_atom = dAtom(symbol, xyz=xyz,
-                      label=tag, occupancy=1)
+                       label=tag, occupancy=1)
         diffpy_atoms.append(d_atom)
     stru = Structure(diffpy_atoms)
     return stru
@@ -67,7 +67,7 @@ def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None, **kwargs):
     Load gr files produced from PDFgetx3
     """
     exp_keys = ['qmax', 'qbin', 'qmin', 'rmin', 'rmax', 'rstep']
-    #TODO: also give back the filename
+    # TODO: also give back the filename
     if skiplines is None:
         with open(gr_file) as f:
             exp_dict = {}
@@ -84,19 +84,19 @@ def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None, **kwargs):
                 if '# PDF calculation setup' in line:
                     record = True
                 if '#### start data' in line:
-                    skiplines=num+2
+                    skiplines = num + 2
                     break
     data = np.loadtxt(gr_file, skiprows=skiplines)
     r = data[:-1, 0]
     gr = data[:-1, 1]
     if rmax is not None:
-        r = r[:math.ceil(rmax/exp_dict['rstep'])]
-        gr = gr[:math.ceil(rmax/exp_dict['rstep'])]
+        r = r[:math.ceil(rmax / exp_dict['rstep'])]
+        gr = gr[:math.ceil(rmax / exp_dict['rstep'])]
         exp_dict['rmax'] = rmax
 
     if rmin is not None:
-        r = r[math.ceil(rmin/exp_dict['rstep']):]
-        gr = gr[math.ceil(rmin/exp_dict['rstep']):]
+        r = r[math.ceil(rmin / exp_dict['rstep']):]
+        gr = gr[math.ceil(rmin / exp_dict['rstep']):]
         exp_dict['rmin'] = rmin
 
     return r, gr, exp_dict
@@ -132,13 +132,13 @@ def build_sphere_np(file, radius):
     atoms.translate(-com)
     del atoms[[atom.index for atom in atoms
                if np.sqrt(np.dot(atom.position, atom.position)) >=
-               np.sqrt(radius**2)]]
+               np.sqrt(radius ** 2)]]
     atoms.center()
     atoms.set_pbc((False, False, False))
     return atoms
 
 
-def tag_surface_atoms(atoms, rNearest, tag=1, tol=0):
+def tag_surface_atoms(atoms, tag=1, tol=0):
     """
     Find which are the surface atoms in a nanoparticle.
     ..note: We define the surface as a collection of atoms for which the
@@ -150,7 +150,7 @@ def tag_surface_atoms(atoms, rNearest, tag=1, tol=0):
     :param atoms:
     :return:
     """
-    s_idx = GetLayerNumbers(atoms, rNearest)
+    s_idx = GetLayerNumbers(atoms)
     for i in range(len(atoms)):
         if s_idx[i] == 1:
             atoms[i].tag = tag
@@ -180,10 +180,10 @@ def add_ligands(ligand, surface, distance, coverage, head, tail):
         if atom.tag == 1 and np.random.random() < coverage:
             pos = atom.position
             com = surface.get_center_of_mass()
-            disp = pos-com
-            norm_disp = disp/np.sqrt(np.dot(disp, disp))
+            disp = pos - com
+            norm_disp = disp / np.sqrt(np.dot(disp, disp))
             l_length = ligand[tail].position - ligand[head].position
-            norm_l_length = l_length/np.sqrt(np.dot(l_length, l_length))
+            norm_l_length = l_length / np.sqrt(np.dot(l_length, l_length))
             ads = dc(ligand)
             ads.rotate(norm_l_length, a=norm_disp)
             ads.translate(-ads[head].position)
@@ -192,7 +192,7 @@ def add_ligands(ligand, surface, distance, coverage, head, tail):
     return atoms
 
 
-def get_angle_list(atoms, cutoff, element=None, tag = None):
+def get_angle_list(atoms, cutoff, element=None, tag=None):
     """
     Get all the angles in the NP
     :param atoms:
@@ -204,7 +204,7 @@ def get_angle_list(atoms, cutoff, element=None, tag = None):
     for i in range(len(atoms)):
         z = list(combinations(n_list[i], 2))
         for a in z:
-            if (element is not None and atoms[i].symbol != element) or\
+            if (element is not None and atoms[i].symbol != element) or \
                     (tag is not None and atoms[i].tag != tag):
                 break
             angles.append(np.rad2deg(atoms.get_angle([a[0], i, a[1]])))
@@ -222,12 +222,12 @@ def time_est(atoms, HD_iter, HMC_iter):
     s = time.time()
     nrg = atoms.get_potential_energy()
     f = time.time()
-    nrg_t = f-s
+    nrg_t = f - s
     s = time.time()
     force = atoms.get_forces()
     f = time.time()
-    ft = f-s
-    total = HD_iter*ft*HMC_iter + nrg_t*HMC_iter
+    ft = f - s
+    total = HD_iter * ft * HMC_iter + nrg_t * HMC_iter
     print str(datetime.timedelta(seconds=math.ceil(total)))
     print 'finished by' + \
           str(datetime.datetime.today() +
@@ -235,7 +235,7 @@ def time_est(atoms, HD_iter, HMC_iter):
     return total
 
 
-def get_coord_list(atoms, cutoff, element=None, tag = None):
+def get_coord_list(atoms, cutoff, element=None, tag=None):
     """
     Get all the angles in the NP
     :param atoms:
@@ -253,7 +253,8 @@ def get_coord_list(atoms, cutoff, element=None, tag = None):
     else:
         return a
 
-def get_bond_dist_list(atoms, cutoff, element=None, tag = None):
+
+def get_bond_dist_list(atoms, cutoff, element=None, tag=None):
     """
     Get all the angles in the NP
     :param atoms:
@@ -264,7 +265,7 @@ def get_bond_dist_list(atoms, cutoff, element=None, tag = None):
     bonds = []
     for i in range(len(atoms)):
         for a in n_list[i]:
-            if (element is not None and atoms[i].symbol != element) or\
+            if (element is not None and atoms[i].symbol != element) or \
                     (tag is not None and atoms[i].tag != tag):
                 break
             bonds.append(atoms.get_distance(i, a))

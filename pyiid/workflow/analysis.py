@@ -109,13 +109,17 @@ def plot_angle(sim, cut, save_file=None, show=True):
                                    tag=tags[tag][0]), bins=bins)
                 if False:
                     pass
-                # if np.alltrue(stru_l[key].pbc):
+                    # if np.alltrue(stru_l[key].pbc):
                     # crystal
                     # for y, x in zip(a, b[:-1]):
                     #     plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
                 else:
                     total = np.sum(a)
-                    plt.plot(b[:-1], a, label='{0} {1} {2}, total: {3}'.format(key, symbol, tag, total),
+                    plt.plot(b[:-1], a,
+                             label='{0} {1} {2}, total: {3}'.format(key,
+                                                                    symbol,
+                                                                    tag,
+                                                                    total),
                              marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond angle in Degrees')
     plt.xlim(0, 180)
@@ -169,7 +173,7 @@ def plot_coordination(sim, cut, save_file=None, show=True):
     if b_min == b_max:
         bins = np.asarray([b_min, b_max])
     else:
-        bins = np.arange(b_min, b_max+2)
+        bins = np.arange(b_min, b_max + 2)
     print bins
     width = 3. / 4 / len(stru_l)
     offset = .3 * 3 / len(stru_l)
@@ -191,7 +195,9 @@ def plot_coordination(sim, cut, save_file=None, show=True):
                 print b[:-1]
                 total = np.sum(a)
                 ax.bar(b[:-1] + n * offset, a, width, bottom=bottoms[:-1],
-                       color=colors[n], label='{0} {1} {2}, total: {3}'.format(key, symbol, tag, total),
+                       color=colors[n],
+                       label='{0} {1} {2}, total: {3}'.format(key, symbol, tag,
+                                                              total),
                        hatch=hatch)
                 j += 1
                 bottoms[:-1] += a
@@ -247,8 +253,9 @@ def plot_bonds(sim, cut, save_file=None, show=True):
                 bonds = get_bond_dist_list(
                     stru_l[key], cut, element=symbol, tag=tags[tag][0])
                 a, b = np.histogram(bonds, bins=10)
-                plt.plot(b[:-1], a, linestyles[k], label=key + ' ' + symbol + ' ' + tag,
-                             marker=tags[tag][1], color=colors[n])
+                plt.plot(b[:-1], a, linestyles[k],
+                         label=key + ' ' + symbol + ' ' + tag,
+                         marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond distance in angstrom')
     plt.ylabel('Bond Counts')
     plt.legend(loc='best')

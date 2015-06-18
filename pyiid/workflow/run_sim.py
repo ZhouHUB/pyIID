@@ -20,7 +20,6 @@ from pyiid.calc.fqcalc import FQCalc
 from pyiid.utils import load_gr_file
 
 
-
 # We would like to have a way to setup and run the simulation, collecting
 # metadata along the way, analyze the results, keep track of comments, and
 # where all the files went/are going.  This should be loadable, giving us the
@@ -32,11 +31,12 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
                    sim_dict=None, exp_dict=None, rattle=(.001, 42),
                    comments=None, rmin=None, rmax=None):
     db_path = os.path.split(db_name)[0]
-    run_db = {'exp_type': exp_type, 'exp_files': exp_files, 'exp_dict':exp_dict,
+    run_db = {'exp_type': exp_type, 'exp_files': exp_files,
+              'exp_dict': exp_dict,
               'calcs': calcs, 'sim_dict': sim_dict, 'comments': comments,
               'rattle': rattle}
     if type(starting_structure) is str:
-        run_db['starting_structure']= starting_structure
+        run_db['starting_structure'] = starting_structure
     try:
         # Load in the "experimental" data to match against
         fobs = None
@@ -131,7 +131,7 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
         run_db['Start Potential Energy'] = start_atoms.get_potential_energy()
         run_db['Start Kinetic Energy'] = start_atoms.get_kinetic_energy()
 
-            # clean up NP arrays
+        # clean up NP arrays
         for calc_dict in calcs:
             if calc_dict['name'] in supported_calcs.keys():
                 if calc_dict['name'] is 'PDF':
@@ -166,7 +166,6 @@ def run_simulation(db_name, exp_type, exp_files, starting_structure, calcs,
                     'Final Kinetic Energy'] = traj[-1].get_kinetic_energy()
     except KeyboardInterrupt:
         pass
-
 
 
 def restart_sim(db_name, db_entry):
@@ -256,8 +255,10 @@ def restart_sim(db_name, db_entry):
     except KeyboardInterrupt:
         pass
 
+
 if __name__ == '__main__':
     from pyiid.utils import build_sphere_np
+
     exp_dict = {
         'qmin': 0.0,
         'qmax': 25.,
@@ -271,7 +272,9 @@ if __name__ == '__main__':
         {'name': 'PDF', 'kwargs': {'conv': 300, 'potential': 'rw'}},
         # {'name': 'FQ', 'kwargs': {'conv': 50, 'potential': 'rw'}},
         # {'name': 'Spring', 'kwargs': {'k': 100, 'rt': exp_dict['rmin']}},
-        {'name': 'LAMMPS', 'kwargs': {'lmpcmds':["pair_style eam/alloy", "pair_coeff * * "+'/mnt/work-data/dev/IID_data/examples/Au/Au_sheng.eam'+" "+"Au"], 'logfile':'test.log'}}
+        {'name': 'LAMMPS', 'kwargs': {'lmpcmds': ["pair_style eam/alloy",
+                                                  "pair_coeff * * " + '/mnt/work-data/dev/IID_data/examples/Au/Au_sheng.eam' + " " + "Au"],
+                                      'logfile': 'test.log'}}
     ]
     '''
     run_simulation(
@@ -300,7 +303,8 @@ if __name__ == '__main__':
 
     # 2nm Au
     # atomsio = build_sphere_np('/mnt/work-data/dev/IID_data/examples/Au/2_nm/1100138.cif', 20/2.)
-    atomsio = aseio.read('/mnt/work-data/dev/IID_data/db_test/PDF_Spring_1541.traj')
+    atomsio = aseio.read(
+        '/mnt/work-data/dev/IID_data/db_test/PDF_Spring_1541.traj')
     run_simulation(
         '/mnt/work-data/dev/IID_data/db_test/test.json',
         'x-ray total scatter',
@@ -312,6 +316,6 @@ if __name__ == '__main__':
         # rattle=(.001, 0),
         rattle=None,
         comments='2nm Au using spring starting and lammps',
-        rmin = 2.5, rmax = 25.
+        rmin=2.5, rmax=25.
     )
-        # '''
+    # '''

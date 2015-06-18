@@ -126,6 +126,7 @@ def get_normalization_array(norm_array, scat, offset):
         return
     norm_array[tx, ty, kq] = scat[tx + offset, kq] * scat[ty, kq]
 
+
 # Gradient kernels -----------------------------------------------------------
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4])
@@ -245,19 +246,19 @@ def fq_grad_step_4(grad_p, cos_term):
     for tz in range(3):
         grad_p[tx, ty, tz, kq] *= cos_term[tx, ty, kq]
 
+
 # General Kernels ------------------------------------------------------------
 @cuda.jit(argtypes=[f4[:], f4[:, :, :]])
 def gpu_reduce_3D_to_1D(reduced, A):
-
     threadi = cuda.grid(1)
 
     if threadi >= A.shape[2]:
         return
     reduced[threadi] = A[:, :, threadi].sum()
 
+
 @cuda.jit(argtypes=[f4[:, :], f4[:, :, :]])
 def gpu_reduce_3D_to_2D(reduced, A):
-
     threadi, threadj = cuda.grid(2)
 
     if threadi >= A.shape[0] or threadj >= A.shape[2]:
@@ -267,7 +268,6 @@ def gpu_reduce_3D_to_2D(reduced, A):
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def gpu_reduce_2D_to_1D(reduced, A):
-
     threadi = cuda.grid(1)
 
     if threadi >= A.shape[1]:
@@ -275,9 +275,8 @@ def gpu_reduce_2D_to_1D(reduced, A):
     reduced[threadi] = A[:, threadi].sum()
 
 
-@cuda.jit(argtypes=[f4[:,:,:], f4[:, :, :, :]])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :, :]])
 def gpu_reduce_4D_to_3D(reduced, A):
-
     imax, _, jmax, kmax = A.shape
     i, j, k = cuda.grid(3)
 
@@ -286,7 +285,7 @@ def gpu_reduce_4D_to_3D(reduced, A):
     reduced[i, j, k] = A[i, :, j, k].sum()
 
 
-@cuda.jit(argtypes=[f4[:,:,:]])
+@cuda.jit(argtypes=[f4[:, :, :]])
 def zero_3D(A):
     tx, ty, kq = cuda.grid(3)
 
@@ -298,7 +297,8 @@ def zero_3D(A):
         return
     A[tx, ty, kq] = 0.0
 
-@cuda.jit(argtypes=[f4[:,:,:,:]])
+
+@cuda.jit(argtypes=[f4[:, :, :, :]])
 def zero_4D(A):
     tx, ty, kq = cuda.grid(3)
 
@@ -312,7 +312,7 @@ def zero_4D(A):
         A[tx, ty, tz, kq] = 0.0
 
 
-@cuda.jit(argtypes=[f4[:,:,:], f4[:,:,:], f4[:,:], f4[:,:]])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :], f4[:, :]])
 def spring_force(direction, d, r, mag):
     tx, ty = cuda.grid(2)
 
@@ -320,4 +320,4 @@ def spring_force(direction, d, r, mag):
     if tx >= n or ty >= n:
         return
     for tz in range(3):
-        direction[tx, ty, tz] = d[tx, ty, tz]/r[tx, ty] * mag[tx, ty]
+        direction[tx, ty, tz] = d[tx, ty, tz] / r[tx, ty] * mag[tx, ty]
