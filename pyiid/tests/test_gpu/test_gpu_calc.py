@@ -22,13 +22,13 @@ def test_calc_rw():
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
             gpu = atoms2.get_potential_energy()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             calc.calculate_energy(atoms2)
             atoms2.set_calculator(calc)
             cpu = atoms2.get_potential_energy()
@@ -51,13 +51,13 @@ def test_calc_chi_sq():
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)
             gpu = atoms2.get_potential_energy()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)
             cpu = atoms2.get_potential_energy()
 
@@ -79,13 +79,13 @@ def test_calc_grad_rw():
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
             gpu = atoms2.get_forces()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
             cpu = atoms2.get_forces()
 
@@ -107,13 +107,13 @@ def test_calc_grad_chi_sq():
 
             scat.set_processor('Multi-GPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)
             gpu = atoms2.get_forces()
 
             scat.set_processor('Serial-CPU')
             gobs = scat.get_pdf(atoms)
-            calc = PDFCalc(gobs=gobs, scatter=scat, potential='chi_sq')
+            calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)
             cpu = atoms2.get_forces()
 

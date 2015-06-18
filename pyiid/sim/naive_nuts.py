@@ -135,7 +135,7 @@ if __name__ == '__main__':
     s = ElasticScatter()
     gobs = s.get_pdf()
 
-    calc = PDFCalc(gobs=gobs, scatter=s, conv=100, potential='rw')
+    calc = PDFCalc(obs_data=gobs, scatter=s, conv=100, potential='rw')
     start_atoms.set_calculator(calc)
     print start_atoms.get_potential_energy()
     

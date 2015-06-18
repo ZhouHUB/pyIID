@@ -1,39 +1,12 @@
+from pyiid.sim import leapfrog
+
 __author__ = 'christopher'
-from numbapro import autojit
 
 from ase.atoms import Atoms as atoms
 from copy import deepcopy as dc
 import numpy as np
 
-Emax = 500
-
-
-# @autojit(target='cpu')
-def leapfrog(atoms, step):
-    """
-    Propagate the dynamics of the system via the leapfrog algorithm one step
-
-    Parameters
-    -----------
-    atoms: ase.Atoms ase.Atoms
-        The atomic configuration for the system
-    step: float
-        The step size for the simulation, the new momentum/velocity is step *
-        the force
-
-    Returns
-    -------
-    ase.Atoms
-        The new atomic positions and velocities
-    """
-    latoms = dc(atoms)
-
-    latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-
-    latoms.positions += step * latoms.get_velocities()
-
-    latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-    return latoms
+Emax = 200
 
 
 def find_step_size(input_atoms):
@@ -58,6 +31,9 @@ def find_step_size(input_atoms):
 
 
 def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
+    atoms.set_momenta(np.random.normal(0, p_scale, (len(atoms), 3)))
+    if wtraj is not None:
+        wtraj.write(atoms)
     traj = [atoms]
 
     atoms0 = dc(atoms)
@@ -75,8 +51,7 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     try:
         while m <= iterations:
             print 'step', step_size
-            rand_momenta = np.random.normal(0, p_scale, (len(atoms), 3))
-            atoms.set_momenta(rand_momenta)
+            atoms.set_momenta(np.random.normal(0, p_scale, (len(atoms), 3)))
             # u = np.random.uniform(0, np.exp(-1.*traj[-1].get_total_energy()))
             e0 = traj[-1].get_total_energy()
             u = np.random.uniform(0, 1)
@@ -116,26 +91,28 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
 
             m += 1
     except KeyboardInterrupt:
+        if m == 0:
+            m = 1
         pass
     print '\n\n\n'
     print 'number of leapfrog samples', samples_total
-    print 'number of successful leapfrog samples', len(traj)
+    print 'number of successful leapfrog samples', len(traj) - 1
     print 'percent of good leapfrog samples', float(
-        len(traj)) / samples_total * 100, '%'
+        len(traj) - 1) / samples_total * 100, '%'
     print 'number of leapfrog per iteration, average', float(samples_total) / m
     print 'number of good leapfrog per iteration, average', float(
-        len(traj)) / m
-    return traj
+        len(traj) - 1) / m
+    return traj, samples_total, float(samples_total) / m
 
 
 # @autojit(target='cpu')
 def buildtree(input_atoms, u, v, j, e, atoms0, e0):
     if j == 0:
         atoms_prime = leapfrog(input_atoms, v * e)
-        delta_energy = e0 - atoms_prime.get_total_energy()
+        neg_delta_energy = e0 - atoms_prime.get_total_energy()
         try:
-            exp1 = np.exp(delta_energy)
-            exp2 = np.exp(Emax + delta_energy)
+            exp1 = np.exp(neg_delta_energy)
+            exp2 = np.exp(Emax + neg_delta_energy)
         except:
             exp1 = 0
             exp2 = 0
@@ -143,7 +120,7 @@ def buildtree(input_atoms, u, v, j, e, atoms0, e0):
         # n_prime = int(u <= np.exp(-atoms_prime.get_total_energy()))
         # s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
         n_prime = int(u <= exp1)
-        s_prime = int(u <= exp2)
+        s_prime = int(u < exp2)
         return atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime, min(1,
                                                                             np.exp(
                                                                                 -atoms_prime.get_total_energy() + input_atoms.get_total_energy())), 1
@@ -175,37 +152,33 @@ def buildtree(input_atoms, u, v, j, e, atoms0, e0):
 
 
 if __name__ == '__main__':
-    import os
     from copy import deepcopy as dc
     import numpy as np
     import matplotlib.pyplot as plt
     from ase.visualize import view
-    from ase.io.trajectory import PickleTrajectory
-    import ase.io as aseio
-    import time
-    import datetime
-    import math
     from ase.atoms import Atoms
 
     from pyiid.wrappers.elasticscatter import ElasticScatter
     from pyiid.calc.pdfcalc import PDFCalc, wrap_rw
-    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, \
-        time_est
 
-    ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    ideal_atoms = Atoms('Sn2O2', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    ideal_atoms.set_masses([1, 1, 1, 1])
+    # ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
     start_atoms = dc(ideal_atoms)
-    start_atoms.positions *= 1.05
+    start_atoms.positions *= 1.02
     s = ElasticScatter()
-    gobs = s.get_pdf()
+    gobs = s.get_pdf(ideal_atoms)
 
-    calc = PDFCalc(gobs=gobs, scatter=s, conv=100, potential='rw')
+    calc = PDFCalc(obs_data=gobs, scatter=s, conv=100, potential='rw')
     start_atoms.set_calculator(calc)
     print start_atoms.get_potential_energy()
 
     e = .8e-2
     M = 10
 
-    traj = nuts(start_atoms, 0.65, M)
+    traj, _, _ = nuts(start_atoms, 0.65, M, p_scale=1)
+
     pe_list = []
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())

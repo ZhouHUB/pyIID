@@ -1,6 +1,7 @@
 __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
+import math
 
 from pyiid.wrappers.elasticscatter import ElasticScatter, wrap_atoms
 from pyiid.kernels.master_kernel import get_rw, grad_pdf, get_grad_rw, \
@@ -158,19 +159,26 @@ class PDFCalc(Calculator):
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
                  atoms=None,
-                 gobs=None, scatter=None, exp_dict=None,
+                 obs_data=None, scatter=None, exp_dict=None,
                  conv=1., potential='rw', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
+        self.scale = 1
         if scatter is None:
             self.scatter = ElasticScatter(exp_dict)
         else:
             self.scatter = scatter
+        self.exp_dict = self.scatter.exp
         self.rw_to_eV = conv
 
-        if gobs is not None:
-            self.gobs = gobs
+        if obs_data is not None and exp_dict is not None:
+            if len(np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])) < len(obs_data):
+                obs_data = obs_data[:self.exp_dict['rmax']/self.exp_dict['rstep']]
+                obs_data = obs_data[self.exp_dict['rmin']/self.exp_dict['rstep']:]
+            self.gobs = obs_data
+        elif obs_data is not None:
+            self.gobs = obs_data
         else:
             raise NotImplementedError('Need an experimental PDF')
 
@@ -223,6 +231,7 @@ class PDFCalc(Calculator):
         :return:
         """
         energy, scale = self.potential(self.scatter.get_pdf(atoms), self.gobs)
+        self.scale = scale
         self.energy_free = energy * self.rw_to_eV
         self.energy_zero = energy * self.rw_to_eV
 
@@ -234,7 +243,7 @@ class PDFCalc(Calculator):
                            self.scatter.get_pdf(atoms),
         self.gobs) * self.rw_to_eV
 
-        self.results['forces'] = forces
+        self.results['forces'] = forces #* atoms.get_masses().reshape(-1, 1)
 
 
 if __name__ == '__main__':
@@ -248,7 +257,7 @@ if __name__ == '__main__':
     # ideal_atoms.pbc = False
     # wrap_atoms(ideal_atoms)
 
-    n = 400
+    n = 4
     pos = np.random.random((n, 3)) * 10.
     ideal_atoms = Atoms('Au' + str(n), pos)
     exp_dict = {'qmin': 0.0, 'qmax': 25.,
@@ -259,8 +268,9 @@ if __name__ == '__main__':
     gobs = scat.get_pdf(ideal_atoms)
 
     # calc1 = PDFCalc(gobs=gobs, scatter=scat)
-    calc1 = PDFCalc(gobs=gobs, scatter=scat, potential='rw')
-    ideal_atoms.set_calculator(calc1)
-    ideal_atoms.positions *= 1.5
+    calc1 = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
+    print calc1.scale
+    # ideal_atoms.set_calculator(calc1)
+    # ideal_atoms.positions *= 1.5
     # print ideal_atoms.get_potential_energy()
-    print ideal_atoms.get_forces()
+    # print ideal_atoms.get_forces()

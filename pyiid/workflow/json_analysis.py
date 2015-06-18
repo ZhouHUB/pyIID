@@ -11,7 +11,6 @@ from pyiid.calc.pdfcalc import wrap_rw
 from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
 
-from simdb.search import *
 
 font = {'family': 'normal',
         # 'weight' : 'bold',
@@ -29,18 +28,15 @@ plt.ion()
 # In short a proto-DB, possibly written in json.
 
 
-def plot_pdf(sim, save_file=None, show=True, sl='last'):
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    calc, = find_calc_document(_id=calc.id)
+def plot_pdf(db_entry, save_file=None, show=True, sl='last'):
+    scatter = ElasticScatter(db_entry['exp_dict'])
+    if db_entry['exp_type'] == 'theory':
+        ideal_atoms = aseio.read(str(db_entry['exp_files']))
+        gobs = scatter.get_pdf(ideal_atoms)
+    else:
+        r, gobs, exp_dict = load_gr_file(str(db_entry['exp_files']), **db_entry['exp_dict'])
 
-    scatter = calc.payload.scatter
-    gobs = calc.payload.gobs
-
-    atoms, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atoms.file_payload
+    traj = PickleTrajectory(db_entry['traj loc'])
     start_atoms = traj[0]
     print 'Start Rw', wrap_rw(scatter.get_pdf(start_atoms), gobs)[0] * 100, '%'
 
@@ -78,19 +74,11 @@ def plot_pdf(sim, save_file=None, show=True, sl='last'):
     return
 
 
-def plot_angle(sim, cut, save_file=None, show=True):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def plot_angle(db_entry, cut, save_file=None, show=True):
+    traj = PickleTrajectory(str(db_entry['traj loc']), 'r')
     stru_l = {}
-    # If the PDF document created with atomic config, use that as target
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    # If we used a theoretical target structure, get it and name it
-    # if calc.ase_config_id is not None:
-    #     target_atoms, = find_atomic_config_document(_id=calc.ase_config_id)
-    #     stru_l['Target'] = target_atoms.file_payload
+    if db_entry['exp_type'] == 'theory':
+        stru_l['Target'] = aseio.read(str(db_entry['exp_files']))
 
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
@@ -136,29 +124,22 @@ def plot_angle(sim, cut, save_file=None, show=True):
         plt.show()
 
 
-def plot_coordination(sim, cut, save_file=None, show=True):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def plot_coordination(db_entry, cut, save_file=None, show=True):
+    traj = PickleTrajectory(str(db_entry['traj loc']), 'r')
     stru_l = {}
-    # If the PDF document created with atomic config, use that as target
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    # If we used a theoretical target structure, get it and name it
-    # if calc.ase_config_id is not None:
-    #     target_atoms, = find_atomic_config_document(_id=calc.ase_config_id)
-    #     stru_l['Target'] = target_atoms.file_payload
+    if db_entry['exp_type'] == 'theory':
+        stru_l['Target'] = aseio.read(str(db_entry['exp_files']))
+
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
     for atoms in stru_l.values():
         tag_surface_atoms(atoms, cut)
 
-    symbols = set(stru_l.itervalues().next().get_chemical_symbols())
+    symbols = set(stru_l['Start'].get_chemical_symbols())
     tags = {'Core': (0, '+'), 'Surface': (1, '*')}
     for tag in tags.keys():
-        tagged_atoms = stru_l.itervalues().next()[
-            [atom.index for atom in stru_l.itervalues().next() if
+        tagged_atoms = stru_l['Start'][
+            [atom.index for atom in stru_l['Start'] if
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
@@ -179,7 +160,7 @@ def plot_coordination(sim, cut, save_file=None, show=True):
     print bins
     width = 3. / 4 / len(stru_l)
     offset = .3 * 3 / len(stru_l)
-    patterns = ('x', '\\', 'o', '.', '\\', '*')
+    patterns = ('x', '\\', 'o', '.')
     colors = ['grey', 'mediumseagreen', 'c', 'y', 'red', 'blue']
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -217,19 +198,11 @@ def plot_coordination(sim, cut, save_file=None, show=True):
     return
 
 
-def plot_bonds(sim, cut, save_file=None, show=True):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def plot_bonds(db_entry, cut, save_file=None, show=True):
+    traj = PickleTrajectory(str(db_entry['traj loc']), 'r')
     stru_l = {}
-    # If the PDF document created with atomic config, use that as target
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    # If we used a theoretical target structure, get it and name it
-    # if calc.ase_config_id is not None:
-    #     target_atoms, = find_atomic_config_document(_id=calc.ase_config_id)
-    #     stru_l['Target'] = target_atoms.file_payload
+    if db_entry['exp_type'] == 'theory':
+        stru_l['Target'] = aseio.read(str(db_entry['exp_files']))
 
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
@@ -245,14 +218,13 @@ def plot_bonds(sim, cut, save_file=None, show=True):
         if len(tagged_atoms) == 0:
             del tags[tag]
     colors = ['c', 'm', 'y', 'k']
-    linestyles = ['-', '--', ':']
     for n, key in enumerate(stru_l.keys()):
-        for k, symbol in enumerate(symbols):
+        for symbol in symbols:
             for tag in tags.keys():
-                bonds = get_bond_dist_list(
-                    stru_l[key], cut, element=symbol, tag=tags[tag][0])
+                bonds = get_bond_dist_list(stru_l[key], cut, element=symbol,
+                                   tag=tags[tag][0])
                 a, b = np.histogram(bonds, bins=10)
-                plt.plot(b[:-1], a, linestyles[k], label=key + ' ' + symbol + ' ' + tag,
+                plt.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
                              marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond distance in angstrom')
     plt.ylabel('Bond Counts')
@@ -266,9 +238,8 @@ def plot_bonds(sim, cut, save_file=None, show=True):
         plt.show()
 
 
-def ase_view(sim):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def ase_view(db_entry):
+    traj = PickleTrajectory(db_entry['traj loc'], 'r')[:]
     view(traj)
 
 

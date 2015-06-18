@@ -121,7 +121,7 @@ if __name__ == '__main__':
     js = np.linspace(0, 150, 10)
     for j in js:
         print j
-        calc1 = PDFCalc(gobs=gobs, qbin=.1, conv=j, potential='rw')
+        calc1 = PDFCalc(obs_data=gobs, qbin=.1, conv=j, potential='rw')
         calc_list = [
             calc1,
             calc2

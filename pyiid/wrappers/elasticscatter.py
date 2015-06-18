@@ -208,7 +208,8 @@ def wrap_atoms(atoms, exp_dict=None):
     for i in range(len(e_set)):
         scatter_array[
         np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
-
+    if 'F(Q) scatter' in atoms.arrays.keys():
+        del atoms.arrays['F(Q) scatter']
     atoms.set_array('F(Q) scatter', scatter_array)
 
     # PDF version
@@ -220,8 +221,10 @@ def wrap_atoms(atoms, exp_dict=None):
     for i in range(len(e_set)):
         scatter_array[
         np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
-
+    if 'PDF scatter' in atoms.arrays.keys():
+        del atoms.arrays['PDF scatter']
     atoms.set_array('PDF scatter', scatter_array)
+
     atoms.info['exp'] = exp_dict
 
 

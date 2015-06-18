@@ -1,33 +1,27 @@
 __author__ = 'christopher'
-import os
 from ase.io.trajectory import PickleTrajectory
 
-from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.sim.nuts_hmc import nuts
 
-from pyiid.calc.multi_calc import MultiCalc
-
-from pyiid.calc.pdfcalc import PDFCalc
-from pyiid.calc.fqcalc import FQCalc
-from pyiid.calc.spring_calc import Spring
-from ase.calculators.lammpslib import LAMMPSlib
-
-from simdb.odm_templates import Simulation
 from simdb.search import *
+from simdb.insert import *
+from simdb.handlers import FileLocation
+
+from filestore.retrieve import handler_context
+import filestore.commands as fsc
 
 
-def run_simulation(Simulation):
-
+def run_simulation(sim):
     # Load info from simulation request
-    sim_params, = find_simulation_parameter_document(_id=Simulation.params.id)
+    sim_params, = find_simulation_parameter_document(_id=sim.params.id)
 
-    #TODO: Throw in some statments about timeouts etc.
+    # TODO: Throw in some statments about timeouts etc.
     iterations = sim_params.iterations
     target_acceptance = sim_params.target_acceptance
     ensemble_temp = sim_params.temperature
 
     # Load Atoms
-    atoms_entry, = find_atomic_config_document(_id=id(Simulation.atoms))
+    atoms_entry, = find_atomic_config_document(_id=sim.atoms.id)
     traj = atoms_entry.file_payload
 
     # now we have 3 options:
@@ -40,35 +34,57 @@ def run_simulation(Simulation):
     # continue (more than one atomic configurations in the trajectory)
 
     # 1)
-    if sim_params.continue_sim and type(traj) == list:
+    if sim_params.continue_sim and isinstance(traj, list):
         # Give back the final configuration
         atoms = traj[-1]
         # Search filestore and get the file_location
-
+        with handler_context({'ase': FileLocation}):
+            atoms_file_location = fsc.retrieve(atoms_entry.file_uid)
         wtraj = PickleTrajectory(atoms_file_location, 'a')
     # 2)
-    elif type(traj) == list and not sim_params.continue_sim:
+    elif isinstance(traj, list) and not sim_params.continue_sim:
         # Give back the initial config
         atoms = traj[0]
         # Generate new file location and save it to filestore
+        new_atoms_entry = insert_atom_document(
+            atoms_entry.name + '_' + sim.name, atoms)
+
+        with handler_context({'ase': FileLocation}):
+            new_file_location = fsc.retrieve(new_atoms_entry.file_uid)
         wtraj = PickleTrajectory(new_file_location, 'w')
+        sim.atoms = new_atoms_entry
+        sim.save()
     # 3)
     else:
-        atoms = traj
+        atoms = traj[-1]
         # Search filestore and get the file_location
+        with handler_context({'ase': FileLocation}):
+            atoms_file_location = fsc.retrieve(atoms_entry.file_uid)
         wtraj = PickleTrajectory(atoms_file_location, 'a')
 
     # Create Calculators
-    pes, = find_pes_document(_id=Simulation.pes.id)
+    pes, = find_pes_document(_id=sim.pes.id)
     master_calc = pes.payload
 
     # Attach MulitCalc to atoms
-    atoms.append(master_calc)
+    atoms.set_calculator(master_calc)
     # Rattle atoms if built from scratch
     atoms.rattle()
+
+    sim.start_total_energy = atoms.get_total_energy()
+    sim.start_potential_energy = atoms.get_potential_energy()
+    sim.start_kinetic_energy = atoms.get_kinetic_energy()
+    sim.start_time = ttime.time()
+    sim.ran = True
+    sim.save()
+
     # Simulate
     # TODO: eventually support different simulation engines
-    out_traj = nuts(atoms, target_acceptance, iterations,
-                    ensemble_temp, wtraj)
-
-# Write info to DB
+    out_traj, samples, l_p_i = nuts(atoms, target_acceptance, iterations,
+                                    ensemble_temp, wtraj)
+    sim.end_time = ttime.time()
+    sim.total_samples = samples
+    sim.leapfrog_per_iter = l_p_i
+    sim.finished = True
+    # Write info to DB
+    sim.save()

@@ -195,7 +195,7 @@ def get_rw(gobs, gcalc, weight=None):
     scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
     np.seterr(**old_settings)
     if scale <= 0:
-        return 1, -1
+        return 1, 1
     else:
         top = np.sum(weight[:] * (gobs[:] - scale * gcalc[:]) ** 2)
         bottom = np.sum(weight[:] * gobs[:] ** 2)
@@ -310,6 +310,7 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
         for tz in range(3):
             if scale <= 0:
                 grad_a = 0
+                scale = 1
             else:
                 grad_a = (-scale * 2 * np.dot(gcalc.T,
                                               grad_pdf[tx, tz, :]) + np.dot(
