@@ -10,7 +10,7 @@ from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
 
 
 def count_nodes():
-    fileloc = os.getenv("PBS_NODEFILE")
+    fileloc = os.environ("PBS_NODEFILE")
     if fileloc is None:
         return None
     else:
@@ -134,25 +134,16 @@ if __name__ == '__main__':
     # import cProfile
     # cProfile.run('''
     from ase.atoms import Atoms
-    import os
     from pyiid.wrappers.elasticscatter import wrap_atoms
-    import matplotlib.pyplot as plt
-    import sys
-
-    sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
     # n = 400
     # pos = np.random.random((n, 3)) * 10.
     # atoms = Atoms('Au' + str(n), pos)
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms, exp_dict)
+    wrap_atoms(atoms, None)
 
     # fq = wrap_fq(atoms)
     # print fq
-    pdf, fq = wrap_pdf(atoms)
-    grad_fq = wrap_fq_grad(atoms)
-    print grad_fq
-    plt.plot(pdf), plt.show()
-    # for i in range(10):
-    # gfq = wrap_fq_grad_gpu(atomsio)
-    # ''', sort='tottime')
+    grad_fq = wrap_fq_grad(atoms, atoms.info['Qbin'])
+    print grad_fq[:, :, 1]
+    # raw_input()

@@ -10,14 +10,20 @@ class Spring(Calculator):
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
-                 atoms=None, k=10, rt=1.5, **kwargs):
+                 atoms=None, k=10, rt=1.5, sp_type='rep', **kwargs):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
 
-        from pyiid.wrappers.cpu_wrap import spring_nrg, spring_force
-        self.nrg_func = spring_nrg
-        self.f_func = spring_force
+        if sp_type == 'rep':
+            from pyiid.wrappers.cpu_wrap import spring_nrg as nrg
+            from pyiid.wrappers.cpu_wrap import spring_force as force
+        if sp_type == 'com':
+            from pyiid.wrappers.cpu_wrap import com_spring_nrg as nrg
+            from pyiid.wrappers.cpu_wrap import com_spring_force as force
+        self.nrg_func = nrg
+        self.f_func = force
+        self.sp_type = sp_type
         self.k = k
         self.rt = rt
 

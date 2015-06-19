@@ -159,6 +159,7 @@ def spring_force(atoms, k, rt):
     get_r_array(r, d)
 
     thresh = np.less(r, rt)
+
     for i in range(len(thresh)):
         thresh[i, i] = False
 
@@ -173,3 +174,34 @@ def spring_force(atoms, k, rt):
     direction[np.isnan(direction)] = 0.0
     direction = np.sum(direction, axis=1)
     return direction
+
+
+def com_spring_nrg(atoms, k, rt):
+    com = atoms.get_center_of_mass()
+    q = atoms.positions
+    disp = q - com
+    dist = np.sqrt(np.sum(disp**2, axis=1))
+    thresh = np.greater(dist, rt)
+    mag = np.zeros(len(atoms))
+
+    mag[thresh] = k * (dist[thresh] - rt)
+    energy = np.sum(mag[thresh] / 2. * (dist[thresh] - rt))
+    return energy
+
+def com_spring_force(atoms, k, rt):
+    com = atoms.get_center_of_mass()
+    q = atoms.positions
+    disp = q - com
+    dist = np.sqrt(np.sum(disp**2, axis=1))
+    thresh = np.greater(dist, rt)
+    mag = np.zeros(len(atoms))
+
+    mag[thresh] = k * (dist[thresh] - rt)
+
+    direction = np.zeros(q.shape)
+    old_settings = np.seterr(all='ignore')
+    for tz in range(3):
+        direction[thresh, tz] = disp[thresh, tz] / dist[thresh] * mag[thresh]
+    np.seterr(**old_settings)
+
+    return direction * -1.

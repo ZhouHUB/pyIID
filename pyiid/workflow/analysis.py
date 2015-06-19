@@ -12,7 +12,8 @@ from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
 
 from simdb.search import *
-
+from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
+    GetLayerNumbers
 font = {'family': 'normal',
         # 'weight' : 'bold',
         'size': 18}
@@ -272,6 +273,24 @@ def ase_view(sim):
     atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
     traj = atomic_config.file_payload
     view(traj)
+
+
+def plot_radial_bond_length(atoms, cut):
+    com = atoms.get_center_of_mass()
+    n_list = list(FullNeighborList(cut, atoms))
+    dist_from_center = []
+    bond_lengths = []
+    ave = []
+    std = []
+    for i, coord in enumerate(n_list):
+        for j in coord:
+            dist_from_center.append(np.sqrt(np.sum((atoms[i].position - com))**2))
+            bond_lengths.append(atoms.get_distance(i, j))
+        ave.append(np.mean(bond_lengths))
+        std.append(np.std(bond_lengths))
+    fig = plt.figure()
+    plt.scatter(dist_from_center, bond_lengths)
+    plt.show()
 
 
 if __name__ == '__main__':
