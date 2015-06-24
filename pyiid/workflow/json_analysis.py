@@ -10,6 +10,8 @@ from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc import wrap_rw
 from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
+import os
+
 
 font = {'family': 'normal',
         # 'weight' : 'bold',
@@ -56,11 +58,12 @@ def plot_pdf(db_entry, save_file=None, show=True, sl='last'):
     baseline = -1 * np.abs(1.5 * gobs.min())
     gdiff = gobs - gcalc * scale
 
-    plt.figure()
-    plt.plot(r, gobs, 'bo', label="G(r) data")
-    plt.plot(r, gcalc * scale, 'r-', label="G(r) fit")
-    plt.plot(r, gdiff + baseline, 'g-', label="G(r) diff")
-    plt.plot(r, np.zeros_like(r) + baseline, 'k:')
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(r, gobs, 'bo', label="G(r) data")
+    ax.plot(r, gcalc * scale, 'r-', label="G(r) fit")
+    ax.plot(r, gdiff + baseline, 'g-', label="G(r) diff")
+    ax.plot(r, np.zeros_like(r) + baseline, 'k:')
     plt.xlabel(r"$r (\AA)$")
     plt.ylabel(r"$G (\AA^{-2})$")
     plt.legend()
@@ -93,9 +96,13 @@ def plot_angle(db_entry, cut, save_file=None, show=True):
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
+    if len(tags) == 1:
+        tags = {'': (1, '*')}
     colors = ['c', 'm', 'y', 'k']
     bins = np.linspace(0, 180, 100)
     # Bin the data
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     for n, key in enumerate(stru_l.keys()):
         for symbol in symbols:
             for tag in tags.keys():
@@ -109,12 +116,12 @@ def plot_angle(db_entry, cut, save_file=None, show=True):
                     # for y, x in zip(a, b[:-1]):
                     #     plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
                 else:
-                    plt.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
+                    ax.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
                              marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond angle in Degrees')
     plt.xlim(0, 180)
     plt.ylabel('Angle Counts')
-    plt.legend()
+    plt.legend(loc='best')
     if save_file is not None:
         plt.savefig(save_file + '_angle.eps', bbox_inches='tight',
                     transparent='True')
@@ -143,6 +150,8 @@ def plot_coordination(db_entry, cut, save_file=None, show=True):
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
+    if len(tags) == 1:
+        tags = {'': (1, '*')}
     b_min = None
     b_max = None
     for key in stru_l.keys():
@@ -217,14 +226,18 @@ def plot_bonds(db_entry, cut, save_file=None, show=True):
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
+    if len(tags) == 1:
+        tags = {'': (1, '*')}
     colors = ['c', 'm', 'y', 'k']
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     for n, key in enumerate(stru_l.keys()):
         for symbol in symbols:
             for tag in tags.keys():
                 bonds = get_bond_dist_list(stru_l[key], cut, element=symbol,
                                            tag=tags[tag][0])
                 a, b = np.histogram(bonds, bins=10)
-                plt.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
+                ax.plot(b[:-1], a, label=key + ' ' + symbol + ' ' + tag,
                          marker=tags[tag][1], color=colors[n])
     plt.xlabel('Bond distance in angstrom')
     plt.ylabel('Bond Counts')
@@ -242,6 +255,13 @@ def ase_view(db_entry):
     traj = PickleTrajectory(db_entry['traj loc'], 'r')[:]
     view(traj)
 
+
+def save_figs(db, nums, target_dir, cut):
+    for i in nums:
+        f_name = os.path.join(target_dir, str(db[i]['ID number']))
+        plot_pdf(db[i], f_name, show=False)
+        plot_coordination(db[i], cut, f_name, show=False)
+        plot_angle(db[i], cut, f_name, show=False)
 
 if __name__ == '__main__':
     from pyiid.workflow.db_utils import load_db

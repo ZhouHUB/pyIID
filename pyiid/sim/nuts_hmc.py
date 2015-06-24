@@ -11,7 +11,7 @@ Emax = 200
 
 def find_step_size(input_atoms):
     atoms = dc(input_atoms)
-    step_size = 1.5
+    step_size = .5
     # '''
     atoms.set_momenta(np.random.normal(0, 1, (len(atoms), 3)))
 
@@ -34,8 +34,9 @@ def find_step_size(input_atoms):
 def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     if wtraj is not None:
         atoms.set_momenta(np.random.normal(0, p_scale, (len(atoms), 3)))
-        atoms.get_forces()
-        atoms.get_potential_energy()
+        initial_vel = atoms.get_velocities()
+        initial_forces = atoms.get_forces()
+        initial_energy = atoms.get_potential_energy()
         wtraj.write(atoms)
     traj = [atoms]
 
@@ -89,6 +90,13 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                 j += 1
                 print 'iteration', m, 'depth', j, 'samples', 2 ** j
                 samples_total += 2 ** j
+                # Prevent run away sampling, EXPERIMENTAL
+                # If we have generated 8192 samples,
+                # then we are moving too slowly and should start a new iter
+                # hopefully with a larger step siez
+                if j >= 13:
+                    print 'jmax emergency escape at {}'.format(j)
+                    s = 0
             w = 1. / (m + t0)
             Hbar = (1 - w) * Hbar + w * (accept_target - a / na)
 

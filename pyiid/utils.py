@@ -12,7 +12,7 @@ from itertools import combinations
 
 import math
 # import tkFileDialog
-from pyiid.kernels.cpu_kernel import get_d_array
+from pyiid.kernels.cpu_kernel import get_d_array, get_r_array
 from copy import deepcopy as dc
 import time
 import datetime
@@ -138,7 +138,7 @@ def build_sphere_np(file, radius):
     return atoms
 
 
-def tag_surface_atoms(atoms, tag=1, tol=0):
+def tag_surface_atoms(atoms, tag=1, tol=0.5):
     """
     Find which are the surface atoms in a nanoparticle.
     ..note: We define the surface as a collection of atoms for which the
@@ -150,7 +150,21 @@ def tag_surface_atoms(atoms, tag=1, tol=0):
     :param atoms:
     :return:
     """
-    s_idx = GetLayerNumbers(atoms)
+    # '''
+    n = len(atoms)
+    d = np.zeros((n, n, 3))
+    q = atoms.positions
+    get_d_array(d, q)
+    r = np.zeros((n, n))
+    get_r_array(r, d)
+    for i in range(n):
+        r[i,i] = np.inf
+        r[i,i] = np.inf
+        r[i,i] = np.inf
+
+    rmin = np.min(r)
+    print rmin
+    s_idx = GetLayerNumbers(atoms, rmin)
     for i in range(len(atoms)):
         if s_idx[i] == 1:
             atoms[i].tag = tag
@@ -170,7 +184,7 @@ def tag_surface_atoms(atoms, tag=1, tol=0):
                 dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))
         if np.all(np.less_equal(dot, np.zeros(len(dot))+tol)):
             atoms[i].tag = tag
-    '''
+    # '''
 
 
 def add_ligands(ligand, surface, distance, coverage, head, tail):

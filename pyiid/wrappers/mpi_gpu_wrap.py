@@ -10,7 +10,7 @@ from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
 
 
 def count_nodes():
-    fileloc = os.environ("PBS_NODEFILE")
+    fileloc = os.environ["PBS_NODEFILE"]
     if fileloc is None:
         return None
     else:

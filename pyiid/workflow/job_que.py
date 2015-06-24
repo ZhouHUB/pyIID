@@ -20,7 +20,8 @@ while True:
     else:
         print 'Found {0} simulation enteries which have not been ran or flagged' \
               ' to be skipped'.format(len(sims))
-        for sim in sims:
+        # run the simulations in the order they were added.
+        for sim in reversed(sims):
             print 'start simulation number ', sim.id
             try:
                 run_simulation(sim)

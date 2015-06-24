@@ -58,16 +58,18 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
         # If the thread on the main node is done, or not started:
         # give a problem to it
         if p is None or p.is_alive() is False:
+            cuda.close()
             p = Thread(
                 target=sub_fq, args=(
-                    cuda.get_current_device(), q, scatter_array, thread_q,
+                    cuda.gpus.lst[0], q, scatter_array, thread_q,
                     qbin, m,
                     n_cov))
             p.start()
-
-        comm.recv(source=MPI.ANY_SOURCE, status=status)
-        comm.send(obj=msg, dest=status.Get_source())
-        n_cov += m
+        else:
+            comm.recv(source=MPI.ANY_SOURCE, status=status)
+            comm.send(obj=msg, dest=status.Get_source())
+        if type(m) == int:
+            n_cov += m
     p.join()
     # Make certain we have covered all the atoms
     assert n_cov == len(q)

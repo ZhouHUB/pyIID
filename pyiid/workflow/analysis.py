@@ -22,45 +22,25 @@ matplotlib.rc('font', **font)
 plt.ion()
 
 
-def plot_pdf(sim, save_file=None, show=True, sl='last'):
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    calc, = find_calc_document(_id=calc.id)
-
-    scatter = calc.payload.scatter
-    gobs = calc.payload.gobs
-
-    atoms, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atoms.file_payload
-    start_atoms = traj[0]
-    print 'Start Rw', wrap_rw(scatter.get_pdf(start_atoms), gobs)[0] * 100, '%'
-
-    if sl == 'last':
-        atoms = traj[-1]
-    elif type(sl) is int:
-        atoms = traj[sl]
-    elif sl == 'all':
-        raise NotImplementedError
-        # atoms = traj
+def plot_pdf(scatter, gobs, atoms, save_file=None, show=True, **kwargs):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
 
     gcalc = scatter.get_pdf(atoms)
     r = scatter.get_r()
 
     rw, scale = wrap_rw(gcalc, gobs)
-    print 'Final Rw', rw * 100, '%'
+    print 'Rw', rw * 100, '%'
 
     baseline = -1 * np.abs(1.5 * gobs.min())
     gdiff = gobs - gcalc * scale
 
-    plt.figure()
-    plt.plot(r, gobs, 'bo', label="G(r) data")
-    plt.plot(r, gcalc * scale, 'r-', label="G(r) fit")
-    plt.plot(r, gdiff + baseline, 'g-', label="G(r) diff")
-    plt.plot(r, np.zeros_like(r) + baseline, 'k:')
-    plt.xlabel(r"$r (\AA)$")
-    plt.ylabel(r"$G (\AA^{-2})$")
+    ax.plot(r, gobs, 'bo', label="G(r) data")
+    ax.plot(r, gcalc * scale, 'r-', label="G(r) fit")
+    ax.plot(r, gdiff + baseline, 'g-', label="G(r) diff")
+    ax.plot(r, np.zeros_like(r) + baseline, 'k:')
+    ax.set_xlabel(r"$r (\AA)$")
+    ax.set_ylabel(r"$G (\AA^{-2})$")
     plt.legend()
     if save_file is not None:
         plt.savefig(save_file + '_pdf.eps', bbox_inches='tight',
@@ -72,26 +52,70 @@ def plot_pdf(sim, save_file=None, show=True, sl='last'):
     return
 
 
-def plot_angle(sim, cut, save_file=None, show=True):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def plot_waterfall_pdf(scatter, gobs, traj, save_file=None, show=True, **kwargs):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    r = scatter.get_r()
+    # ax.plot(r, gobs, 'bo', label="G(r) data")
+    for i, atoms in enumerate(traj):
+        gcalc = scatter.get_pdf(atoms)
+        rw, scale = wrap_rw(gcalc, gobs)
+        print i, 'Rw', rw * 100, '%'
+        plt.plot(r, gcalc * scale + i, '-', label="Fit {}".format(i))
+    ax.set_xlabel(r"$r (\AA)$")
+    ax.set_ylabel(r"$G (\AA^{-2})$")
+    ax.legend()
+    if save_file is not None:
+        plt.savefig(save_file + '_pdf.eps', bbox_inches='tight',
+                    transparent='True')
+        plt.savefig(save_file + '_pdf.png', bbox_inches='tight',
+                    transparent='True')
+    if show is True:
+        plt.show()
+    return
+
+
+def plot_waterfall_diff_pdf(scatter, gobs, traj, save_file=None, show=True, **kwargs):
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    r = scatter.get_r()
+    # ax.plot(r, gobs, 'bo', label="G(r) data")
+    for i, atoms in enumerate(traj):
+        gcalc = scatter.get_pdf(atoms)
+        rw, scale = wrap_rw(gcalc, gobs)
+        print i, 'Rw', rw * 100, '%'
+        plt.plot(r, gobs - (gcalc * scale)
+                 # - i
+                 , '-', label="Fit {}".format(i))
+    ax.set_xlabel(r"$r (\AA)$")
+    ax.set_ylabel(r"$G (\AA^{-2})$")
+    ax.legend()
+    if save_file is not None:
+        plt.savefig(save_file + '_pdf.eps', bbox_inches='tight',
+                    transparent='True')
+        plt.savefig(save_file + '_pdf.png', bbox_inches='tight',
+                    transparent='True')
+    if show is True:
+        plt.show()
+    return
+
+
+def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, **kwargs):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
     stru_l = {}
     # If the PDF document created with atomic config, use that as target
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    # If we used a theoretical target structure, get it and name it
-    # if calc.ase_config_id is not None:
-    #     target_atoms, = find_atomic_config_document(_id=calc.ase_config_id)
-    #     stru_l['Target'] = target_atoms.file_payload
-
+    if target_configuration is not None:
+        stru_l['Target'] = target_configuration
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
     for atoms in stru_l.values():
         tag_surface_atoms(atoms, cut)
 
     symbols = set(stru_l['Start'].get_chemical_symbols())
+
     tags = {'Core': (0, '+'), 'Surface': (1, '*')}
     for tag in tags.keys():
         tagged_atoms = stru_l['Start'][
@@ -99,6 +123,7 @@ def plot_angle(sim, cut, save_file=None, show=True):
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
+    # need to change this
     colors = ['c', 'm', 'y', 'k']
     bins = np.linspace(0, 180, 100)
     # Bin the data
@@ -116,15 +141,15 @@ def plot_angle(sim, cut, save_file=None, show=True):
                     #     plt.axvline(x=x, ymax=y, color='grey', linestyle='--')
                 else:
                     total = np.sum(a)
-                    plt.plot(b[:-1], a,
+                    ax.plot(b[:-1], a,
                              label='{0} {1} {2}, total: {3}'.format(key,
                                                                     symbol,
                                                                     tag,
                                                                     total),
                              marker=tags[tag][1], color=colors[n])
-    plt.xlabel('Bond angle in Degrees')
-    plt.xlim(0, 180)
-    plt.ylabel('Angle Counts')
+    ax.set_xlabel('Bond angle in Degrees')
+    ax.set_xlim(0, 180)
+    ax.set_ylabel('Angle Counts')
     plt.legend()
     if save_file is not None:
         plt.savefig(save_file + '_angle.eps', bbox_inches='tight',
@@ -135,19 +160,11 @@ def plot_angle(sim, cut, save_file=None, show=True):
         plt.show()
 
 
-def plot_coordination(sim, cut, save_file=None, show=True):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def plot_coordination(cut, traj, target_configuration=None, save_file=None, show=True, **kwargs):
     stru_l = {}
     # If the PDF document created with atomic config, use that as target
-    cl = sim.pes.calc_list
-    for calc in cl:
-        if calc.calculator == 'PDF':
-            break
-    # If we used a theoretical target structure, get it and name it
-    # if calc.ase_config_id is not None:
-    #     target_atoms, = find_atomic_config_document(_id=calc.ase_config_id)
-    #     stru_l['Target'] = target_atoms.file_payload
+    if target_configuration is not None:
+        stru_l['Target'] = target_configuration
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
     for atoms in stru_l.values():
@@ -175,11 +192,11 @@ def plot_coordination(sim, cut, save_file=None, show=True):
         bins = np.asarray([b_min, b_max])
     else:
         bins = np.arange(b_min, b_max + 2)
-    print bins
     width = 3. / 4 / len(stru_l)
     offset = .3 * 3 / len(stru_l)
     patterns = ('x', '\\', 'o', '.', '\\', '*')
     colors = ['grey', 'mediumseagreen', 'c', 'y', 'red', 'blue']
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
@@ -191,9 +208,7 @@ def plot_coordination(sim, cut, save_file=None, show=True):
                 hatch = patterns[j]
                 coord = get_coord_list(stru_l[key], cut, element=symbol,
                                        tag=tags[tag][0])
-                print coord
                 a, b = np.histogram(coord, bins=bins)
-                print b[:-1]
                 total = np.sum(a)
                 ax.bar(b[:-1] + n * offset, a, width, bottom=bottoms[:-1],
                        color=colors[n],
@@ -203,9 +218,10 @@ def plot_coordination(sim, cut, save_file=None, show=True):
                 j += 1
                 bottoms[:-1] += a
 
-    plt.xlabel('Coordination Number')
-    plt.xticks(bins[:-1] + 1 / 2., bins[:-1])
-    plt.ylabel('Atomic Counts')
+    ax.set_xlabel('Coordination Number')
+    ax.set_xticks(bins[:-1] + 1 / 2.)
+    ax.set_xticklabels(bins[:-1])
+    ax.set_ylabel('Atomic Counts')
     ax2 = plt.twinx()
     ax2.set_ylim(ax.get_ylim())
     ax.legend(loc=0, ncol=1)
@@ -248,6 +264,10 @@ def plot_bonds(sim, cut, save_file=None, show=True):
             del tags[tag]
     colors = ['c', 'm', 'y', 'k']
     linestyles = ['-', '--', ':']
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
     for n, key in enumerate(stru_l.keys()):
         for k, symbol in enumerate(symbols):
             for tag in tags.keys():
@@ -257,8 +277,8 @@ def plot_bonds(sim, cut, save_file=None, show=True):
                 plt.plot(b[:-1], a, linestyles[k],
                          label=key + ' ' + symbol + ' ' + tag,
                          marker=tags[tag][1], color=colors[n])
-    plt.xlabel('Bond distance in angstrom')
-    plt.ylabel('Bond Counts')
+    ax.set_xlabel('Bond distance in angstrom')
+    ax.set_ylabel('Bond Counts')
     plt.legend(loc='best')
     if save_file is not None:
         plt.savefig(save_file + '_angle.eps', bbox_inches='tight',
@@ -269,9 +289,7 @@ def plot_bonds(sim, cut, save_file=None, show=True):
         plt.show()
 
 
-def ase_view(sim):
-    atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
-    traj = atomic_config.file_payload
+def ase_view(traj, **kwargs):
     view(traj)
 
 
