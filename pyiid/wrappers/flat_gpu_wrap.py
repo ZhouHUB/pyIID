@@ -1,136 +1,29 @@
+from pyiid.wrappers import *
+
 __author__ = 'christopher'
-import math
 from threading import Thread
-import sys
-
-import numpy as np
-from numba import cuda
-
-sys.path.extend(['/mnt/work-data/dev/pyIID'])
 
 from pyiid.kernels.flat_kernel import get_ij_lists
+from pyiid.wrappers.k_atomic_gpu import *
 
 
-def get_gpus_mem():
-    gpus = cuda.gpus.lst
-    mem_list = []
-    for gpu in gpus:
-        with gpu:
-            meminfo = cuda.current_context().get_memory_info()
-        mem_list.append(int(meminfo[0]))
-    sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    return sort_gpus, sort_gmem
-
-
-def subs_fq(gpu, q, scatter_array, fq_q, qmax_bin, qbin, il, jl):
+def subs_fq(gpu, q, scatter_array, fq_q, qbin, il, jl):
     # set up GPU
     with gpu:
-        # load kernels
-        from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
-            get_normalization_array, get_fq, d2_to_d1_sum, construct_qij, \
-            construct_scatij
-
-        elements_per_dim_1 = [len(il)]
-        tpb1 = [32]
-        bpg1 = []
-        for e_dim, tpb in zip(elements_per_dim_1, tpb1):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg1.append(bpg)
-
-        elements_per_dim_q = [qmax_bin]
-        tpbq = [32]
-        bpgq = []
-        for e_dim, tpb in zip(elements_per_dim_q, tpb1):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpgq.append(bpg)
-
-        elements_per_dim_2 = [len(il), qmax_bin]
-        tpb2 = [16, 4]
-        bpg2 = []
-        for e_dim, tpb in zip(elements_per_dim_2, tpb2):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg2.append(bpg)
-
-        stream = cuda.stream()
-        stream2 = cuda.stream()
-
-        # transfer data
-        dd = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-
-        dqi = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dqj = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dil = cuda.to_device(np.asarray(il, dtype=np.uint32), stream=stream)
-        djl = cuda.to_device(np.asarray(jl, dtype=np.uint32), stream=stream)
-        dq = cuda.to_device(q)
-
-        # calculate kernels
-        construct_qij[bpg1, tpb1, stream](dqi, dqj, dq, dil, djl)
-
-        dr = cuda.device_array(len(il), dtype=np.float32, stream=stream)
-        get_d_array[bpg1, tpb1, stream](dd, dqi, dqj)
-        del dqi, dqj
-
-        get_r_array[bpg1, tpb1, stream](dr, dd)
-
-        dnorm = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                  stream=stream2)
-
-        dscati = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                   stream=stream2)
-        dscatj = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                   stream=stream2)
-        dscat = cuda.to_device(scatter_array.astype(np.float32),
-                               stream=stream2)
-
-        construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
-
-        get_normalization_array[bpg2, tpb2, stream2](dnorm, dscati, dscatj)
-        del dscati, dscatj, dscat, dil, djl
-
-        dfq = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                stream=stream2)
-
-        final = np.zeros(qmax_bin, dtype=np.float32)
-        dfinal = cuda.to_device(final)
-
-        get_fq[bpg2, tpb2, stream2](dfq, dr, dnorm, qbin)
-        del dr, dnorm
-        d2_to_d1_sum[bpgq, tpbq, stream2](dfinal, dfq)
-        del dfq
-
-        dfinal.to_host(stream2)
+        final = atomic_fq(q, scatter_array, qbin, il, jl)
         fq_q.append(final)
-        del dfinal
+        del final
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
-    # set up atoms
-    q = atoms.get_positions()
-    q = q.astype(np.float32)
-    n = len(q)
-    if sum_type == 'fq':
-        scatter_array = atoms.get_array('F(Q) scatter')
-    else:
-        scatter_array = atoms.get_array('PDF scatter')
-    qmax_bin = scatter_array.shape[1]
+    q, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(atoms,
+                                                                     sum_type)
 
     # setup flat map
     il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
-    jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    jl = il.copy()
     get_ij_lists(il, jl, n)
     k_max = len(il)
-
-    gpus, mem_list = get_gpus_mem()
 
     fq_q = []
     k_cov = 0
@@ -138,17 +31,14 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
     while k_cov < k_max:
         for gpu, mem in zip(gpus, mem_list):
-            m = int(math.floor(
-                float(mem - 4 * qmax_bin - 4 * qmax_bin * n - 12 * n) / (
-                    16 * (qmax_bin + 3))))
-
+            m = atoms_pdf_gpu_fq(n, qmax_bin, mem)
             if m > k_max - k_cov:
                 m = k_max - k_cov
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 if k_cov >= k_max:
                     break
                 p = Thread(target=subs_fq, args=(
-                    gpu, q, scatter_array, fq_q, qmax_bin, qbin,
+                    gpu, q, scatter_array, fq_q, qbin,
                     il[k_cov:k_cov + m],
                     jl[k_cov:k_cov + m],
                 ))
@@ -170,121 +60,14 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     return 2 * final
 
 
-def subs_grad_fq(gpu, q, scatter_array, grad_q, qmax_bin, qbin, il, jl, k_cov,
+def subs_grad_fq(gpu, q, scatter_array, grad_q, qbin, il, jl, k_cov,
                  index_list):
     # set up GPU
-    n = len(q)
     with gpu:
-        # load kernels
-        from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
-            get_normalization_array, get_fq, get_grad_fq, \
-            construct_scatij, construct_qij, flat_sum, zero_pseudo_3D
-
-        elements_per_dim_1 = [len(il)]
-        tpb1 = [64]
-        bpg1 = []
-        for e_dim, tpb in zip(elements_per_dim_1, tpb1):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg1.append(bpg)
-
-        elements_per_dim_q = [qmax_bin]
-        tpbq = [16]
-        bpgq = []
-        for e_dim, tpb in zip(elements_per_dim_q, tpb1):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpgq.append(bpg)
-
-        elements_per_dim_2 = [len(il), qmax_bin]
-        tpb2 = [16, 4]
-        bpg2 = []
-        for e_dim, tpb in zip(elements_per_dim_2, tpb2):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg2.append(bpg)
-
-        elements_per_dim_nq = [len(q), qmax_bin]
-        tpbnq = [16, 4]
-        bpgnq = []
-        for e_dim, tpb in zip(elements_per_dim_nq, tpbnq):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpgnq.append(bpg)
-
-        elements_per_dim_3 = [len(il), len(q), qmax_bin]
-        tpb3 = [64, 1, 1]
-        bpg3 = []
-        for e_dim, tpb in zip(elements_per_dim_3, tpb3):
-            bpg = int(math.ceil(float(e_dim) / tpb))
-            if bpg < 1:
-                bpg = 1
-            assert (bpg * tpb >= e_dim)
-            bpg3.append(bpg)
-
-        stream = cuda.stream()
-        stream2 = cuda.stream()
-
-        # transfer data
-        dd = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dq = cuda.to_device(q, stream=stream)
-        dqi = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dqj = cuda.device_array((len(il), 3), dtype=np.float32, stream=stream)
-        dil = cuda.to_device(np.asarray(il, dtype=np.uint32), stream=stream)
-        djl = cuda.to_device(np.asarray(jl, dtype=np.uint32), stream=stream)
-
-        construct_qij[bpg1, tpb1, stream](dqi, dqj, dq, dil, djl)
-        dr = cuda.device_array(len(il), dtype=np.float32, stream=stream)
-
-        # calculate kernels
-        get_d_array[bpg1, tpb1, stream](dd, dqi, dqj)
-        del dqi, dqj
-
-        get_r_array[bpg1, tpb1, stream](dr, dd)
-
-        dnorm = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                  stream=stream2)
-        dscati = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                   stream=stream2)
-        dscatj = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                   stream=stream2)
-        dscat = cuda.to_device(scatter_array, stream=stream2)
-
-        construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
-        get_normalization_array[bpg2, tpb2, stream2](dnorm, dscati, dscatj)
-        del dscati, dscatj, dscat
-
-        dfq = cuda.device_array((len(il), qmax_bin), dtype=np.float32,
-                                stream=stream2)
-
-        get_fq[bpg2, tpb2, stream2](dfq, dr, dnorm, qbin)
-
-        grad = np.zeros((len(il), 3, qmax_bin), dtype=np.float32)
-        dgrad = cuda.device_array(grad.shape, dtype=np.float32, stream=stream2)
-
-        get_grad_fq[bpg2, tpb2, stream2](dgrad, dfq, dr, dd, dnorm, qbin)
-
-        new_grad2 = np.zeros((len(q), 3, qmax_bin), dtype=np.float32)
-
-        dnew_grad = cuda.device_array(new_grad2.shape, dtype=np.float32,
-                                      stream=stream2)
-        zero_pseudo_3D[bpgnq, tpbnq, stream2](dnew_grad)
-
-        flat_sum[[1, bpgq[0]], [4, tpbq[0]], stream2](dnew_grad, dgrad, dil,
-                                                      djl)
-        dnew_grad.copy_to_host(new_grad2)
-        del dd, dr, dnorm, dfq, dgrad, dil, djl
+        new_grad2 = atomic_grad_fq(q, scatter_array, qbin, il, jl)
     grad_q.append(new_grad2)
     index_list.append(k_cov)
-    del grad, k_cov, il, jl
+    del k_cov, new_grad2
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
@@ -313,18 +96,12 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 
     while k_cov < k_max:
         for gpu, mem in zip(gpus, mem_list):
-            m = int(math.floor(
-                float(mem - 4 * qmax_bin * n - 12 * n) / (
-                    4 * (7 * qmax_bin + 12))))
-            # m = 2
+            m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
             if m > k_max - k_cov:
                 m = k_max - k_cov
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                # if k_cov >= k_max:
-                #     break
-                # print float(k_cov+m)/k_max * 100, '%'
                 p = Thread(target=subs_grad_fq, args=(
-                    gpu, q, scatter_array, grad_q, qmax_bin, qbin,
+                    gpu, q, scatter_array, grad_q, qbin,
                     il[k_cov:k_cov + m],
                     jl[k_cov:k_cov + m],
                     k_cov,
@@ -357,8 +134,6 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 
 
 if __name__ == '__main__':
-    # import cProfile
-    # cProfile.run('''
     from ase.atoms import Atoms
     from pyiid.wrappers.elasticscatter import wrap_atoms
 
@@ -368,7 +143,8 @@ if __name__ == '__main__':
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms)
 
-    # fq = wrap_fq(atoms, atoms.info['Qbin'])
-    grad_fq = wrap_fq_grad(atoms, atoms.info['Qbin'])
+    fq = wrap_fq(atoms, atoms.info['exp']['qbin'])
+    print fq
+    grad_fq = wrap_fq_grad(atoms, atoms.info['exp']['qbin'])
     print grad_fq[:, :, 1]
     # raw_input()

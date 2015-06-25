@@ -4,8 +4,6 @@ import numpy as np
 import math
 import sys
 
-sys.path.extend(['/mnt/work-data/dev/pyIID'])
-
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf, \
     get_scatter_array
 
@@ -73,7 +71,7 @@ class ElasticScatter(object):
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
-    def set_processor(self, processor=None):
+    def set_processor(self, processor=None, kernel_type='flat'):
         """
         Set the processor to use for calculating the scattering.  If no
         parameter is given then check for the fastest possible processor
@@ -90,7 +88,8 @@ class ElasticScatter(object):
         if processor is None:
             # Test each processor in order of most advanced to least
             for pro in self.avail_pro:
-                if self.set_processor(processor=pro) is not None:
+                if self.set_processor(processor=pro,
+                                      kernel_type=kernel_type) is not None:
                     break
 
         elif processor == self.avail_pro[0] and check_mpi() is True:
@@ -105,19 +104,22 @@ class ElasticScatter(object):
             return True
 
         elif processor == self.avail_pro[1] and check_multi_gpu() is True:
-            from pyiid.wrappers.multi_gpu_wrap import \
-                wrap_fq as node_0_gpu_wrap_fq
-            from pyiid.wrappers.multi_gpu_wrap import \
-                wrap_fq_grad as node_0_gpu_wrap_fq_grad
+            if kernel_type == 'nxn':
+                from pyiid.wrappers.multi_gpu_wrap import \
+                    wrap_fq as node_0_gpu_wrap_fq
+                from pyiid.wrappers.multi_gpu_wrap import \
+                    wrap_fq_grad as node_0_gpu_wrap_fq_grad
 
-            from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
-            from pyiid.wrappers.flat_gpu_wrap import \
-                wrap_fq_grad as flat_grad
+                self.fq = node_0_gpu_wrap_fq
+                self.grad = node_0_gpu_wrap_fq_grad
 
-            # self.fq = node_0_gpu_wrap_fq
-            # self.grad = node_0_gpu_wrap_fq_grad
-            self.fq = flat_fq
-            self.grad = flat_grad
+            elif kernel_type == 'flat':
+                from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
+                from pyiid.wrappers.flat_gpu_wrap import \
+                    wrap_fq_grad as flat_grad
+
+                self.fq = flat_fq
+                self.grad = flat_grad
 
             self.processor = processor
             return True
@@ -234,12 +236,12 @@ if __name__ == '__main__':
     import ase.io as aseio
     import matplotlib.pyplot as plt
 
-    atoms = aseio.read(
-        '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz', )
+    # atoms = aseio.read(
+    #     '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz', )
     # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    # n = 1500
-    # pos = np.random.random((n, 3)) * 10.
-    # atoms = Atoms('Au' + str(n), pos)
+    n = 1500
+    pos = np.random.random((n, 3)) * 10.
+    atoms = Atoms('Au' + str(n), pos)
     exp_dict = {
         'qmin': 0.0,
         'qmax': 25.,
@@ -249,10 +251,11 @@ if __name__ == '__main__':
         'rstep': .01
     }
     scat = ElasticScatter(exp_dict)
+    # scat.set_processor(processor='Multi-GPU', kernel_type='nxn')
     # fq = scat.get_fq(atoms)
-    # gfq = scat.get_grad_fq(atoms)
-    pdf = scat.get_pdf(atoms)
-    r = scat.get_r()
+    gfq = scat.get_grad_fq(atoms)
+    # pdf = scat.get_pdf(atoms)
+    # r = scat.get_r()
     # gpdf = scat.get_grad_pdf(atoms)
-    plt.plot(r, pdf)
-    plt.show()
+    # plt.plot(r, pdf)
+    # plt.show()

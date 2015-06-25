@@ -1,4 +1,5 @@
 __author__ = 'christopher'
+from pyiid.wrappers import *
 import math
 from threading import Thread
 import numpy as np
@@ -18,32 +19,12 @@ def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
-    # get information for FQ transformation
-    q = atoms.get_positions()
-    q = q.astype(np.float32)
-    n = len(q)
-    if sum_type == 'fq':
-        scatter_array = atoms.get_array('F(Q) scatter')
-    else:
-        scatter_array = atoms.get_array('PDF scatter')
-    qmax_bin = scatter_array.shape[1]
-
-    # get info on our gpu setup and memory requrements
-    gpus = cuda.gpus.lst
-    mem_list = []
-    for gpu in gpus:
-        with gpu:
-            meminfo = cuda.current_context().get_memory_info()
-        mem_list.append(meminfo[0])
-    sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-
+    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(atoms,
+                                                                         sum_type)
     # starting buffers
     fq_q = []
     n_cov = 0
     p_dict = {}
-
-    # TODO: NEEDS WORK GIVES BAD RESULTS WITH EQUAL WEIGHTING
 
     # The total amount of work is greater than the sum of our GPUs, no
     # special distribution needed, just keep putting problems on GPUs until
@@ -90,30 +71,13 @@ def sub_grad(gpu, q, scatter_array, grad_q, qbin, m, n_cov, index_list):
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
-    # atoms info
-    q = atoms.get_positions()
-    q = q.astype(np.float32)
-    n = len(q)
-    if sum_type == 'fq':
-        scatter_array = atoms.get_array('F(Q) scatter')
-    else:
-        scatter_array = atoms.get_array('PDF scatter')
-    qmax_bin = scatter_array.shape[1]
-
-    gpus = cuda.gpus.lst
-    mem_list = []
-    for gpu in gpus:
-        with gpu:
-            meminfo = cuda.current_context().get_memory_info()
-        mem_list.append(meminfo[0])
-    sort_gpus = [x for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
-    sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
+    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(atoms,
+                                                                         sum_type)
 
     grad_q = []
     index_list = []
     p_dict = {}
     n_cov = 0
-    # TODO: Re-code using thread pool from multiprocessing, need a way to manage memory
     while n_cov < n:
         for gpu, mem in zip(sort_gpus, sort_gmem):
             m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
@@ -153,28 +117,18 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     return grad_p
 
 
-def wrap_spring_force():
-    # setup data
-    # get d
-    # get r
-
-    pass
-
-
 if __name__ == '__main__':
-    # import cProfile
-    # cProfile.run('''
     from ase.atoms import Atoms
     from pyiid.wrappers.elasticscatter import wrap_atoms
 
-    # n = 400
+    # n = 1500
     # pos = np.random.random((n, 3)) * 10.
     # atoms = Atoms('Au' + str(n), pos)
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms, None)
+    wrap_atoms(atoms)
 
-    # fq = wrap_fq(atoms)
-    # print fq
-    grad_fq = wrap_fq_grad(atoms, atoms.info['Qbin'])
+    fq = wrap_fq(atoms, atoms.info['exp']['qbin'])
+    print fq
+    grad_fq = wrap_fq_grad(atoms, atoms.info['exp']['qbin'])
     print grad_fq[:, :, 1]
     # raw_input()

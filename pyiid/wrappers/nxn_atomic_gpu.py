@@ -3,16 +3,16 @@ import math
 
 import numpy as np
 from numba import cuda
-from numba import autojit
+from numba import jit
 
 
-@autojit
+# @jit()
 def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
     return int(math.floor(float(-4 * n * qmax_bin - 12 * n + .7 * mem) / (
         4 * (6 * qmax_bin * n + 3 * qmax_bin + 4 * n))))
 
 
-@autojit
+# @jit()
 def atoms_per_gpu_fq(n, qmax_bin, mem):
     return int(math.floor(
         float(-4 * n * qmax_bin - 12 * n - 4 * qmax_bin + .8 * mem) / (

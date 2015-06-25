@@ -89,7 +89,6 @@ def test_get_r():
     jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
     get_ij_lists(il, jl, n)
 
-    # # print len(il), len(jl)
     stream, bpg, tpb = set_up_gpu(len(il))
     qi = q[il]
     qj = q[jl]
@@ -118,7 +117,6 @@ def test_get_r():
     serial_get_r_array(cpur, cd)
     assert_allclose(sr, cpur)
     return
-
 
 if __name__ == '__main__':
     import nose

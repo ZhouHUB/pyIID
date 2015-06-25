@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 
-@autojit()
+# @jit()
 def get_ij_lists(il, jl, n):
     k = 0
     for i in xrange(n):
@@ -171,8 +171,27 @@ def flat_sum(new_grad, grad, il, jl):
         new_grad[il[k], tz, qx] -= grad[k, tz, qx]
         new_grad[jl[k], tz, qx] += grad[k, tz, qx]
 
-
 '''
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], u4[:], u4[:]])
+def ideal_flat_sum(new_grad, grad, il, jl):
+    # Something goes wrong here, a race condition or something
+    # the CPU version of this code works fine.  I may need to move to atomic
+    # addition, although it is not currently supported by numba.
+
+    # tz, qx = cuda.grid(2)
+    k, qx, tz = cuda.grid(3)
+
+    # if qx >= grad.shape[2] or tz >= 3:
+    if k >= len(il) or qx >= new_grad.shape[2] or tz >= 3:
+        return
+
+    # for k in range(len(il)):
+    # for tz in range(3):
+    ik = il[k]
+    jk = jl[k]
+    new_grad[ik, tz, qx] -= grad[k, tz, qx]
+    new_grad[jk, tz, qx] += grad[k, tz, qx]
+
 def shared_flat_sum(new_grad, grad, il, jl, npk, noffset):
     """
     The idea behind this kernel is that for each k range in the block there is
