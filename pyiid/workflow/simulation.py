@@ -83,8 +83,15 @@ def run_simulation(sim):
     out_traj, samples, l_p_i = nuts(atoms, target_acceptance, iterations,
                                     ensemble_temp, wtraj)
     sim.end_time = ttime.time()
-    sim.total_samples = samples
+    if sim.total_samples is not None:
+        sim.total_samples += samples
+    else:
+        sim.total_samples = samples
     sim.leapfrog_per_iter = l_p_i
     sim.finished = True
+    sim.save()
     # Write info to DB
+    sim.final_potential_energy = out_traj[-1].get_potential_energy()
+    sim.final_kinetic_energy = out_traj[-1].get_kinetic_energy()
+    sim.final_kinetic_energy = out_traj[-1].get_total_energy()
     sim.save()

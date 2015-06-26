@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from ase.visualize import view
 import matplotlib
+from pyiid.workflow import sim_unpack
+import os
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc import wrap_rw
@@ -14,6 +16,8 @@ from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
 from simdb.search import *
 from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
     GetLayerNumbers
+from inspect import isgenerator
+
 font = {'family': 'normal',
         # 'weight' : 'bold',
         'size': 18}
@@ -41,7 +45,7 @@ def plot_pdf(scatter, gobs, atoms, save_file=None, show=True, **kwargs):
     ax.plot(r, np.zeros_like(r) + baseline, 'k:')
     ax.set_xlabel(r"$r (\AA)$")
     ax.set_ylabel(r"$G (\AA^{-2})$")
-    plt.legend()
+    plt.legend(loc='best', prop={'size': 12})
     if save_file is not None:
         plt.savefig(save_file + '_pdf.eps', bbox_inches='tight',
                     transparent='True')
@@ -52,8 +56,8 @@ def plot_pdf(scatter, gobs, atoms, save_file=None, show=True, **kwargs):
     return
 
 
-def plot_waterfall_pdf(scatter, gobs, traj, save_file=None, show=True, **kwargs):
-
+def plot_waterfall_pdf(scatter, gobs, traj, save_file=None, show=True,
+                       **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     r = scatter.get_r()
@@ -65,7 +69,7 @@ def plot_waterfall_pdf(scatter, gobs, traj, save_file=None, show=True, **kwargs)
         plt.plot(r, gcalc * scale + i, '-', label="Fit {}".format(i))
     ax.set_xlabel(r"$r (\AA)$")
     ax.set_ylabel(r"$G (\AA^{-2})$")
-    ax.legend()
+    ax.legend(loc='best', prop={'size': 12})
     if save_file is not None:
         plt.savefig(save_file + '_pdf.eps', bbox_inches='tight',
                     transparent='True')
@@ -76,8 +80,8 @@ def plot_waterfall_pdf(scatter, gobs, traj, save_file=None, show=True, **kwargs)
     return
 
 
-def plot_waterfall_diff_pdf(scatter, gobs, traj, save_file=None, show=True, **kwargs):
-
+def plot_waterfall_diff_pdf(scatter, gobs, traj, save_file=None, show=True,
+                            **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     r = scatter.get_r()
@@ -91,7 +95,7 @@ def plot_waterfall_diff_pdf(scatter, gobs, traj, save_file=None, show=True, **kw
                  , '-', label="Fit {}".format(i))
     ax.set_xlabel(r"$r (\AA)$")
     ax.set_ylabel(r"$G (\AA^{-2})$")
-    ax.legend()
+    ax.legend(loc='best', prop={'size': 12})
     if save_file is not None:
         plt.savefig(save_file + '_pdf.eps', bbox_inches='tight',
                     transparent='True')
@@ -102,7 +106,62 @@ def plot_waterfall_diff_pdf(scatter, gobs, traj, save_file=None, show=True, **kw
     return
 
 
-def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, **kwargs):
+def plot_waterfall_pdf_2d(scatter, gobs, traj, save_file=None, show=True,
+                          **kwargs):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    r = scatter.get_r()
+    # ax.plot(r, gobs, 'bo', label="G(r) data")
+    gcalcs = []
+    for i, atoms in enumerate(traj):
+        gcalc = scatter.get_pdf(atoms)
+        rw, scale = wrap_rw(gcalc, gobs)
+        print i, 'Rw', rw * 100, '%'
+        gcalcs.append(gcalc * scale)
+    ax.imshow(gcalcs, aspect='auto', origin='lower',
+              extent=(r.min(), r.max(), 0, len(traj)))
+    ax.set_xlabel(r"$r (\AA)$")
+    ax.set_ylabel("iteration")
+    ax.legend(loc='best', prop={'size': 12})
+    if save_file is not None:
+        plt.savefig(save_file + '_2d_water_pdf.eps', bbox_inches='tight',
+                    transparent='True')
+        plt.savefig(save_file + '_2d_water_pdf.png', bbox_inches='tight',
+                    transparent='True')
+    if show is True:
+        plt.show()
+    return
+
+
+def plot_waterfall_diff_pdf_2d(scatter, gobs, traj, save_file=None, show=True,
+                               **kwargs):
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    r = scatter.get_r()
+    # ax.plot(r, gobs, 'bo', label="G(r) data")
+    gcalcs = []
+    for i, atoms in enumerate(traj):
+        gcalc = scatter.get_pdf(atoms)
+        rw, scale = wrap_rw(gcalc, gobs)
+        print i, 'Rw', rw * 100, '%'
+        gcalcs.append(gobs - gcalc * scale)
+    ax.imshow(gcalcs, aspect='auto', origin='lower',
+              extent=(r.min(), r.max(), 0, len(traj)))
+    ax.set_xlabel(r"$r (\AA)$")
+    ax.set_ylabel("iteration")
+    ax.legend(loc='best', prop={'size': 12})
+    if save_file is not None:
+        plt.savefig(save_file + '_2d_water_diff_pdf.eps', bbox_inches='tight',
+                    transparent='True')
+        plt.savefig(save_file + '_2d_water_diff_pdf.png', bbox_inches='tight',
+                    transparent='True')
+    if show is True:
+        plt.show()
+    return
+
+
+def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True,
+               **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
     stru_l = {}
@@ -112,7 +171,7 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, 
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
     for atoms in stru_l.values():
-        tag_surface_atoms(atoms, cut)
+        tag_surface_atoms(atoms)
 
     symbols = set(stru_l['Start'].get_chemical_symbols())
 
@@ -123,6 +182,8 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, 
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
+    if len(tags) == 1:
+        tags = {'': (1, '*')}
     # need to change this
     colors = ['c', 'm', 'y', 'k']
     bins = np.linspace(0, 180, 100)
@@ -142,15 +203,15 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, 
                 else:
                     total = np.sum(a)
                     ax.plot(b[:-1], a,
-                             label='{0} {1} {2}, total: {3}'.format(key,
-                                                                    symbol,
-                                                                    tag,
-                                                                    total),
-                             marker=tags[tag][1], color=colors[n])
+                            label='{0} {1} {2}, {3}'.format(key,
+                                                            symbol,
+                                                            tag,
+                                                            total),
+                            marker=tags[tag][1], color=colors[n])
     ax.set_xlabel('Bond angle in Degrees')
     ax.set_xlim(0, 180)
     ax.set_ylabel('Angle Counts')
-    plt.legend()
+    ax.legend(loc='best', prop={'size': 12})
     if save_file is not None:
         plt.savefig(save_file + '_angle.eps', bbox_inches='tight',
                     transparent='True')
@@ -160,7 +221,8 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, 
         plt.show()
 
 
-def plot_coordination(cut, traj, target_configuration=None, save_file=None, show=True, **kwargs):
+def plot_coordination(cut, traj, target_configuration=None, save_file=None,
+                      show=True, **kwargs):
     stru_l = {}
     # If the PDF document created with atomic config, use that as target
     if target_configuration is not None:
@@ -168,7 +230,7 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None, show
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[-1]
     for atoms in stru_l.values():
-        tag_surface_atoms(atoms, cut)
+        tag_surface_atoms(atoms)
 
     symbols = set(stru_l.itervalues().next().get_chemical_symbols())
     tags = {'Core': (0, '+'), 'Surface': (1, '*')}
@@ -178,6 +240,8 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None, show
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
+    if len(tags) == 1:
+        tags = {'': (1, '*')}
     b_min = None
     b_max = None
     for key in stru_l.keys():
@@ -212,8 +276,8 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None, show
                 total = np.sum(a)
                 ax.bar(b[:-1] + n * offset, a, width, bottom=bottoms[:-1],
                        color=colors[n],
-                       label='{0} {1} {2}, total: {3}'.format(key, symbol, tag,
-                                                              total),
+                       label='{0} {1} {2}, {3}'.format(key, symbol, tag,
+                                                       total),
                        hatch=hatch)
                 j += 1
                 bottoms[:-1] += a
@@ -224,7 +288,7 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None, show
     ax.set_ylabel('Atomic Counts')
     ax2 = plt.twinx()
     ax2.set_ylim(ax.get_ylim())
-    ax.legend(loc=0, ncol=1)
+    ax.legend(loc='best', prop={'size': 12})
     if save_file is not None:
         plt.savefig(save_file + '_coord.eps', bbox_inches='tight',
                     transparent='True')
@@ -279,7 +343,7 @@ def plot_bonds(sim, cut, save_file=None, show=True):
                          marker=tags[tag][1], color=colors[n])
     ax.set_xlabel('Bond distance in angstrom')
     ax.set_ylabel('Bond Counts')
-    plt.legend(loc='best')
+    plt.legend(loc='best', prop={'size': 12})
     if save_file is not None:
         plt.savefig(save_file + '_angle.eps', bbox_inches='tight',
                     transparent='True')
@@ -302,13 +366,64 @@ def plot_radial_bond_length(atoms, cut):
     std = []
     for i, coord in enumerate(n_list):
         for j in coord:
-            dist_from_center.append(np.sqrt(np.sum((atoms[i].position - com))**2))
+            dist_from_center.append(
+                np.sqrt(np.sum((atoms[i].position - com)) ** 2))
             bond_lengths.append(atoms.get_distance(i, j))
         ave.append(np.mean(bond_lengths))
         std.append(np.std(bond_lengths))
     fig = plt.figure()
     plt.scatter(dist_from_center, bond_lengths)
     plt.show()
+
+
+def mass_plot(sims, cut):
+    if not isgenerator(sims) or not isinstance(sims, list):
+        sims = [sims]
+    for sim in sims:
+        d = sim_unpack(sim)
+        ase_view(**d)
+        plot_pdf(atoms=d['traj'][-1], **d)
+        plot_angle(cut, **d)
+        plot_coordination(cut, **d)
+
+
+def mass_save(sims, cut, dir):
+    if not isgenerator(sims) or not isinstance(sims, list):
+        sims = [sims]
+    for sim in sims:
+        name = str(sim.atoms.id)
+        new_dir_path = os.path.join(dir, str(sim.name))
+        if not os.path.exists(new_dir_path):
+            os.mkdir(os.path.join(dir, sim.name))
+        d = sim_unpack(sim)
+
+        aseio.write(os.path.join(new_dir_path, name + '_target.eps'),
+                    d['target_configuration'])
+        aseio.write(os.path.join(new_dir_path, name + '_target.png'),
+                    d['target_configuration'])
+        aseio.write(os.path.join(new_dir_path, name + '_target.xyz'),
+                    d['target_configuration'])
+
+
+        aseio.write(os.path.join(new_dir_path, name + '_start.eps'),
+                    d['traj'][0])
+        aseio.write(os.path.join(new_dir_path, name + '_start.png'),
+                    d['traj'][0])
+        aseio.write(os.path.join(new_dir_path, name + '_start.xyz'),
+                    d['traj'][0])
+
+        aseio.write(os.path.join(new_dir_path, name + '.eps'),
+                    d['traj'][-1])
+        aseio.write(os.path.join(new_dir_path, name + '.png'),
+                    d['traj'][-1])
+        aseio.write(os.path.join(new_dir_path, name + '.xyz'),
+                    d['traj'][-1])
+
+        plot_pdf(atoms=d['traj'][-1], show=False,
+                 save_file=os.path.join(new_dir_path, name), **d)
+        plot_angle(cut, show=False, save_file=os.path.join(new_dir_path, name), **d)
+        plot_coordination(cut, show=False, save_file=os.path.join(new_dir_path, name),
+                          **d)
 
 
 if __name__ == '__main__':

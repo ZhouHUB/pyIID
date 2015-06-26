@@ -7,13 +7,15 @@ i = 0
 print 'Start job queue'
 while True:
     print 'search for simulations to be run'
-    sims = list(find_simulation_document(ran=False, skip=False, error=False))
+    sims = list(find_simulation_document(ran=False, skip=False,
+                                         # error=False
+                                         ))
     if len(sims) == 0:
         # we didn't find anything, implying that there were no more un-run simulations
         print "Didn't find anything yet, waiting 10 seconds"
         if i >= 30:
             print 'Idle for too long, exiting'
-            break
+            exit()
         i += 1
         sleep(10)
 
@@ -23,10 +25,11 @@ while True:
         # run the simulations in the order they were added.
         for sim in reversed(sims):
             print 'start simulation number ', sim.id
+            print 'simulation name', sim.name
             try:
                 run_simulation(sim)
             except:
                 print 'Simulation number {} has errored'.format(sim)
-                sim.errored = True
+                sim.error = True
                 sim.save()
                 pass

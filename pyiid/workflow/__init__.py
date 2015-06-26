@@ -17,6 +17,7 @@ from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
 
 
 def sim_unpack(sim):
+    sim.reload()
     d = {}
     cl = sim.pes.calc_list
     for cal in cl:
@@ -24,7 +25,7 @@ def sim_unpack(sim):
             calc, = find_calc_document(_id=cal.id)
             d['scatter'] = calc.payload.scatter
             d['gobs'] = calc.payload.gobs
-            if 'ase_config_id' in calc.calc_exp._data.keys():
+            if calc.calc_exp['ase_config_id'] is not None:
                 ac, = find_atomic_config_document(_id=calc.calc_exp.ase_config_id.id)
                 d['target_configuration'], = ac.file_payload
     atomic_configs, = find_atomic_config_document(_id=sim.atoms.id)
