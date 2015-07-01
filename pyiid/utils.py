@@ -150,7 +150,7 @@ def tag_surface_atoms(atoms, tag=1, tol=0.5):
     :param atoms:
     :return:
     """
-    # '''
+    '''
     n = len(atoms)
     d = np.zeros((n, n, 3))
     q = atoms.positions
@@ -256,16 +256,33 @@ def get_coord_list(atoms, cutoff, element=None, tag=None):
     :param cutoff:
     :return:
     """
-    a = CoordinationNumbers(atoms, cutoff)
-    if element is not None and tag is not None:
-        return a[(np.asarray(atoms.get_chemical_symbols()) == element)
-                 & (atoms.get_tags() == tag)]
-    elif element is not None:
-        return a[np.asarray(atoms.get_chemical_symbols()) == element]
-    elif tag is not None:
-        return a[atoms.get_tags() == tag]
+    if isinstance(atoms, list):
+        coord_l = []
+        for atms in atoms:
+            a = CoordinationNumbers(atms, cutoff)
+            if element is not None and tag is not None:
+                coord_l.append(a[(np.asarray(atoms.get_chemical_symbols()) == element)
+                         & (atoms.get_tags() == tag)])
+            elif element is not None:
+                coord_l.append(a[np.asarray(atoms.get_chemical_symbols()) == element])
+            elif tag is not None:
+                coord_l.append(a[atoms.get_tags() == tag])
+            else:
+                coord_l.append(a)
+        c = np.asarray(coord_l)
+        return np.average(c, axis=0), np.std(c, axis=0)
+
     else:
-        return a
+        a = CoordinationNumbers(atoms, cutoff)
+        if element is not None and tag is not None:
+            return a[(np.asarray(atoms.get_chemical_symbols()) == element)
+                     & (atoms.get_tags() == tag)]
+        elif element is not None:
+            return a[np.asarray(atoms.get_chemical_symbols()) == element]
+        elif tag is not None:
+            return a[atoms.get_tags() == tag]
+        else:
+            return a
 
 
 def get_bond_dist_list(atoms, cutoff, element=None, tag=None):

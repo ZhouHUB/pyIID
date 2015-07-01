@@ -12,7 +12,6 @@ while True:
                                          ))
     if len(sims) == 0:
         # we didn't find anything, implying that there were no more un-run simulations
-        print "Didn't find anything yet, waiting 10 seconds"
         if i >= 30:
             print 'Idle for too long, exiting'
             exit()
@@ -28,8 +27,12 @@ while True:
             print 'simulation name', sim.name
             try:
                 run_simulation(sim)
+            except KeyboardInterrupt:
+                print 'run ended'
+                pass
             except:
-                print 'Simulation number {} has errored'.format(sim)
+                print 'Simulation number {} has errored'.format(sim.id)
                 sim.error = True
+                sim.skip = True
                 sim.save()
                 pass

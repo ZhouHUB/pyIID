@@ -3,6 +3,7 @@ from pyiid.sim import leapfrog
 __author__ = 'christopher'
 
 from ase.atoms import Atoms as atoms
+from ase.units import kB, fs
 from copy import deepcopy as dc
 import numpy as np
 
@@ -54,7 +55,7 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     print 'start hmc'
     try:
         while m <= iterations:
-            print 'step', step_size
+            print 'step', step_size/fs, 'fs'
             atoms.set_momenta(np.random.normal(0, p_scale, (len(atoms), 3)))
             # u = np.random.uniform(0, np.exp(-1.*traj[-1].get_total_energy()))
             e0 = traj[-1].get_total_energy()

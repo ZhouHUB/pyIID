@@ -30,7 +30,6 @@ def classical_dynamics(atoms, stepsize, n_steps, temp=0):
     return traj
 
 
-
 if __name__ == '__main__':
     import os
     from copy import deepcopy as dc
@@ -41,7 +40,7 @@ if __name__ == '__main__':
 
     from pyiid.wrappers.elasticscatter import ElasticScatter
     from pyiid.calc.pdfcalc import PDFCalc
-    from pyiid.calc import wrap_rw
+    from ase.units import *
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
@@ -49,15 +48,14 @@ if __name__ == '__main__':
     start_atoms.positions *= 1.02
     s = ElasticScatter()
     gobs = s.get_pdf(ideal_atoms)
-
-
-    calc = PDFCalc(obs_data=gobs, scatter=s, conv=300, potential='rw')
+    c = .1
+    calc = PDFCalc(obs_data=gobs, scatter=s, conv=c, potential='rw')
     start_atoms.set_calculator(calc)
-    print start_atoms.get_potential_energy() / 300
+    print start_atoms.get_potential_energy() / c
 
-    e = .5
+    e = 5 * fs
 
-    traj= classical_dynamics(start_atoms, e, 20)
+    traj = classical_dynamics(start_atoms, e, 20)
 
     pe_list = []
     for atoms in traj:
@@ -66,8 +64,8 @@ if __name__ == '__main__':
         f2 = f * 2
     min_pe = np.argmin(pe_list)
     view(traj)
-    print min(pe_list) / 300
-    r = np.arange(0, 40, .01)
+    print min(pe_list) / c
+    # r = np.arange(0, 40, .01)
     # plt.plot(r, gobs, 'b-', label='ideal')
     # plt.plot(r, s.get_pdf(traj[0]) *
     #          wrap_rw(s.get_pdf(traj[0]), gobs)[1], 'k-',

@@ -24,6 +24,7 @@ font = {'family': 'normal',
 
 matplotlib.rc('font', **font)
 plt.ion()
+colors = ['grey', 'red', 'blue']
 
 
 def plot_pdf(scatter, gobs, atoms, save_file=None, show=True, **kwargs):
@@ -185,7 +186,6 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True,
     if len(tags) == 1:
         tags = {'': (1, '*')}
     # need to change this
-    colors = ['c', 'm', 'y', 'k']
     bins = np.linspace(0, 180, 100)
     # Bin the data
     for n, key in enumerate(stru_l.keys()):
@@ -259,7 +259,6 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None,
     width = 3. / 4 / len(stru_l)
     offset = .3 * 3 / len(stru_l)
     patterns = ('x', '\\', 'o', '.', '\\', '*')
-    colors = ['grey', 'mediumseagreen', 'c', 'y', 'red', 'blue']
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -326,7 +325,6 @@ def plot_bonds(sim, cut, save_file=None, show=True):
              atom.tag == tags[tag][0]]]
         if len(tagged_atoms) == 0:
             del tags[tag]
-    colors = ['c', 'm', 'y', 'k']
     linestyles = ['-', '--', ':']
 
     fig = plt.figure()
@@ -374,6 +372,83 @@ def plot_radial_bond_length(atoms, cut):
     fig = plt.figure()
     plt.scatter(dist_from_center, bond_lengths)
     plt.show()
+
+
+def plot_average_coordination(cut, traj, target_configuration=None, save_file=None,
+                      show=True, **kwargs):
+    stru_l = {}
+    # If the PDF document created with atomic config, use that as target
+    if target_configuration is not None:
+        stru_l['Target'] = target_configuration
+    stru_l['Start'] = traj[0]
+    stru_l['Equilibrium'] = traj[-1]
+    for atoms in stru_l.values():
+        tag_surface_atoms(atoms)
+
+    symbols = set(stru_l.itervalues().next().get_chemical_symbols())
+    tags = {'Core': (0, '+'), 'Surface': (1, '*')}
+    for tag in tags.keys():
+        tagged_atoms = stru_l.itervalues().next()[
+            [atom.index for atom in stru_l.itervalues().next() if
+             atom.tag == tags[tag][0]]]
+        if len(tagged_atoms) == 0:
+            del tags[tag]
+    if len(tags) == 1:
+        tags = {'': (1, '*')}
+    b_min = None
+    b_max = None
+    for key in stru_l.keys():
+        total_coordination = get_coord_list(stru_l[key], cut)
+        l_min = min(total_coordination)
+        l_max = max(total_coordination)
+        if b_min is None or b_min > l_min:
+            b_min = l_min
+        if b_max is None or b_max < l_max:
+            b_max = l_max
+    if b_min == b_max:
+        bins = np.asarray([b_min, b_max])
+    else:
+        bins = np.arange(b_min, b_max + 2)
+    width = 3. / 4 / len(stru_l)
+    offset = .3 * 3 / len(stru_l)
+    patterns = ('x', '\\', 'o', '.', '\\', '*')
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    for n, key in enumerate(stru_l.keys()):
+        bottoms = np.zeros(bins.shape)
+        j = 0
+        for symbol in symbols:
+            for tag in tags.keys():
+                hatch = patterns[j]
+                coord = get_coord_list(stru_l[key], cut, element=symbol,
+                                       tag=tags[tag][0])
+                a, b = np.histogram(coord, bins=bins)
+                total = np.sum(a)
+                ax.bar(b[:-1] + n * offset, a, width, bottom=bottoms[:-1],
+                       color=colors[n],
+                       label='{0} {1} {2}, {3}'.format(key, symbol, tag,
+                                                       total),
+                       hatch=hatch)
+                j += 1
+                bottoms[:-1] += a
+
+    ax.set_xlabel('Coordination Number')
+    ax.set_xticks(bins[:-1] + 1 / 2.)
+    ax.set_xticklabels(bins[:-1])
+    ax.set_ylabel('Atomic Counts')
+    ax2 = plt.twinx()
+    ax2.set_ylim(ax.get_ylim())
+    ax.legend(loc='best', prop={'size': 12})
+    if save_file is not None:
+        plt.savefig(save_file + '_coord.eps', bbox_inches='tight',
+                    transparent='True')
+        plt.savefig(save_file + '_coord.png', bbox_inches='tight',
+                    transparent='True')
+    if show is True:
+        plt.show()
+    return
 
 
 def mass_plot(sims, cut):
@@ -427,10 +502,10 @@ def mass_save(sims, cut, dir):
 
 
 if __name__ == '__main__':
-    from pyiid.workflow.db_utils import load_db
+    from simdb.search import *
+    sims = list(find_simulation_document())
+    sim = sims[8]
+    d = sim_unpack(sim)
+    # plot_coordination(3.2, **d)
+    a, b = get_coord_list(d['traj'][50:], 1.45)
 
-    db = load_db('/mnt/work-data/dev/IID_data/db_test/test.json')
-    # plot_angle(db[-1], 3)
-    # plot_coordination(db[-1], 3)
-    # plot_coordination(db[-4], 1.6)
-    plot_bonds(db[-2], 3)

@@ -36,6 +36,8 @@ class ElasticScatter(object):
     def __init__(self, exp_dict=None):
         # Currently supported processor architectures
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
+        self.exp_dict_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep']
+        self.default_values = [0.0, 25, .1, 0.0, 40.0, .01]
         self.exp = None
         self.pdf_qbin = None
         self.update_experiment(exp_dict)
@@ -61,10 +63,12 @@ class ElasticScatter(object):
     def update_experiment(self, exp_dict):
         # Should be read in from the gr file, but if not here are some defaults
         if exp_dict is None or bool(exp_dict) is False:
-            exp_dict = {'qmin': 0.0, 'qmax': 25., 'qbin': .1, 'rmin': 0.0,
-                        'rmax': 40.0, 'rstep': .01}
-        # TODO: Check keys to make certain everything is there
-
+            exp_dict = {}
+        for key, dv in zip(self.exp_dict_keys, self.default_values):
+            if key not in exp_dict.keys():
+                exp_dict[key] = dv
+                # if key == 'rstep':
+                #     exp_dict[key] = np.pi/exp_dict['qmax']
         self.exp = exp_dict
         # Technically we should use this for qbin:
         self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
@@ -235,6 +239,7 @@ if __name__ == '__main__':
     from ase.atoms import Atoms
     import ase.io as aseio
     import matplotlib.pyplot as plt
+    from time import time as ttime
 
     # atoms = aseio.read(
     #     '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz', )
@@ -248,14 +253,17 @@ if __name__ == '__main__':
         'qbin': .1,
         'rmin': 2.45,
         'rmax': 20.,
-        'rstep': .01
+        # 'rstep': .01
     }
     scat = ElasticScatter(exp_dict)
     # scat.set_processor(processor='Multi-GPU', kernel_type='nxn')
+    st = ttime()
     # fq = scat.get_fq(atoms)
-    gfq = scat.get_grad_fq(atoms)
+    # gfq = scat.get_grad_fq(atoms)
     # pdf = scat.get_pdf(atoms)
-    # r = scat.get_r()
-    # gpdf = scat.get_grad_pdf(atoms)
+    gpdf = scat.get_grad_pdf(atoms)
+    ft = ttime()
+    print ft-st
+    r = scat.get_r()
     # plt.plot(r, pdf)
     # plt.show()

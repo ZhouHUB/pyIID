@@ -4,6 +4,7 @@ __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 from pyiid.wrappers.elasticscatter import ElasticScatter
+import math
 
 
 class PDFCalc(Calculator):
@@ -30,10 +31,7 @@ class PDFCalc(Calculator):
         if obs_data is not None and exp_dict is not None:
             if len(np.arange(exp_dict['rmin'], exp_dict['rmax'],
                              exp_dict['rstep'])) < len(obs_data):
-                obs_data = obs_data[
-                           :self.exp_dict['rmax'] / self.exp_dict['rstep']]
-                obs_data = obs_data[
-                           self.exp_dict['rmin'] / self.exp_dict['rstep']:]
+                obs_data = obs_data[math.floor(self.exp_dict['rmin'] / self.exp_dict['rstep']):math.ceil(self.exp_dict['rmax'] / self.exp_dict['rstep'])]
             self.gobs = obs_data
         elif obs_data is not None:
             self.gobs = obs_data

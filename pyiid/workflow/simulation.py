@@ -68,8 +68,6 @@ def run_simulation(sim):
 
     # Attach MulitCalc to atoms
     atoms.set_calculator(master_calc)
-    # Rattle atoms if built from scratch
-    atoms.rattle()
 
     sim.start_total_energy = atoms.get_total_energy()
     sim.start_potential_energy = atoms.get_potential_energy()
@@ -83,6 +81,10 @@ def run_simulation(sim):
     out_traj, samples, l_p_i = nuts(atoms, target_acceptance, iterations,
                                     ensemble_temp, wtraj)
     sim.end_time = ttime.time()
+    if sim.total_iterations != 0:
+        sim.total_iterations += sim.params.iterations
+    else:
+        sim.total_iterations = sim.params.iterations
     if sim.total_samples is not None:
         sim.total_samples += samples
     else:

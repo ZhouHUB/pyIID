@@ -205,3 +205,48 @@ def com_spring_force(atoms, k, rt):
     np.seterr(**old_settings)
 
     return direction * -1.
+
+
+def att_spring_nrg(atoms, k, rt):
+    q = atoms.positions
+    n = len(atoms)
+    d = np.zeros((n, n, 3))
+    get_d_array(d, q)
+    r = np.zeros((n, n))
+    get_r_array(r, d)
+
+    thresh = np.greater(r, rt)
+    for i in range(len(thresh)):
+        thresh[i, i] = False
+
+    mag = np.zeros(r.shape)
+    mag[thresh] = k * (r[thresh] - rt)
+
+    energy = np.sum(mag[thresh] / 2. * (r[thresh] - rt))
+    return energy
+
+
+def att_spring_force(atoms, k, rt):
+    q = atoms.positions
+    n = len(atoms)
+    d = np.zeros((n, n, 3))
+    get_d_array(d, q)
+    r = np.zeros((n, n))
+    get_r_array(r, d)
+
+    thresh = np.greater(r, rt)
+
+    for i in range(len(thresh)):
+        thresh[i, i] = False
+
+    mag = np.zeros(r.shape)
+    mag[thresh] = k * (r[thresh] - rt)
+
+    direction = np.zeros((n, n, 3))
+    old_settings = np.seterr(all='ignore')
+    for tz in range(3):
+        direction[thresh, tz] = d[thresh, tz] / r[thresh] * mag[thresh]
+    np.seterr(**old_settings)
+    direction[np.isnan(direction)] = 0.0
+    direction = np.sum(direction, axis=1)
+    return direction
