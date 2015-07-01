@@ -12,28 +12,28 @@ def test_spring():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, _, _ = setup_atomic_configs()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     calc = Spring(k=100, rt=5.)
-    atoms2.set_calculator(calc)
-    assert atoms2.get_potential_energy() >= 100
+    atoms1.set_calculator(calc)
+    assert atoms1.get_potential_energy() >= 100
 
 
 def test_grad_spring():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, _, _ = setup_atomic_configs()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
     calc = Spring(k=100, rt=5.)
-    atoms2.set_calculator(calc)
-    forces = atoms2.get_forces()
-    com = atoms2.get_center_of_mass()
-    for i in range(len(atoms2)):
-        dist = atoms2[i].position - com
+    atoms1.set_calculator(calc)
+    forces = atoms1.get_forces()
+    com = atoms1.get_center_of_mass()
+    for i in range(len(atoms1)):
+        dist = atoms1[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
@@ -42,28 +42,28 @@ def test_spring2():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, _, _ = setup_atomic_configs()
     scat = ElasticScatter()
     scat.set_processor('CPU')
-    calc = Spring(k=100, rt=5., sp_type='com')
-    atoms2.set_calculator(calc)
-    assert atoms2.get_potential_energy() >= 100
+    calc = Spring(k=100, rt=1., sp_type='com')
+    atoms1.set_calculator(calc)
+    assert atoms1.get_potential_energy() >= 100
 
 
 def test_grad_spring2():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, _, _ = setup_atomic_configs()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
-    calc = Spring(k=100, rt=5., sp_type='com')
-    atoms2.set_calculator(calc)
-    forces = atoms2.get_forces()
-    com = atoms2.get_center_of_mass()
-    for i in range(len(atoms2)):
-        dist = atoms2[i].position - com
+    calc = Spring(k=100, rt=1., sp_type='com')
+    atoms1.set_calculator(calc)
+    forces = atoms1.get_forces()
+    com = atoms1.get_center_of_mass()
+    for i in range(len(atoms1)):
+        dist = atoms1[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
@@ -71,28 +71,28 @@ def test_spring3():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, _, _ = setup_atomic_configs()
     scat = ElasticScatter()
     scat.set_processor('CPU')
-    calc = Spring(k=100, rt=5., sp_type='att')
-    atoms2.set_calculator(calc)
-    assert atoms2.get_potential_energy() >= 100
+    calc = Spring(k=100, rt=1., sp_type='att')
+    atoms1.set_calculator(calc)
+    assert atoms1.get_potential_energy() >= 100
 
 
 def test_grad_spring3():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, _, _ = setup_atomic_configs()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
-    calc = Spring(k=100, rt=5., sp_type='att')
-    atoms2.set_calculator(calc)
-    forces = atoms2.get_forces()
-    com = atoms2.get_center_of_mass()
-    for i in range(len(atoms2)):
-        dist = atoms2[i].position - com
+    calc = Spring(k=100, rt=1., sp_type='att')
+    atoms1.set_calculator(calc)
+    forces = atoms1.get_forces()
+    com = atoms1.get_center_of_mass()
+    for i in range(len(atoms1)):
+        dist = atoms1[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
