@@ -1,3 +1,4 @@
+import math
 from numba import cuda
 import numpy as np
 
@@ -15,6 +16,7 @@ def get_gpus_mem():
     sort_gmem = [y for (y, x) in sorted(zip(mem_list, gpus), reverse=True)]
     return sort_gpus, sort_gmem
 
+
 def setup_gpu_calc(atoms, sum_type):
     # atoms info
     q = atoms.get_positions()
@@ -28,3 +30,15 @@ def setup_gpu_calc(atoms, sum_type):
     sort_gpus, sort_gmem = get_gpus_mem()
 
     return q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem
+
+
+def generate_grid(elements, tpb):
+    bpgs = []
+    for e_dim, thds in zip(elements, tpb):
+        bpg = int(math.ceil(float(e_dim) / thds))
+        if bpg < 1:
+            bpg = 1
+        bpgs.append(bpg)
+    for e, t, b in zip(elements, tpb, bpgs):
+        assert (e < t * b)
+    return bpgs

@@ -2,6 +2,7 @@ __author__ = 'christopher'
 
 import numpy as np
 from copy import deepcopy as dc
+from pyiid.sim import leapfrog
 
 delta_max = 500
 
@@ -91,89 +92,3 @@ def buildtree(input_atoms, u, v, j, e):
                         pos_atoms.get_momenta().flatten()) >= 0)
         Cp += Cpp
         return neg_atoms, pos_atoms, Cp, sp
-
-
-def leapfrog(atoms, step):
-    """
-    Propagate the dynamics of the system via the leapfrog algorithm one step
-
-    Parameters
-    -----------
-    atoms: ase.Atoms ase.Atoms
-        The atomic configuration for the system
-    step: float
-        The step size for the simulation, the new momentum/velocity is step *
-        the force
-
-    Returns
-    -------
-    ase.Atoms
-        The new atomic positions and velocities
-    """
-    latoms = dc(atoms)
-
-    latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-
-    latoms.positions += step * latoms.get_velocities()
-
-    latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-    return latoms
-
-
-if __name__ == '__main__':
-    import os
-    from copy import deepcopy as dc
-    import numpy as np
-    import matplotlib.pyplot as plt
-    from ase.visualize import view
-    from ase.io.trajectory import PickleTrajectory
-    import ase.io as aseio
-    import time
-    import datetime
-    import math
-    from ase.atoms import Atoms
-
-    from pyiid.wrappers.elasticscatter import ElasticScatter
-    from pyiid.calc.pdfcalc import PDFCalc
-    from pyiid.calc import wrap_rw
-    from pyiid.utils import tag_surface_atoms, build_sphere_np, load_gr_file, \
-        time_est
-
-    ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    start_atoms = dc(ideal_atoms)
-    start_atoms.positions *= 1.05
-    s = ElasticScatter()
-    gobs = s.get_pdf(ideal_atoms)
-
-    calc = PDFCalc(obs_data=gobs, scatter=s, conv=100, potential='rw')
-    start_atoms.set_calculator(calc)
-    print start_atoms.get_potential_energy()
-
-    e = .8e-2
-    M = 10
-
-    traj, C_list = nuts(start_atoms, e, M)
-    for c in C_list:
-        for atoms in c:
-            f = atoms.get_forces()
-            f2 = f * 2
-        view(c)
-
-    pe_list = []
-    for atoms in traj:
-        pe_list.append(atoms.get_potential_energy())
-        f = atoms.get_forces()
-        f2 = f * 2
-    min_pe = np.argmin(pe_list)
-    view(traj)
-    print traj[-1].get_potential_energy()
-    r = np.arange(0, 40, .01)
-    plt.plot(r, gobs, 'b-', label='ideal')
-    plt.plot(r, s.get_pdf(traj[0]) *
-             wrap_rw(s.get_pdf(traj[0]), gobs)[1], 'k-',
-             label='start')
-    plt.plot(r, s.get_pdf(traj[-1]) *
-             wrap_rw(s.get_pdf(traj[-1]), gobs)[1], 'r-',
-             label='final')
-    plt.legend()
-    plt.show()

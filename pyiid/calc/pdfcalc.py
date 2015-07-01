@@ -2,9 +2,9 @@ from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
 
 __author__ = 'christopher'
 from ase.calculators.calculator import Calculator
-import numpy as np
 from pyiid.wrappers.elasticscatter import ElasticScatter
 import math
+import numpy as np
 
 
 class PDFCalc(Calculator):
@@ -100,30 +100,3 @@ class PDFCalc(Calculator):
                            self.gobs) * self.rw_to_eV
 
         self.results['forces'] = forces  # * atoms.get_masses().reshape(-1, 1)
-
-
-if __name__ == '__main__':
-    from ase.atoms import Atoms
-    import numpy as np
-
-    # ideal_atoms = Octahedron('Au', 2)
-    # ideal_atoms.pbc = False
-    # wrap_atoms(ideal_atoms)
-
-    n = 4
-    pos = np.random.random((n, 3)) * 10.
-    ideal_atoms = Atoms('Au' + str(n), pos)
-    exp_dict = {'qmin': 0.0, 'qmax': 25.,
-                'qbin': np.pi / (45. + 6 * 2 * np.pi / 25), 'rmin': 0.0,
-                'rmax': 40.0, 'rstep': .01}
-
-    scat = ElasticScatter()
-    gobs = scat.get_pdf(ideal_atoms)
-
-    # calc1 = PDFCalc(gobs=gobs, scatter=scat)
-    calc1 = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
-    print calc1.scale
-    # ideal_atoms.set_calculator(calc1)
-    # ideal_atoms.positions *= 1.5
-    # print ideal_atoms.get_potential_energy()
-    # print ideal_atoms.get_forces()

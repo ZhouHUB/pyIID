@@ -36,6 +36,18 @@ def gpu_avail(n_nodes):
 
 
 def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
+    """
+    Breakup the job across the GPU enabled nodes
+
+    Parameters
+    ----------
+    n_nodes: int
+        Number of allocated nodes, not including the head node
+    Returns
+    -------
+    list of floats:
+        Amount of memory per GPU
+    """
     from mpi4py import MPI
 
     kernel_loc = inspect.getfile(mpi_fq_worker)
@@ -73,7 +85,7 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     p.join()
     # Make certain we have covered all the atoms
     assert n_cov == len(q)
-
+    # TODO: Make Numpy based Gather for faster memory transfer
     reports = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
     reports += thread_q
@@ -81,6 +93,18 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
 
 
 def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
+    """
+    Breakup the grad F(Q) job across GPU enabled nodes
+
+    Parameters
+    ----------
+    n_nodes: int
+        Number of allocated nodes, not including the head node
+    Returns
+    -------
+    list of floats:
+        Amount of memory per GPU
+    """
     from mpi4py import MPI
 
     kernel_loc = inspect.getfile(mpi_grad_worker)
@@ -99,6 +123,6 @@ def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
             msg = (q, scatter_array, qbin, m, n_cov)
         comm.recv(source=MPI.ANY_SOURCE, status=status)
         comm.send(obj=msg, dest=status.Get_source())
-
+    # TODO: Make Numpy based Gather for faster memory transfer
     reports = comm.gather(root=MPI.ROOT)
     return reports

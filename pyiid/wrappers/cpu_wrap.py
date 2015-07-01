@@ -1,8 +1,6 @@
 __author__ = 'christopher'
 from pyiid.kernels.cpu_kernel import *
 import numpy as np
-from numbapro import autojit
-
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     """
@@ -45,27 +43,15 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     r = np.zeros((n, n))
     get_r_array(r, d)
 
-
     # get non-normalized fq
     fq = np.zeros(qmax_bin)
     get_fq_array(fq, r, scatter_array, qbin)
 
-
     # Normalize fq
-    # norm_array = np.zeros((n, n, qmax_bin), dtype=np.float32)
-    # get_normalization_array(norm_array, scatter_array)
-
-    # norm_array = norm_array.sum(axis=(0, 1))
-    # norm_array *= 1. / (scatter_array.shape[0] ** 2)
-
-    # old_settings = np.seterr(all='ignore')
-    # fq = np.nan_to_num(1 / (n * norm_array) * fq)
-    # np.seterr(**old_settings)
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / na * fq)
     np.seterr(**old_settings)
-    # del norm_array, r, d, q, scatter_array
     del r, d, q, scatter_array
     return fq
 

@@ -24,7 +24,7 @@ class FQCalc(Calculator):
         if obs_data is not None:
             self.gobs = obs_data
         else:
-            raise NotImplementedError('Need an experimental PDF')
+            raise NotImplementedError('Need an experimental F(Q)')
 
         if potential == 'chi_sq':
             self.potential = wrap_chi_sq

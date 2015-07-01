@@ -1,18 +1,15 @@
 __author__ = 'christopher'
 import math
-
+from pyiid.wrappers import generate_grid
 import numpy as np
 from numba import cuda
-from numba import jit
 
 
-# @jit()
 def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
     return int(math.floor(float(-4 * n * qmax_bin - 12 * n + .7 * mem) / (
         4 * (6 * qmax_bin * n + 3 * qmax_bin + 4 * n))))
 
 
-# @jit()
 def atoms_per_gpu_fq(n, qmax_bin, mem):
     return int(math.floor(
         float(-4 * n * qmax_bin - 12 * n - 4 * qmax_bin + .8 * mem) / (
@@ -59,48 +56,22 @@ def atomic_fq(q, scatter_array, qbin, m, n_cov):
     # Q
     elements_per_dim_1 = [qmax_bin]
     tpb_l_1 = [32]
-    bpg_l_1 = []
-    for e_dim, tpb in zip(elements_per_dim_1, tpb_l_1):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_1.append(bpg)
+    bpg_l_1 = generate_grid(elements_per_dim_1, tpb_l_1)
 
     # NxQ
     elements_per_dim_2_q = [n, qmax_bin]
     tpb_l_2_q = [32, 32]
-    bpg_l_2_q = []
-    for e_dim, tpb in zip(elements_per_dim_2_q, tpb_l_2_q):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_2_q.append(bpg)
+    bpg_l_2_q = generate_grid(elements_per_dim_2_q, tpb_l_2_q)
 
     # NXN
     elements_per_dim_2 = [m, n]
     tpb_l_2 = [32, 32]
-    # tpb_l_2 = [8, 4]
-    bpg_l_2 = []
-    for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_2.append(bpg)
+    bpg_l_2 = generate_grid(elements_per_dim_2, tpb_l_2)
 
     # NxNxQ
     elements_per_dim_3 = [m, n, qmax_bin]
     tpb_l_3 = [16, 16, 4]
-    # tpb_l_3 = [4, 4, 2]
-    bpg_l_3 = []
-    for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_3.append(bpg)
+    bpg_l_3 = generate_grid(elements_per_dim_3, tpb_l_3)
 
     # start calculations
     dscat = cuda.to_device(scatter_array, stream2)
@@ -181,51 +152,15 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
     stream3 = cuda.stream()
 
     # four kinds of test_kernels; Q, NxQ, NxN, or NxNxQ
-    # Q
-    elements_per_dim_1 = [qmax_bin]
-    tpb_l_1 = [32]
-    bpg_l_1 = []
-    for e_dim, tpb in zip(elements_per_dim_1, tpb_l_1):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_1.append(bpg)
-
-    # NxQ
-    elements_per_dim_2_q = [n, qmax_bin]
-    tpb_l_2_q = [32, 32]
-    bpg_l_2_q = []
-    for e_dim, tpb in zip(elements_per_dim_2_q, tpb_l_2_q):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_2_q.append(bpg)
-
     # NXN
     elements_per_dim_2 = [m, n]
     tpb_l_2 = [32, 32]
-    # tpb_l_2 = [8, 4]
-    bpg_l_2 = []
-    for e_dim, tpb in zip(elements_per_dim_2, tpb_l_2):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_2.append(bpg)
+    bpg_l_2 = generate_grid(elements_per_dim_2, tpb_l_2)
 
     # NxNxQ
     elements_per_dim_3 = [m, n, qmax_bin]
     tpb_l_3 = [16, 16, 4]
-    # tpb_l_3 = [4, 4, 2]
-    bpg_l_3 = []
-    for e_dim, tpb in zip(elements_per_dim_3, tpb_l_3):
-        bpg = int(math.ceil(float(e_dim) / tpb))
-        if bpg < 1:
-            bpg = 1
-        assert (bpg * tpb >= e_dim)
-        bpg_l_3.append(bpg)
+    bpg_l_3 = generate_grid(elements_per_dim_3, tpb_l_3)
 
     # start F(Q) calculations
     dscat = cuda.to_device(scatter_array, stream2)

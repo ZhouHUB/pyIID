@@ -71,15 +71,8 @@ def subs_grad_fq(gpu, q, scatter_array, grad_q, qbin, il, jl, k_cov,
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
-    q = atoms.get_positions()
-    q = q.astype(np.float32)
-    n = len(q)
-    if sum_type == 'fq':
-        scatter_array = atoms.get_array('F(Q) scatter')
-    else:
-        scatter_array = atoms.get_array('PDF scatter')
-    qmax_bin = scatter_array.shape[1]
-    qbin = np.float32(qbin)
+    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(atoms,
+                                                                         sum_type)
 
     # setup flat map
     il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
@@ -131,20 +124,3 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
             grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
     np.seterr(**old_settings)
     return grad_p
-
-
-if __name__ == '__main__':
-    from ase.atoms import Atoms
-    from pyiid.wrappers.elasticscatter import wrap_atoms
-
-    # n = 1500
-    # pos = np.random.random((n, 3)) * 10.
-    # atoms = Atoms('Au' + str(n), pos)
-    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms)
-
-    fq = wrap_fq(atoms, atoms.info['exp']['qbin'])
-    print fq
-    grad_fq = wrap_fq_grad(atoms, atoms.info['exp']['qbin'])
-    print grad_fq[:, :, 1]
-    # raw_input()

@@ -128,22 +128,3 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1, sum_type='fq'):
     grad_p[:, :] = np.nan_to_num(grad_p[:, :] / na)
     np.seterr(**old_settings)
     return grad_p
-
-
-if __name__ == '__main__':
-    # import cProfile
-    # cProfile.run('''
-    from ase.atoms import Atoms
-    from pyiid.wrappers.elasticscatter import wrap_atoms
-
-    # n = 400
-    # pos = np.random.random((n, 3)) * 10.
-    # atoms = Atoms('Au' + str(n), pos)
-    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    wrap_atoms(atoms, None)
-
-    # fq = wrap_fq(atoms)
-    # print fq
-    grad_fq = wrap_fq_grad(atoms, atoms.info['Qbin'])
-    print grad_fq[:, :, 1]
-    # raw_input()

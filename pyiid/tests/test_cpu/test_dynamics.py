@@ -54,3 +54,7 @@ def test_reverse_dynamics():
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.argmin(pe_list)
     assert min_pe / 300. < .1
+
+if __name__ == '__main__':
+    import nose
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)

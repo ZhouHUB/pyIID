@@ -246,6 +246,13 @@ def test_gpu_scatter_fail():
         scat.set_processor('Multi-GPU')
         assert scat.processor == 'Multi-GPU'
 
+
+def test_scatter_vector():
+    exp = generate_experiment()
+    scat = ElasticScatter(exp_dict=exp)
+    assert scat.get_scatter_vector() == np.arange(exp['qmin'], exp['qmax'], exp['qbin'])
+
+
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)

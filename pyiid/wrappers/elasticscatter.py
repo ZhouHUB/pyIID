@@ -233,37 +233,3 @@ def wrap_atoms(atoms, exp_dict=None):
     atoms.set_array('PDF scatter', scatter_array)
 
     atoms.info['exp'] = exp_dict
-
-
-if __name__ == '__main__':
-    from ase.atoms import Atoms
-    import ase.io as aseio
-    import matplotlib.pyplot as plt
-    from time import time as ttime
-
-    # atoms = aseio.read(
-    #     '/mnt/bulk-data/Dropbox/BNL_Project/Simulations/Models.d/2-AuNP-DFT.d/SizeVariation.d/Au55.initial_VASP_Oh.xyz', )
-    # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    n = 1500
-    pos = np.random.random((n, 3)) * 10.
-    atoms = Atoms('Au' + str(n), pos)
-    exp_dict = {
-        'qmin': 0.0,
-        'qmax': 25.,
-        'qbin': .1,
-        'rmin': 2.45,
-        'rmax': 20.,
-        # 'rstep': .01
-    }
-    scat = ElasticScatter(exp_dict)
-    # scat.set_processor(processor='Multi-GPU', kernel_type='nxn')
-    st = ttime()
-    # fq = scat.get_fq(atoms)
-    # gfq = scat.get_grad_fq(atoms)
-    # pdf = scat.get_pdf(atoms)
-    gpdf = scat.get_grad_pdf(atoms)
-    ft = ttime()
-    print ft-st
-    r = scat.get_r()
-    # plt.plot(r, pdf)
-    # plt.show()
