@@ -40,5 +40,6 @@ def generate_grid(elements, tpb):
             bpg = 1
         bpgs.append(bpg)
     for e, t, b in zip(elements, tpb, bpgs):
-        assert (e < t * b)
+        # print e, t*b
+        assert (e <= t * b)
     return bpgs
