@@ -38,7 +38,7 @@ def atomic_fq(q, scatter_array, qbin, il, jl):
 
     elements_per_dim_2 = [k_max, qmax_bin]
     tpb2 = [16, 4]
-    bpg2 = generate_grid(elements_per_dim_2, tpbq)
+    bpg2 = generate_grid(elements_per_dim_2, tpb2)
 
     # generate streams
     stream = cuda.stream()
