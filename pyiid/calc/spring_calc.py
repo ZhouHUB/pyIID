@@ -21,6 +21,9 @@ class Spring(Calculator):
         if sp_type == 'com':
             from pyiid.wrappers.cpu_wrap import com_spring_nrg as nrg
             from pyiid.wrappers.cpu_wrap import com_spring_force as force
+        if sp_type == 'att':
+            from pyiid.wrappers.cpu_wrap import att_spring_nrg as nrg
+            from pyiid.wrappers.cpu_wrap import att_spring_force as force
         self.nrg_func = nrg
         self.f_func = force
         self.sp_type = sp_type
