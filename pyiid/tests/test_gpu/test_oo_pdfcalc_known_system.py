@@ -43,6 +43,7 @@ def test_chi_sq():
 def test_grad_rw():
     atoms1, atoms2, scale = setup_atomic_configs()
     scat = ElasticScatter()
+    scat.set_processor('Multi-GPU', kernel_type='nxn')
     gobs = scat.get_pdf(atoms1)
     calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
     atoms2.set_calculator(calc)

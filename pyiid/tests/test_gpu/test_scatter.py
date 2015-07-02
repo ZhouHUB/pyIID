@@ -7,7 +7,7 @@ from ase.atoms import Atoms
 import numpy as np
 import matplotlib.pyplot as plt
 
-rt = 1e-6
+rt = 1e-5
 at = .000005 
 
 def test_fq_flat():

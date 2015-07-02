@@ -33,6 +33,7 @@ def setup_gpu_calc(atoms, sum_type):
 
 
 def generate_grid(elements, tpb):
+    assert len(elements) == len(tpb)
     bpgs = []
     for e_dim, thds in zip(elements, tpb):
         bpg = int(math.ceil(float(e_dim) / thds))

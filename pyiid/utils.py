@@ -1,8 +1,8 @@
 __author__ = 'christopher'
 
 import numpy as np
-from diffpy.Structure.structure import Structure
-from diffpy.Structure.atom import Atom as dAtom
+# from diffpy.Structure.structure import Structure
+# from diffpy.Structure.atom import Atom as dAtom
 from ase.atoms import Atoms as AAtoms
 import ase.io as aseio
 from ase.lattice.surface import add_adsorbate
@@ -17,7 +17,7 @@ from copy import deepcopy as dc
 import time
 import datetime
 
-
+'''
 def convert_atoms_to_stru(atoms):
     """
     Convert between ASE and Diffpy structural objects
@@ -60,7 +60,7 @@ def update_stru(new_atoms, stru):
     # for j in changed_list:
     #     stru[j]._set_xyz_cartn(new_atoms[j].position)
     return stru
-
+'''
 
 def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None, **kwargs):
     """
