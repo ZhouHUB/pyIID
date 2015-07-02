@@ -4,6 +4,18 @@ import math
 import numpy as np
 
 
+@cuda.jit(device=True)
+def ij_to_k(i, j):
+    return int(j + i * (i - 1) / 2)
+
+
+@cuda.jit(device=True)
+def k_to_ij(k):
+    i = math.floor((1 + math.sqrt(1 + 8. * k)) / 2)
+    j = k - i * (i - 1) / 2
+    return int(i), int(j)
+
+
 # @jit()
 def get_ij_lists(il, jl, n):
     k = 0
@@ -20,10 +32,18 @@ def symmetric_reshape(out_data, in_data, i_list, j_list):
     out_data[i_list, j_list] = in_data
 
 
+def antisymmetric_reshape(out_data, in_data):
+    for i in range(len(out_data)):
+        for j in range(i):
+            out_data[i, j] = -1*in_data[j + i * (i - 1) / 2]
+            out_data[j, i] = in_data[j + i * (i - 1) / 2]
+
+
+'''
 def antisymmetric_reshape(out_data, in_data, i_list, j_list):
     out_data[j_list, i_list] = in_data
     out_data[i_list, j_list] = -1 * in_data
-
+'''
 
 def asr_gpu(new_grad, grad, il, jl):
     k, qx = cuda.grid(2)
@@ -35,6 +55,7 @@ def asr_gpu(new_grad, grad, il, jl):
         new_grad[il[k], jl[k], tz, qx] = -1 * grad[k, tz, qx]
 
 
+'''
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
 def get_d_array(d, qi, qj):
     k = cuda.grid(1)
@@ -42,6 +63,17 @@ def get_d_array(d, qi, qj):
         return
     for tz in range(3):
         d[k, tz] = qi[k, tz] - qj[k, tz]
+'''
+
+#TODO: test this with grid(2)
+@cuda.jit(argtypes=[f4[:, :], f4[:, :]])
+def get_d_array(d, q):
+    k = cuda.grid(1)
+    if k >= len(d):
+        return
+    i, j = k_to_ij(k)
+    for tz in range(3):
+        d[k, tz] = q[i, tz] - q[j, tz]
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
@@ -52,7 +84,7 @@ def get_r_array(r, d):
         return
     r[k] = math.sqrt(d[k, 0] ** 2 + d[k, 1] ** 2 + d[k, 2] ** 2)
 
-
+'''
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
 def get_normalization_array(norm_array, scati, scatj):
     """
@@ -73,6 +105,29 @@ def get_normalization_array(norm_array, scati, scatj):
     if k >= n or qx >= qmax_bin:
         return
     norm_array[k, qx] = scati[k, qx] * scatj[k, qx]
+'''
+
+@cuda.jit(argtypes=[f4[:, :], f4[:, :]])
+def get_normalization_array(norm_array, scat):
+    """
+    Generate the Q dependant normalization factors for the F(Q) array
+
+    Parameters:
+    -----------
+    norm_array: NxNx3 array
+        Normalization array
+    scatter_array: NxM array
+        The scatter factor array
+    """
+
+    k, qx = cuda.grid(2)
+
+    n = norm_array.shape[0]
+    qmax_bin = norm_array.shape[1]
+    if k >= n or qx >= qmax_bin:
+        return
+    i, j = k_to_ij(k)
+    norm_array[k, qx] = scat[i, qx] * scat[j, qx]
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:], f4[:, :], f4])
@@ -82,20 +137,20 @@ def get_fq(fq, r, norm, qbin):
     qmax_bin = fq.shape[1]
     if k >= n or qx >= qmax_bin:
         return
-    fq[k, qx] = norm[k, qx] * math.sin(qbin * qx * r[k]) / r[k]
+    fq[k, qx] = norm[k, qx] * math.sin(float32(qbin * qx) * r[k]) / r[k]
 
-
+# TODO: break this up to get speed up
+# A = norm*Q, B = cos(Q*r), C = d/r
+# D = A*B - F(Q)
+# D /r * C
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
 def get_grad_fq(grad, fq, r, d, norm, qbin):
     k, qx = cuda.grid(2)
-
     if k >= len(grad) or qx > norm.shape[1]:
         return
     for w in range(3):
-        grad[k, w, qx] = (
-                             norm[k, qx] * qx * qbin * math.cos(
-                                 qx * qbin * r[k]) -
-                             fq[k, qx]) / r[k] * d[k, w] / r[k]
+        # grad[k, w, qx] = (norm[k, qx] * qx * qbin * math.cos(qx * qbin * r[k]) - fq[k, qx]) / r[k] * d[k, w] / r[k]
+        grad[k, w, qx] = (norm[k, qx] * float32(qx * qbin) * math.cos(float32(qx * qbin) * r[k]) - fq[k, qx]) / r[k] * d[k, w] / r[k]
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
@@ -170,6 +225,41 @@ def flat_sum(new_grad, grad, il, jl):
         #     jk = jl[k]
         new_grad[il[k], tz, qx] -= grad[k, tz, qx]
         new_grad[jl[k], tz, qx] += grad[k, tz, qx]
+'''
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])
+def fast_flat_sum(new_grad, grad):
+    i, j, qx = cuda.grid(3)
+    n = len(new_grad)
+    if i == j or i >= n or j >= n or qx >= grad.shape[2]:
+        return
+    if j < i:
+        k = ij_to_k(i, j)
+        alpha = -1
+    else:
+        k = ij_to_k(j, i)
+        alpha = 1
+    for tz in range(3):
+        new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
+'''
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])
+def fast_flat_sum(new_grad, grad):
+    i, qx = cuda.grid(2)
+    n = len(new_grad)
+    if i >= n or qx >= grad.shape[2]:
+        return
+
+    for tz in range(3):
+        tmp = 0.
+        for j in range(n):
+            if j < i:
+                k = ij_to_k(i, j)
+                alpha = -1
+            elif j > i:
+                k = ij_to_k(j, i)
+                alpha = 1
+            tmp += grad[k, tz, qx] * alpha
+        new_grad[i, tz, qx] = tmp
 
 '''
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], u4[:], u4[:]])

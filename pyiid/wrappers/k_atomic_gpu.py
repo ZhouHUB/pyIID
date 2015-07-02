@@ -46,35 +46,22 @@ def atomic_fq(q, scatter_array, qbin, il, jl):
 
     # transfer data
     dd = cuda.device_array((k_max, 3), dtype=np.float32, stream=stream)
-    dqi = cuda.device_array((k_max, 3), dtype=np.float32, stream=stream)
-    dqj = cuda.device_array((k_max, 3), dtype=np.float32, stream=stream)
-    dil = cuda.to_device(np.asarray(il, dtype=np.uint32), stream=stream)
-    djl = cuda.to_device(np.asarray(jl, dtype=np.uint32), stream=stream)
     dq = cuda.to_device(q)
 
     # calculate kernels
-    construct_qij[bpg1, tpb1, stream](dqi, dqj, dq, dil, djl)
 
     dr = cuda.device_array(k_max, dtype=np.float32, stream=stream)
-    get_d_array[bpg1, tpb1, stream](dd, dqi, dqj)
-    del dqi, dqj
+    get_d_array[bpg1, tpb1, stream](dd, dq)
+    del dq
 
     get_r_array[bpg1, tpb1, stream](dr, dd)
 
-    dnorm = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                              stream=stream2)
+    dnorm = cuda.device_array((k_max, qmax_bin), dtype=np.float32, stream=stream2)
 
-    dscati = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                               stream=stream2)
-    dscatj = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                               stream=stream2)
-    dscat = cuda.to_device(scatter_array.astype(np.float32),
-                           stream=stream2)
+    dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
 
-    construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
-
-    get_normalization_array[bpg2, tpb2, stream2](dnorm, dscati, dscatj)
-    del dscati, dscatj, dscat, dil, djl
+    get_normalization_array[bpg2, tpb2, stream2](dnorm, dscat)
+    del dscat
 
     dfq = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
                             stream=stream2)
@@ -92,14 +79,14 @@ def atomic_fq(q, scatter_array, qbin, il, jl):
     return final
 
 
-def atomic_grad_fq(q, scatter_array, qbin, il, jl):
-    k_max = len(il)
+def atomic_grad_fq(q, scatter_array, qbin, k, n_cov):
+    k_max = k
     qmax_bin = scatter_array.shape[1]
 
     # load kernels
     from pyiid.kernels.flat_kernel import get_d_array, get_r_array, \
         get_normalization_array, get_fq, get_grad_fq, \
-        construct_scatij, construct_qij, flat_sum, zero_pseudo_3D
+        construct_scatij, construct_qij, flat_sum, zero_pseudo_3D, fast_flat_sum
 
     # generate grids
     elements_per_dim_1 = [k_max]
@@ -125,31 +112,20 @@ def atomic_grad_fq(q, scatter_array, qbin, il, jl):
     # transfer data
     dd = cuda.device_array((k_max, 3), dtype=np.float32, stream=stream)
     dq = cuda.to_device(q, stream=stream)
-    dqi = cuda.device_array((k_max, 3), dtype=np.float32, stream=stream)
-    dqj = cuda.device_array((k_max, 3), dtype=np.float32, stream=stream)
-    dil = cuda.to_device(np.asarray(il, dtype=np.uint32), stream=stream)
-    djl = cuda.to_device(np.asarray(jl, dtype=np.uint32), stream=stream)
 
-    construct_qij[bpg1, tpb1, stream](dqi, dqj, dq, dil, djl)
     dr = cuda.device_array(k_max, dtype=np.float32, stream=stream)
 
     # calculate kernels
-    get_d_array[bpg1, tpb1, stream](dd, dqi, dqj)
-    del dqi, dqj
+    get_d_array[bpg1, tpb1, stream](dd, dq)
 
     get_r_array[bpg1, tpb1, stream](dr, dd)
 
     dnorm = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
                               stream=stream2)
-    dscati = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                               stream=stream2)
-    dscatj = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                               stream=stream2)
     dscat = cuda.to_device(scatter_array, stream=stream2)
 
-    construct_scatij[bpg2, tpb2, stream2](dscati, dscatj, dscat, dil, djl)
-    get_normalization_array[bpg2, tpb2, stream2](dnorm, dscati, dscatj)
-    del dscati, dscatj, dscat
+    get_normalization_array[bpg2, tpb2, stream2](dnorm, dscat)
+    del dscat
 
     dfq = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
                             stream=stream2)
@@ -167,9 +143,9 @@ def atomic_grad_fq(q, scatter_array, qbin, il, jl):
                                   stream=stream2)
     zero_pseudo_3D[bpgnq, tpbnq, stream2](dnew_grad)
 
-    flat_sum[[1, bpgq[0]], [4, tpbq[0]], stream2](dnew_grad, dgrad, dil,
-                                                  djl)
+    # fast_flat_sum[[bpgnq[0], bpgnq[0], bpgnq[1]], [tpbnq[0], tpbnq[0], tpbnq[1]]](dnew_grad, dgrad)
+    fast_flat_sum[bpgnq, tpbnq](dnew_grad, dgrad)
     dnew_grad.copy_to_host(new_grad2)
-    del dd, dr, dnorm, dfq, dgrad, dil, djl
-    del grad, il, jl
+    del dd, dr, dnorm, dfq, dgrad
+    del grad
     return new_grad2

@@ -41,6 +41,7 @@ def test_get_d():
     from pyiid.kernels.cpu_kernel import get_d_array as serial_get_d_array
     # prep data
     n = 4
+    k = n*(n-1)/2
     q = np.random.random((n, 3)).astype(np.float32)
     cd = np.zeros((n, n, 3), dtype=np.float32)
     kd = dc(cd)
@@ -49,23 +50,16 @@ def test_get_d():
     serial_get_d_array(cd, q)
 
     # kernel version
-    il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
-    jl = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
-    get_ij_lists(il, jl, n)
-    # # print len(il), len(jl)
-    stream, bpg, tpb = set_up_gpu(len(il))
-    qi = q[il]
-    qj = q[jl]
-
-    gpud = np.zeros((len(il), 3), dtype=np.float32)
+    stream, bpg, tpb = set_up_gpu(k)
+    gpud = np.zeros((k, 3), dtype=np.float32)
     dgpud = cuda.to_device(gpud)
-    dqi = cuda.to_device(qi)
-    dqj = cuda.to_device(qj)
+    dq = cuda.to_device(q)
 
-    get_d_array[bpg, tpb, stream](dgpud, dqi, dqj)
+    get_d_array[bpg, tpb, stream](dgpud, dq)
     dgpud.to_host()
 
-    antisymmetric_reshape(kd, gpud, il, jl)
+    antisymmetric_reshape(kd, gpud)
+    print cd.shape, kd.shape
     assert_allclose(cd, kd)
 
     return
