@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 rt = 1e-5
-at = .000005 
+at = .000005
 
 def test_fq_flat():
     for i in range(4):
@@ -29,7 +29,7 @@ def test_fq_flat():
             # print 'median difference', np.median(gpu - cpu)
             assert_allclose(gpu, cpu, rtol=rt, atol=at)
             # print 'passed'
-'''
+
 
 def test_fq_nxn():
     for i in range(4):
@@ -50,7 +50,6 @@ def test_fq_nxn():
             # print 'median difference', np.median(gpu - cpu)
             assert_allclose(gpu, cpu, rtol=rt, atol=at)
             # print 'passed'
-'''
 
 
 def test_pdf_flat():
@@ -73,7 +72,7 @@ def test_pdf_flat():
             assert_allclose(gpu, cpu, rtol=rt, atol=at)
             # print 'passed'
 
-'''
+
 def test_pdf_nxn():
     for i in range(4):
         if i == 0:
@@ -182,7 +181,7 @@ def test_grad_pdf_nxn():
             assert_allclose(gpu, cpu, rtol=rt, atol=at)
             # print 'passed'
 
-'''
+
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)
