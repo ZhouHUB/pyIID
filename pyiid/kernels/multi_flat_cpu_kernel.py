@@ -6,9 +6,8 @@ import mkl
 targ = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
-
-@jit(target=targ)
-def get_d_array(d, q):
+@jit(target=targ, nopython=True)
+def get_d_array(d, q, offset):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
 
@@ -18,14 +17,14 @@ def get_d_array(d, q):
     q: Nx3 array
         The atomic positions
     """
-    n = len(q)
-    for tx in range(n):
-        for ty in range(n):
-            for tz in range(3):
-                d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
+    for k in range(len(d)):
+        i = int(math.floor(float((1 + math.sqrt(1 + 8. * (k + offset)))) / 2.))
+        j = int((k + offset) - i * (i - 1) / 2.)
+        for tz in range(3):
+            d[k, tz] = q[i, tz] - q[j, tz]
 
 
-@jit(target=targ)
+@jit(target=targ, nopython=True)
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -36,15 +35,12 @@ def get_r_array(r, d):
     d: NxNx3 array
         The coordinate pair distances
     """
-    n = len(r)
-    for tx in range(n):
-        for ty in range(n):
-            r[tx, ty] = math.sqrt(
-                d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
+    for k in xrange(len(r)):
+        r[k] = math.sqrt(d[k, 0] ** 2 + d[k, 1] ** 2 + d[k, 2] ** 2)
 
 
-@jit(target=targ)
-def get_fq_array(fq, r, scatter_array, qbin):
+@jit(target=targ, nopython=True)
+def get_fq(fq, r, norm, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
 
@@ -59,26 +55,15 @@ def get_fq_array(fq, r, scatter_array, qbin):
     qbin: float
         The qbin size
     """
-    sum_scale = 1
-    n = len(r)
-    qmax_bin = len(fq)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for kq in range(0, qmax_bin):
-                    debye_waller_scale = 1
-                    # TODO: debye_waller_scale = math.exp(
-                    # -.5 * dw_signal_sqrd * (kq*Qbin)**2)
-                    fq[kq] += sum_scale * \
-                              debye_waller_scale * \
-                              scatter_array[tx, kq] * \
-                              scatter_array[ty, kq] / \
-                              r[tx, ty] * \
-                              math.sin(kq * qbin * r[tx, ty])
+    for k in xrange(fq.shape[0]):
+        for qx in xrange(fq.shape[1]):
+            Q = float32(qbin * qx)
+            rk = r[k]
+            fq[k, qx] = norm[k, qx] * math.sin(Q * rk) / rk
 
 
-@jit(target=targ)
-def get_normalization_array(norm_array, scatter_array):
+@jit(target=targ, nopython=True)
+def get_normalization_array(norm, scat, offset):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
@@ -89,18 +74,15 @@ def get_normalization_array(norm_array, scatter_array):
     scatter_array: NxQ array
         The scatter factor array
     """
-    n = len(norm_array)
-    qmax_bin = norm_array.shape[2]
+    for k in xrange(norm.shape[0]):
+        i = int(math.floor(float((1 + math.sqrt(1 + 8. * (k + offset)))) / 2.))
+        j = int((k + offset) - i * (i - 1) / 2.)
+        for qx in xrange(norm.shape[1]):
+            norm[k, qx] = scat[i, qx] * scat[j, qx]
 
-    for kq in range(0, qmax_bin):
-        for tx in range(n):
-            for ty in range(n):
-                norm_array[tx, ty, kq] = (
-                    scatter_array[tx, kq] * scatter_array[ty, kq])
-
-
+'''
 # Gradient test_kernels -------------------------------------------------------
-@jit(target=targ)
+@jit(target=targ, nopython=True)
 def fq_grad_position(grad_p, d, r, scatter_array, qbin):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -141,7 +123,7 @@ def fq_grad_position(grad_p, d, r, scatter_array, qbin):
 
 # Misc. Kernels----------------------------------------------------------------
 
-@jit(target=targ)
+@jit(target=targ, nopython=True)
 def get_dw_sigma_squared(s, u, r, d, n):
     for tx in range(n):
         for ty in range(n):
@@ -155,7 +137,7 @@ def get_dw_sigma_squared(s, u, r, d, n):
             s[tx, ty] = u_dot_r * u_dot_r
 
 
-@jit(target=targ)
+@jit(target=targ, nopython=True)
 def get_gr(gr, r, rbin, n):
     """
     Generate gr the histogram of the atomic distances
@@ -189,10 +171,11 @@ def simple_grad(grad_p, d, r):
                     grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
 
 
-@jit(target=targ)
+@jit(target=targ, nopython=True)
 def spring_force_kernel(direction, d, r, mag):
     n = len(r)
     for i in range(n):
         for j in range(n):
             if i != j:
                 direction[i, :] += d[i, j, :] / r[i, j] * mag[i, j]
+'''

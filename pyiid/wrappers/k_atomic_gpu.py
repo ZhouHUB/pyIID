@@ -1,4 +1,4 @@
-from pyiid.kernels.flat_kernel import k_to_ij
+from pyiid.kernels import k_to_ij
 from pyiid.wrappers import generate_grid
 
 __author__ = 'christopher'
@@ -48,29 +48,23 @@ def atomic_fq(q, scatter_array, qbin, k_max, k_cov):
     dq = cuda.to_device(q)
 
     # calculate kernels
-
-    dr = cuda.device_array(k_max, dtype=np.float32, stream=stream)
     get_d_array[bpg1, tpb1, stream](dd, dq, k_cov)
     del dq
 
+    dr = cuda.device_array(k_max, dtype=np.float32, stream=stream)
     get_r_array[bpg1, tpb1, stream](dr, dd)
 
-    dnorm = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                              stream=stream2)
-
+    dnorm = cuda.device_array((k_max, qmax_bin), dtype=np.float32, stream=stream2)
     dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
-
     get_normalization_array[bpg2, tpb2, stream2](dnorm, dscat, k_cov)
     del dscat
 
-    dfq = cuda.device_array((k_max, qmax_bin), dtype=np.float32,
-                            stream=stream2)
-
+    dfq = cuda.device_array((k_max, qmax_bin), dtype=np.float32, stream=stream2)
     final = np.zeros(qmax_bin, dtype=np.float32)
     dfinal = cuda.to_device(final)
-
     get_fq[bpg2, tpb2, stream2](dfq, dr, dnorm, qbin)
     del dr, dnorm
+
     d2_to_d1_sum[bpgq, tpbq, stream2](dfinal, dfq)
     del dfq
 
@@ -135,4 +129,5 @@ def atomic_grad_fq(q, scatter_array, qbin, k_cov, k_max):
     fast_flat_sum[bpgnq, tpbnq, stream2](dnew_grad, dgrad, k_cov, k_max, i_min)
     dnew_grad.copy_to_host(new_grad2)
     del dgrad, dnew_grad
+
     return new_grad2

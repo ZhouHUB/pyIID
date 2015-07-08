@@ -38,6 +38,7 @@ class ElasticScatter(object):
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
         self.exp_dict_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep']
         self.default_values = [0.0, 25, .1, 0.0, 40.0, .01]
+        self.alg = None
         self.exp = None
         self.pdf_qbin = None
         self.update_experiment(exp_dict)
@@ -86,14 +87,14 @@ class ElasticScatter(object):
         processor: ['MPI-GPU', 'Multi-GPU', 'Serial-CPU']
             The processor to use
         """
-        # If a processor is given try to use that processor, but check if it is
-        # viable first.
+        # If a processor is given try to use that processor,
+        # but check if it is viable first.
 
         if processor is None:
             # Test each processor in order of most advanced to least
             for pro in self.avail_pro:
-                if self.set_processor(processor=pro,
-                                      kernel_type=kernel_type) is not None:
+                if self.set_processor(
+                        processor=pro, kernel_type=kernel_type) is not None:
                     break
 
         elif processor == self.avail_pro[0] and check_mpi() is True:
@@ -116,6 +117,7 @@ class ElasticScatter(object):
 
                 self.fq = node_0_gpu_wrap_fq
                 self.grad = node_0_gpu_wrap_fq_grad
+                self.alg = 'nxn'
 
             elif kernel_type == 'flat':
                 from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
@@ -124,13 +126,23 @@ class ElasticScatter(object):
 
                 self.fq = flat_fq
                 self.grad = flat_grad
+                self.alg = 'flat'
 
             self.processor = processor
             return True
 
         elif processor == self.avail_pro[2]:
-            self.fq = cpu_wrap_fq
-            self.grad = cpu_wrap_fq_grad
+            if kernel_type == 'nxn':
+                self.fq = cpu_wrap_fq
+                self.grad = cpu_wrap_fq_grad
+                self.alg = 'nxn'
+
+            elif kernel_type == 'flat':
+                from pyiid.wrappers.flat_multi_cpu_wrap import wrap_fq
+
+                self.fq = wrap_fq
+                # self.grad = wrap_fq_grad
+                self.alg = 'flat'
             self.processor = processor
             return True
 
@@ -164,6 +176,19 @@ class ElasticScatter(object):
     def get_iq(self, atoms):
         return self.get_sq(atoms) * np.average(
             atoms.get_array('F(Q) scatter')) ** 2
+
+    def get_2d_scatter(self, atoms, pixel_array):
+        iq = self.get_iq(atoms)
+        s = self.get_scatter_vector()
+        qb = self.exp['qbin']
+        final_shape = pixel_array.shape
+        fp = pixel_array.ravel()
+        img = np.zeros(fp.shape)
+        for sub_s, i in zip(s, iq):
+            c = np.intersect1d(np.where(sub_s - qb / 2. < fp)[0],
+                           np.where(sub_s + qb / 2. > fp)[0])
+            img[c] = i
+        return img.reshape(final_shape)
 
     def get_grad_fq(self, atoms):
         self.check_scatter(atoms)
