@@ -4,14 +4,14 @@ from numpy.testing import assert_allclose
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.fqcalc import FQCalc
-from pyiid.tests import setup_atomic_configs
+from pyiid.tests import setup_atomic_square
 
 
 def test_rw():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, atoms2, scale = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     gobs = scat.get_fq(atoms1)
@@ -26,7 +26,7 @@ def test_chi_sq():
     """
     Test two random systems against one another for $\chi^{2}$
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, atoms2, scale = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     gobs = scat.get_fq(atoms1)
@@ -42,7 +42,7 @@ def test_grad_rw():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, atoms2, scale = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
@@ -61,7 +61,7 @@ def test_grad_chi_sq():
     """
     Test two random systems against one another for grad $\chi^{2}$
     """
-    atoms1, atoms2, scale = setup_atomic_configs()
+    atoms1, atoms2, scale = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     gobs = scat.get_fq(atoms1)

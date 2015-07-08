@@ -17,6 +17,7 @@ install:
   - source activate testenv
   - pip install python-ase
   - pip install nose-exclude
+  - pip install ddt
   - python setup.py install
   - pip install coveralls
 

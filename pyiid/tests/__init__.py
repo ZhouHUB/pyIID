@@ -7,6 +7,7 @@ from pyiid.wrappers.elasticscatter import wrap_atoms
 import unittest
 from ddt import ddt, data
 from numpy.testing import assert_allclose
+from itertools import *
 TC = unittest.TestCase
 
 def setup_atoms(n, exp_dict=None):
@@ -28,9 +29,9 @@ def generate_experiment():
     return exp_dict
 
 
-def setup_atomic_configs():
+def setup_atomic_square():
     atoms1 = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     atoms2 = atoms1.copy()
     scale = .75
     atoms2.positions *= scale
-    return atoms1, atoms2, scale
+    return atoms1, atoms2

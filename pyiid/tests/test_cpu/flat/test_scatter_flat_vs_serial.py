@@ -3,7 +3,6 @@ import numpy as np
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.tests import *
 from numba import cuda
-from itertools import *
 
 test_atoms = [setup_atoms(n) for n in np.logspace(1, 3, 3)]
 test_exp = [generate_experiment() for i in range(3)]
