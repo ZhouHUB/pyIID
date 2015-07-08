@@ -2,6 +2,7 @@ __author__ = 'christopher'
 from numpy.testing import assert_allclose
 from copy import deepcopy as dc
 from numba import cuda
+import numpy as np
 
 cuda.select_device(0)
 from pyiid.kernels.flat_kernel import *

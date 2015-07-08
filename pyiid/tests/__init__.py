@@ -4,7 +4,10 @@ __author__ = 'christopher'
 import numpy as np
 from ase.atoms import Atoms
 from pyiid.wrappers.elasticscatter import wrap_atoms
-
+import unittest
+from ddt import ddt, data
+from numpy.testing import assert_allclose
+TC = unittest.TestCase
 
 def setup_atoms(n, exp_dict=None):
     q = np.random.random((n, 3)) * 10

@@ -20,7 +20,7 @@ def test_calc_rw():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU')
+            scat.set_processor('Multi-GPU', 'test_flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
@@ -49,7 +49,7 @@ def test_calc_chi_sq():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU')
+            scat.set_processor('Multi-GPU', 'test_flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)
@@ -73,11 +73,11 @@ def test_calc_grad_rw():
             exp = generate_experiment()
         scat = ElasticScatter(exp_dict=exp)
         # Test a set of different sized ensembles
-        for n in np.logspace(1, 2, 2):
+        for n in np.logspace(1, 4, 4):
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU')
+            scat.set_processor('Multi-GPU', 'test_flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
@@ -88,7 +88,7 @@ def test_calc_grad_rw():
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
             cpu = atoms2.get_forces()
-
+            print np.max(gpu - cpu)
             assert_allclose(gpu, cpu)
 
 
@@ -105,7 +105,7 @@ def test_calc_grad_chi_sq():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU')
+            scat.set_processor('Multi-GPU', 'test_flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)

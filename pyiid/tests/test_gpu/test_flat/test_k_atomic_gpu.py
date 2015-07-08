@@ -8,7 +8,7 @@ from numpy.testing import assert_allclose
 
 from pyiid.wrappers import generate_grid
 from pyiid.wrappers.elasticscatter import wrap_atoms
-from pyiid.kernels.flat_kernel import ij_to_k, k_to_ij
+from pyiid.kernels import ij_to_k, k_to_ij
 
 
 def generate_d(d, q, offset):
