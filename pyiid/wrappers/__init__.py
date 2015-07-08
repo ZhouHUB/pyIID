@@ -23,9 +23,9 @@ def setup_gpu_calc(atoms, sum_type):
     q = q.astype(np.float32)
     n = len(q)
     if sum_type == 'fq':
-        scatter_array = atoms.get_array('F(Q) scatter')
+        scatter_array = atoms.get_array('F(Q) scatter').astype(np.float32)
     else:
-        scatter_array = atoms.get_array('PDF scatter')
+        scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     qmax_bin = scatter_array.shape[1]
     sort_gpus, sort_gmem = get_gpus_mem()
 

@@ -8,7 +8,7 @@ from pyiid.tests import generate_experiment, setup_atoms
 from pyiid.testing.decorators import known_fail_if
 from pyiid.calc.pdfcalc import PDFCalc
 
-n = 1000
+n = 2000
 
 
 def test_rw():

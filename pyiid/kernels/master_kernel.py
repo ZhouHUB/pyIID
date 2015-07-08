@@ -1,6 +1,5 @@
 __author__ = 'christopher'
 import math
-from numbapro import autojit
 from numba import *
 import mkl
 import numpy as np
@@ -253,6 +252,7 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     for tx in range(n):
         for tz in range(3):
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
+    print 'start fft'
     pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
     p.close()
     pdf_grad_flat = np.asarray(pdf_grad_l)

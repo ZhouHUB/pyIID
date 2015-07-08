@@ -2,8 +2,6 @@ from pyiid.wrappers import *
 
 __author__ = 'christopher'
 from threading import Thread
-
-from pyiid.kernels.flat_kernel import get_ij_lists
 from pyiid.wrappers.k_atomic_gpu import *
 
 
@@ -17,7 +15,7 @@ def subs_fq(gpu, q, scatter_array, fq_q, qbin, il, jl):
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     q, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(atoms,
-                                                                     sum_type)
+                                                                   sum_type)
 
     # setup flat map
     # il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
@@ -77,34 +75,37 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     grad_q = []
     k_cov = 0
     p_dict = {}
-
+    grad_p = np.zeros((n, 3, qmax_bin))
     while k_cov < k_max:
         for gpu, mem in zip(gpus, mem_list):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
                 if m > k_max - k_cov:
                     m = k_max - k_cov
-                # print m, k_max
+
                 p = Thread(target=subs_grad_fq, args=(
                     gpu, q, scatter_array, grad_q, qbin, k_cov, m,
                 ))
                 p.start()
                 p_dict[gpu] = p
                 k_cov += m
-
+                # print float(k_cov) / k_max * 100., '%'
                 if k_cov >= k_max:
                     break
-                    # TODO: sum arrays during processing to cut down on memory
+        # TODO: sum arrays during processing to cut down on memory
+        # if queue is not empty sum the queue down
+        # remove entries from queue
+        for i in range(len(grad_q)):
+            # print len(grad_q)
+            grad_p += grad_q.pop(0)
+
     for value in p_dict.values():
         value.join()
-
-    sort_grads = grad_q
-
-    if len(sort_grads) > 1:
-        # grads = np.concatenate(sort_grads, axis=)
-        grad_p = np.sum(sort_grads, axis=0)
-    else:
-        grad_p = sort_grads[0]
+    # print len(grad_q)
+    for i in range(len(grad_q)):
+        grad_p += grad_q.pop(0)
+    # print len(grad_q)
+    # grad_p = np.sum(grad_q, axis=0)
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     for tx in range(n):

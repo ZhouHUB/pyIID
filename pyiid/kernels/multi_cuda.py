@@ -77,7 +77,7 @@ def get_fq_step_0(fq, r, qbin):
     # r is zero for tx = ty, thus we don't calculate for it
     if tx >= m or ty >= n or kq >= qmax_bin or tx == ty:
         return
-    fq[tx, ty, kq] = float32(math.sin(float32(kq * qbin) * r[tx, ty]) / r[tx, ty])
+    fq[tx, ty, kq] = math.sin(float32(qbin * kq) * r[tx, ty]) / r[tx, ty]
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])
@@ -150,8 +150,8 @@ def fq_grad_step_0(cos_term, r, qbin):
     qmax_bin = cos_term.shape[2]
     if tx >= m or ty >= n or kq >= qmax_bin or tx == ty:
         return
-    cos_term[tx, ty, kq] = math.cos(float32(kq * qbin) * r[tx, ty]) * kq * qbin / r[
-        tx, ty]
+    cos_term[tx, ty, kq] = math.cos(float32(qbin * kq) * r[tx, ty]) * float32(
+        kq * qbin)
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :]])
@@ -198,7 +198,7 @@ def fq_grad_step_2(cos_term, fq, r):
         return
     if tx == ty:
         return
-    cos_term[tx, ty, kq] -= fq[tx, ty, kq] / r[tx, ty]
+    cos_term[tx, ty, kq] -= fq[tx, ty, kq]
 
 
 @cuda.jit(argtypes=[f4[:, :, :, :], f4[:, :, :], f4[:, :]])
@@ -221,7 +221,7 @@ def fq_grad_step_3(grad_p, d, r):
     if tx >= m or ty >= n or kq >= qmax_bin or tx == ty:
         return
     for tz in range(3):
-        grad_p[tx, ty, tz, kq] = d[tx, ty, tz] / r[tx, ty]
+        grad_p[tx, ty, tz, kq] = d[tx, ty, tz] / r[tx, ty] / r[tx, ty]
 
 
 @cuda.jit(argtypes=[f4[:, :, :, :], f4[:, :, :]])
