@@ -5,10 +5,10 @@ from threading import Thread
 from pyiid.wrappers.k_atomic_gpu import *
 
 
-def subs_fq(gpu, q, scatter_array, fq_q, qbin, m, k_cov):
+def subs_fq(gpu, q, scatter_array, fq_q, qbin, il, jl):
     # set up GPU
     with gpu:
-        final = atomic_fq(q, scatter_array, qbin, m, k_cov)
+        final = atomic_fq(q, scatter_array, qbin, il, jl)
         fq_q.append(final)
         del final
 
@@ -18,6 +18,9 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
                                                                    sum_type)
 
     # setup test_flat map
+    # il = np.zeros((n ** 2 - n) / 2., dtype=np.uint32)
+    # jl = il.copy()
+    # get_ij_lists(il, jl, n)
     k_max = int((n ** 2 - n) / 2.)
 
     fq_q = []

@@ -138,10 +138,10 @@ class ElasticScatter(object):
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
-                from pyiid.wrappers.flat_multi_cpu_wrap import wrap_fq
+                from pyiid.wrappers.flat_multi_cpu_wrap import wrap_fq, wrap_fq_grad
 
                 self.fq = wrap_fq
-                # self.grad = wrap_fq_grad
+                self.grad = wrap_fq_grad
                 self.alg = 'flat'
             self.processor = processor
             return True

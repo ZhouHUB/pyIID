@@ -4,9 +4,10 @@ from ase.atoms import Atoms
 from pyiid.wrappers.elasticscatter import ElasticScatter
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+import ase.io
 
-atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-
+# atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+atoms = ase.io.read('/mnt/work-data/dev/IID_data/db_test/PDF_LAMMPS_587.traj')
 scat = ElasticScatter()
 scat.update_experiment({'qmax': 8, 'qmin':.5})
 s = scat.get_scatter_vector()

@@ -5,10 +5,15 @@ import numpy as np
 from ase.atoms import Atoms
 from pyiid.wrappers.elasticscatter import wrap_atoms
 import unittest
-from ddt import ddt, data
+from ddt import ddt, data, unpack
 from numpy.testing import assert_allclose
 from itertools import *
+
+
 TC = unittest.TestCase
+
+
+
 
 def setup_atoms(n, exp_dict=None):
     q = np.random.random((n, 3)) * 10

@@ -2,7 +2,7 @@ __author__ = 'christopher'
 import math
 from numba import *
 import mkl
-
+from pyiid.kernels import *
 targ = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
@@ -40,29 +40,6 @@ def get_r_array(r, d):
 
 
 @jit(target=targ, nopython=True)
-def get_fq(fq, r, norm, qbin):
-    """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    qbin: float
-        The qbin size
-    """
-    for k in xrange(fq.shape[0]):
-        for qx in xrange(fq.shape[1]):
-            Q = float32(qbin * qx)
-            rk = r[k]
-            fq[k, qx] = norm[k, qx] * math.sin(Q * rk) / rk
-
-
-@jit(target=targ, nopython=True)
 def get_normalization_array(norm, scat, offset):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -80,10 +57,34 @@ def get_normalization_array(norm, scat, offset):
         for qx in xrange(norm.shape[1]):
             norm[k, qx] = scat[i, qx] * scat[j, qx]
 
-'''
+
+@jit(target=targ, nopython=True)
+def get_fq(fq, r, norm, qbin):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    qbin: float
+        The qbin size
+    """
+    for k in xrange(fq.shape[0]):
+        for qx in xrange(fq.shape[1]):
+            Q = float32(qbin) * float32(qx)
+            # Q = float32(qbin * qx)
+            rk = r[k]
+            fq[k, qx] = norm[k, qx] * math.sin(Q * rk) / rk
+
+
 # Gradient test_kernels -------------------------------------------------------
 @jit(target=targ, nopython=True)
-def fq_grad_position(grad_p, d, r, scatter_array, qbin):
+def get_grad_fq(grad, fq, r, d, norm, qbin):
     """
     Generate the gradient F(Q) for an atomic configuration
 
@@ -100,27 +101,80 @@ def fq_grad_position(grad_p, d, r, scatter_array, qbin):
     qbin: float
         The size of the Q bins
     """
-    n = len(r)
-    qmax_bin = grad_p.shape[2]
-    for tx in range(n):
-        for tz in range(3):
-            for ty in range(n):
-                if tx != ty:
-                    for kq in range(0, qmax_bin):
-                        sub_grad_p = \
-                            scatter_array[tx, kq] * \
-                            scatter_array[ty, kq] * \
-                            d[tx, ty, tz] * \
-                            (
-                                (kq * qbin) *
-                                r[tx, ty] *
-                                math.cos(kq * qbin * r[tx, ty]) -
-                                math.sin(kq * qbin * r[tx, ty])
-                            ) \
-                            / (r[tx, ty] ** 3)
-                        grad_p[tx, tz, kq] += sub_grad_p
+    for k in xrange(grad.shape[0]):
+        for qx in xrange(fq.shape[1]):
+            # Q = float32(qbin * qx)
+            Q = float32(qbin) * float32(qx)
+            rk = r[k]
+            # A = (norm[k, qx] * Q * math.cos(Q * r[k]) - fq[k, qx]) / float32(r[k] ** 2)
+            A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / float32(rk ** 2)
+            for w in range(3):
+                grad[k, w, qx] = A * d[k, w]
+                # grad[k, w, qx] = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / rk / rk * d[k, w]
+                # grad[k, w, qx] = float32(qbin)
 
 
+@jit(target=targ, nopython=True)
+def fast_flat_sum(new_grad, grad, k_cov, k_max, i_min, i_max):
+    n = len(new_grad)
+    for i in xrange(i_min, i_max):
+        for qx in xrange(grad.shape[2]):
+            for tz in range(3):
+                tmp = float32(0.)
+                for j in xrange(n):
+                    k = int32(-1)
+                    if j < i:
+                        k = j + i * (i - 1) / 2
+                        alpha = float32(-1.)
+                    elif j > i:
+                        k = i + j * (j - 1) / 2
+                        alpha = float32(1.)
+                    k -= k_cov
+                    if 0 <= k < k_max:
+                        tmp += float32(grad[k, tz, qx] * alpha)
+                new_grad[i, tz, qx] = tmp
+
+@jit(target=targ, nopython=True)
+def fast_fast_flat_sum(new_grad, grad, k_cov):
+    n = len(new_grad)
+    k_max = len(grad)
+    for i in xrange(n):
+        for j in xrange(n):
+            for qx in xrange(grad.shape[2]):
+                for tz in xrange(3):
+                    if j < i:
+                        k = j + i * (i - 1) / 2 - k_cov
+                        alpha = -1
+                    elif i < j:
+                        k = i + j * (j - 1) / 2 - k_cov
+                        alpha = 1
+                    if 0 <= k < k_max:
+                        new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
+
+
+    '''
+    n = len(new_grad)
+    k_max = len(grad)
+    for i in xrange(n):
+        for j in xrange(n):
+            for qx in xrange(grad.shape[2]):
+                k = -1
+                alpha = 0
+                if j < i:
+                    k = j + i * (i - 1) / 2
+                    alpha = float32(1.)
+                    k -= k_cov
+                elif i < j:
+                    k = i + j * (j - 1) / 2
+                    alpha = float32(-1)
+                    k -= k_cov
+                # if 0 <= k <= k_max:
+                if 0 <= k < k_max:
+                    for tz in range(3):
+                        # new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
+                        new_grad[i, tz, qx] += alpha
+    '''
+'''
 # Misc. Kernels----------------------------------------------------------------
 
 @jit(target=targ, nopython=True)
