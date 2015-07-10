@@ -10,7 +10,8 @@ from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq_grad as gfq2
 
 test_data = product(test_atoms, test_qbin)
 
-
+# There seems to be an issue here, nose doesn't run both classes
+# Can be put into general tests, if we can alias/load the wrappers dynamically
 @ddt
 class TestWrap(TC):
     @data(*test_data)

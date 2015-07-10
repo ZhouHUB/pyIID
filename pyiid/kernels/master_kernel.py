@@ -35,7 +35,7 @@ def get_scatter_array(scatter_array, numbers, qbin):
                                                     kq * qbin / 4 / np.pi)
 
 
-# @autojit(target=targ)
+@jit(target='cpu')# @autojit(target=targ)
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     """
     Get the atomic pair distribution function
@@ -111,7 +111,7 @@ def fft_fq_to_gr(f, qbin, qmin):
     return g
 
 
-# @autojit(target='cpu')
+@jit(target='cpu')
 def fft_gr_to_fq(g, rstep, rmin):
     """
     Fourier Transform from G(r) to F(Q)
@@ -249,8 +249,10 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     if pool_size <= 0:
         pool_size = 1
     p = Pool(pool_size)
+    # pdf_grad_l = []
     for tx in range(n):
         for tz in range(3):
+            # pdf_grad_l.append(get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
     pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
     p.close()

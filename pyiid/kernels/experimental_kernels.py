@@ -122,3 +122,77 @@ def fft_gr_to_fq(g, rstep, rmin):
         # f[i] = gpadcfft[2 * i + 1] * npad2 * rstep
         f[i] = gpadcfft[2 * i] * npad2 * rstep
     return f.imag
+
+# @autojit(target=targ)
+def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
+    """
+    Get the atomic pair distribution function
+
+    Parameters
+    -----------
+    :param qmin:
+    fpad: 1d array
+        The reduced structure function, padded with zeros to qmin
+    rstep: float
+        The step size in real space
+    qstep: float
+        The step size in inverse space
+    rgrid: 1d array
+        The real space r values
+    rmax: float
+        The maximum r value
+
+    Returns
+    -------
+    1d array:
+        The atomic pair distribution function
+    """
+    # Zero out F(Q) below qmin theshold
+    fpad[:int(math.ceil(qmin / qstep))] = 0.0
+    # Expand F(Q)
+    nfromdr = int(math.ceil(math.pi / rstep / qstep))
+    if nfromdr > int(len(fpad)):
+        # put in a bunch of zeros
+        fpad2 = np.zeros(nfromdr)
+        fpad2[:len(fpad)] = fpad
+        fpad = fpad2
+
+    gpad = fft_fq_to_gr(fpad, qstep, qmin)
+
+    drpad = math.pi / (len(gpad) * qstep)
+    pdf0 = np.zeros(len(rgrid))
+    for i, r in enumerate(rgrid):
+        xdrp = r / drpad / 2
+        # xdrp = r / drpad
+        iplo = int(xdrp)
+        iphi = iplo + 1
+        wphi = xdrp - iplo
+        wplo = 1.0 - wphi
+        pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
+    pdf1 = pdf0 * 2
+    return pdf1.real
+    # return gpad
+
+
+# @autojit(target='cpu')
+def fft_fq_to_gr(f, qbin, qmin):
+    """
+    Fourier Transform from F(Q) to G(r)
+
+    Parameters
+    -----------
+    :param qmin:
+    f: Nd array
+        F(Q)
+    qbin: float
+        Qbin size
+    qmin:
+
+    Returns
+    -------
+    g: Nd array
+        The PDF
+    """
+    g = fft_gr_to_fq(f, qbin, qmin)
+    g *= 2.0 / math.pi
+    return g

@@ -132,7 +132,7 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
                         # new_grad[i, tz, qx] += alpha
 
 
-    '''
+'''
     n = len(new_grad)
     k_max = len(grad)
     for i in xrange(n):

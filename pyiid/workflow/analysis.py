@@ -24,7 +24,7 @@ font = {'family': 'normal',
 
 matplotlib.rc('font', **font)
 plt.ion()
-colors = ['grey', 'red', 'blue']
+colors = ['grey', 'red', 'royalblue']
 
 
 def plot_pdf(scatter, gobs, atoms, save_file=None, show=True, **kwargs):
