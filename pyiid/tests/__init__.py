@@ -57,11 +57,11 @@ test_potentials = [('rw', .9), ('chi_sq', 250)]
 
 if os.getenv('TRAVIS'):
     # use a smaller test size otherwise travis stalls
-    test_atoms = [setup_atoms(n) for n in np.logspace(1, 2, 2)]
-    test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 2, 2)]
+    test_atoms = [setup_atoms(n) for n in int(np.logspace(1, 1.5, 2))]
+    test_double_atoms = [setup_double_atoms(n) for n in int(np.logspace(1, 1.5, 2))]
 else:
-    test_atoms = [setup_atoms(n) for n in np.logspace(1, 3, 3)]
-    # test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 3, 3)]
-    test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 1, 1)]
+    test_atoms = [setup_atoms(n) for n in int(np.logspace(1, 3, 3))]
+    test_double_atoms = [setup_double_atoms(n) for n in int(np.logspace(1, 3, 3))]
+    # test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 1, 1)]
 
 test_qbin = [.1]
