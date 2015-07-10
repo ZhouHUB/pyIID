@@ -2,7 +2,6 @@ __author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
-import gc
 """
 These are non-unique tests, they are run for a combination of processors,
 algorithms, experiments, and atomic configurations.  The number of tests
@@ -12,7 +11,7 @@ number of potential configurations and get full code coverage.  Some of the
 good side effects of this extensive testing is that we find issues associated
 with memory leaks, and issues of how we break up tasks over multiprocessors.
 """
-'''
+
 # single proc/alg 
 @ddt
 class TestScatterSmoke(TC):
@@ -185,8 +184,6 @@ class TestPDFCalc(TC):
         assert_allclose(ans2, ans1,
                         # rtol=5e-4,
                         atol=1e-3)
-
-'''
 
 @ddt
 class TestScatter(TC):
