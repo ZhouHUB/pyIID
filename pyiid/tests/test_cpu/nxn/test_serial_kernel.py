@@ -1,9 +1,7 @@
 __author__ = 'christopher'
-
 import numpy as np
-from numpy.testing import assert_allclose
 from pyiid.kernels.cpu_kernel import *
-
+from pyiid.tests import *
 
 def test_get_d_array():
     """

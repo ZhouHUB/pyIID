@@ -1,8 +1,8 @@
 __author__ = 'christopher'
-import math
 from numba import *
-import mkl
+
 from pyiid.kernels import *
+
 targ = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
@@ -110,29 +110,8 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
             A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / float32(rk ** 2)
             for w in range(3):
                 grad[k, w, qx] = A * d[k, w]
-                # grad[k, w, qx] = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / rk / rk * d[k, w]
                 # grad[k, w, qx] = float32(qbin)
 
-
-@jit(target=targ, nopython=True)
-def fast_flat_sum(new_grad, grad, k_cov, k_max, i_min, i_max):
-    n = len(new_grad)
-    for i in xrange(i_min, i_max):
-        for qx in xrange(grad.shape[2]):
-            for tz in range(3):
-                tmp = float32(0.)
-                for j in xrange(n):
-                    k = int32(-1)
-                    if j < i:
-                        k = j + i * (i - 1) / 2
-                        alpha = float32(-1.)
-                    elif j > i:
-                        k = i + j * (j - 1) / 2
-                        alpha = float32(1.)
-                    k -= k_cov
-                    if 0 <= k < k_max:
-                        tmp += float32(grad[k, tz, qx] * alpha)
-                new_grad[i, tz, qx] = tmp
 
 @jit(target=targ, nopython=True)
 def fast_fast_flat_sum(new_grad, grad, k_cov):
@@ -150,6 +129,7 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
                         alpha = 1
                     if 0 <= k < k_max:
                         new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
+                        # new_grad[i, tz, qx] += alpha
 
 
     '''

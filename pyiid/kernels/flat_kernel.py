@@ -96,39 +96,30 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
     A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / rk / rk
     for w in range(3):
         grad[k, w, qx] = A * d[k, w]
+        # grad[k, w, qx] = float32(qbin)
 
-@cuda.jit(argtypes=[f4[:], f4[:, :]])
-def d2_to_d1_sum(d1, d2):
-    qx = cuda.grid(1)
-
-    if qx >= len(d1):
-        return
-    tmp = d2[:, qx].sum()
-    d1[qx] = tmp
-
-
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4, i4, i4, i4])
-def fast_flat_sum(new_grad, grad, k_cov, k_max, i_min, i_max):
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
+def fast_fast_flat_sum(new_grad, grad, k_cov):
+    # i, j, qx = cuda.grid(3)
     i, qx = cuda.grid(2)
-    i += i_min
-    n = int32(len(new_grad))
-    if i >= i_max or qx >= grad.shape[2]:
+    n = len(new_grad)
+    k_max = len(grad)
+    # if i == j or i >= n or j >= n or qx >= grad.shape[2]:
+    #     return
+    if i >= n or qx >= grad.shape[2]:
         return
-    for tz in range(3):
-        tmp = float32(0.)
+    for tz in xrange(3):
+        tmp = float32(0.0)
         for j in xrange(n):
-            k = int32(-1)
             if j < i:
-                k = cuda_ij_to_k(i, j)
-                # k = j + i * (i - 1) / 2
-                alpha = float32(-1.)
-            elif j > i:
-                k = cuda_ij_to_k(j, i)
-                # k = i + j * (j - 1) / 2
-                alpha = float32(1.)
-            k -= k_cov
+                k = cuda_ij_to_k(i, j) - k_cov
+                alpha = float32(-1)
+            elif i < j:
+                k = cuda_ij_to_k(j, i) - k_cov
+                alpha = float32(1)
             if 0 <= k < k_max:
-                tmp += float32(grad[k, tz, qx] * alpha)
+                # new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
+                tmp += grad[k, tz, qx] * alpha
         new_grad[i, tz, qx] = tmp
 
 
@@ -139,3 +130,13 @@ def zero3d(A):
     if x >= a or y >= b or z >= c:
         return
     A[x, y, z] = float32(0.)
+
+
+@cuda.jit(argtypes=[f4[:], f4[:, :]])
+def d2_to_d1_sum(d1, d2):
+    qx = cuda.grid(1)
+
+    if qx >= len(d1):
+        return
+    tmp = d2[:, qx].sum()
+    d1[qx] = tmp

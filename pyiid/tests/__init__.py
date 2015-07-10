@@ -8,12 +8,10 @@ import unittest
 from ddt import ddt, data, unpack
 from numpy.testing import assert_allclose
 from itertools import *
+import os
 
 
 TC = unittest.TestCase
-
-
-
 
 def setup_atoms(n, exp_dict=None):
     q = np.random.random((n, 3)) * 10
@@ -21,6 +19,15 @@ def setup_atoms(n, exp_dict=None):
     wrap_atoms(atoms, exp_dict)
     return atoms
 
+def setup_double_atoms(n, exp_dict=None):
+    q = np.random.random((n, 3)) * 10
+    atoms = Atoms('Au' + str(int(n)), q)
+    wrap_atoms(atoms, exp_dict)
+
+    q2 = np.random.random((n, 3)) * 10
+    atoms2 = Atoms('Au' + str(int(n)), q2)
+    wrap_atoms(atoms2, exp_dict)
+    return atoms, atoms2
 
 def generate_experiment():
     exp_dict = {}
@@ -40,3 +47,21 @@ def setup_atomic_square():
     scale = .75
     atoms2.positions *= scale
     return atoms1, atoms2
+
+test_exp = [None]
+test_exp.extend([generate_experiment() for i in range(3)])
+
+test_atom_squares = [setup_atomic_square()]
+
+test_potentials = [('rw', .9), ('chi_sq', 250)]
+
+if os.getenv('TRAVIS'):
+    # use a smaller test size otherwise travis stalls
+    test_atoms = [setup_atoms(n) for n in np.logspace(1, 2, 2)]
+    test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 2, 2)]
+else:
+    test_atoms = [setup_atoms(n) for n in np.logspace(1, 3, 3)]
+    # test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 3, 3)]
+    test_double_atoms = [setup_double_atoms(n) for n in np.logspace(1, 1, 1)]
+
+test_qbin = [.1]

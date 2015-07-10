@@ -8,8 +8,8 @@ from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.tests import *
 
 test_data = tuple(product(test_atom_squares, test_exp, test_potentials))
-proc = 'CPU'
-alg = 'flat'
+proc = 'Multi-GPU'
+alg = 'nxn'
 
 @ddt
 class TestPDFCalc(TC):

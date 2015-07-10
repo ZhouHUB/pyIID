@@ -20,7 +20,7 @@ def test_calc_rw():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU', 'test_flat')
+            scat.set_processor('Multi-GPU', 'flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
@@ -49,7 +49,7 @@ def test_calc_chi_sq():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU', 'test_flat')
+            scat.set_processor('Multi-GPU', 'flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)
@@ -77,7 +77,7 @@ def test_calc_grad_rw():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU', 'test_flat')
+            scat.set_processor('Multi-GPU', 'flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='rw')
             atoms2.set_calculator(calc)
@@ -105,7 +105,7 @@ def test_calc_grad_chi_sq():
             atoms = setup_atoms(int(n), exp)
             atoms2 = setup_atoms(n, exp)
 
-            scat.set_processor('Multi-GPU', 'test_flat')
+            scat.set_processor('Multi-GPU', 'flat')
             gobs = scat.get_pdf(atoms)
             calc = PDFCalc(obs_data=gobs, scatter=scat, potential='chi_sq')
             atoms2.set_calculator(calc)

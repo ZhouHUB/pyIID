@@ -1,11 +1,11 @@
 __author__ = 'christopher'
-import numpy as np
 from multiprocessing import Pool, cpu_count
-import math
+
+import numpy as np
+
 from pyiid.kernels.multi_flat_cpu_kernel import *
 from pyiid.wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
-from pyiid.kernels import k_to_ij
-import matplotlib.pyplot as plt
+
 
 def setup_gpu_calc(atoms, sum_type):
     # atoms info
@@ -131,12 +131,14 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     fqs = p.map(atomic_grad_fq, tasks)
     # sum the answers
     grad_p = np.sum(fqs, axis=0)
+    # '''
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
             grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
     np.seterr(**old_settings)
+    # '''
     return grad_p
 
 
@@ -144,8 +146,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from pyiid.wrappers.elasticscatter import wrap_atoms
-    from pyiid.wrappers.cpu_wrap import wrap_fq as mfq
-    from pyiid.wrappers.cpu_wrap import wrap_fq_grad as mfqg
+    from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq_grad as mfqg
     import matplotlib.pyplot as plt
     from numpy.testing import assert_allclose
 

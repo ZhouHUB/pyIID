@@ -278,37 +278,3 @@ if __name__ == '__main__':
     import nose
 
     nose.runmodule(argv=['-s', '--with-doctest', '-v'], exit=False)
-
-    '''
-    Q = 250
-    n = 200
-    if n == 2:
-        r = np.asarray([[0, 1], [1, 0]]).astype(np.float32)
-    else:
-        r = np.random.random((n, n)).astype(np.float32) * 10
-    qbin = .1
-    cfq = np.zeros((n, n, Q), dtype=np.float32)
-    # CPU compiled
-    qmax_bin = cfq.shape[-1]
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for kq in range(0, qmax_bin):
-                    cfq[tx, ty, kq] = math.sin(kq * qbin * r[tx, ty]) / r[
-                        tx, ty]
-
-    # GPU kernel
-    kfq = np.zeros((n, n, Q), dtype=np.float32)
-    dfq = cuda.to_device(kfq)
-    dr = cuda.to_device(r)
-    stream, bpg, tpb = set_up_gpu(n, 250)
-    get_fq_step_0[bpg, tpb, stream](dfq, dr, qbin)
-    dfq.to_host(stream)
-    cuda.close()
-
-    import matplotlib.pyplot as plt
-
-    plt.plot(kfq.sum(axis=(0, 1)), label='gpu')
-    plt.plot(cfq.sum(axis=(0, 1)), label='cpu')
-    plt.legend()
-    plt.show()'''

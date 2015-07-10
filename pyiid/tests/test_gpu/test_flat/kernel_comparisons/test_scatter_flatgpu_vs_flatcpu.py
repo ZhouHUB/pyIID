@@ -11,8 +11,8 @@ test_exp = [None]
 
 test_data = tuple(product(test_atoms, test_exp))
 
-proc1 = 'Multi-GPU'
-proc2 = 'CPU'
+proc2 = 'Multi-GPU'
+proc1 = 'CPU'
 
 alg1 = 'flat'
 # alg2 = 'nxn'
@@ -24,7 +24,6 @@ class TestScatter(TC):
     """
     Test flat cpu scatter
     """
-    '''
     @data(*test_data)
     def test_scatter_fq(self, value):
         # set everything up
@@ -35,10 +34,12 @@ class TestScatter(TC):
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_fq(atoms)
+        print scat.processor, scat.alg
 
         # run algorithm 2
         scat.set_processor(proc2, alg2)
         ans2 = scat.get_fq(atoms)
+        print scat.processor, scat.alg
 
         # test
         print np.max(np.abs(ans1 - ans2)), atol
@@ -48,7 +49,7 @@ class TestScatter(TC):
             np.where(np.abs(ans1 - ans2) > (np.abs(ans2) * 1e-7 + atol))[0]), \
             np.where(np.abs(ans1 - ans2) > (np.abs(ans2) * 1e-7 + atol))[0]
         assert_allclose(ans1, ans2, atol=atol)
-    '''
+
     @data(*test_data)
     def test_scatter_grad_fq(self, value):
         # set everything up
@@ -59,10 +60,12 @@ class TestScatter(TC):
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_grad_fq(atoms)
+        print scat.processor, scat.alg
 
         # run algorithm 2
         scat.set_processor(proc2, alg2)
         ans2 = scat.get_grad_fq(atoms)
+        print scat.processor, scat.alg
 
         # test
         print np.max(np.abs(ans1 - ans2)), atol
@@ -71,47 +74,7 @@ class TestScatter(TC):
             ans1.size
         assert_allclose(ans1, ans2, atol=atol)
 
-
-    # These tests are not needed
-    # the cpu tests should have tested this plumbing
-
-    '''
-    @data(*test_data)
-    def test_scatter_sq(self, value):
-        # set everything up
-        atoms, exp = value
-        atol = 6e-6 * len(atoms)
-        scat = ElasticScatter(exp_dict=exp)
-
-        # run algorithm 1
-        scat.set_processor(proc1, alg1)
-        ans1 = scat.get_sq(atoms)
-
-        # run algorithm 2
-        scat.set_processor(proc2, alg2)
-        ans2 = scat.get_sq(atoms)
-
-        # test
-        assert_allclose(ans1, ans2, atol=atol)
-
-    @data(*test_data)
-    def test_scatter_iq(self, value):
-        # set everything up
-        atoms, exp = value
-        atol = 6e-6 * len(atoms)
-        scat = ElasticScatter(exp_dict=exp)
-
-        # run algorithm 1
-        scat.set_processor(proc1, alg1)
-        ans1 = scat.get_iq(atoms)
-
-        # run algorithm 2
-        scat.set_processor(proc2, alg2)
-        ans2 = scat.get_iq(atoms)
-
-        # test
-        assert_allclose(ans1, ans2, rtol=1e-5, atol=atol)
-
+'''
     @data(*test_data)
     def test_scatter_pdf(self, value):
         # set everything up
@@ -130,23 +93,23 @@ class TestScatter(TC):
         # test
         assert_allclose(ans1, ans2, atol=atol)
 
-    @data(*test_data)
     def test_scatter_grad_pdf(self, value):
-        """
-        Smoke test CPU Grad PDF from scatter
-        """
-
+        # set everything up
         atoms, exp = value
+        atol = 6e-6 * len(atoms)
         scat = ElasticScatter(exp_dict=exp)
-        scat.set_processor(proc, proc)
-        # Test a set of different sized ensembles
-        ans = scat.get_grad_pdf(atoms)
-        # Check that Scatter gave back something
-        assert ans is not None
-        # Check that all the values are not zero
-        assert np.any(ans)
-'''
 
+        # run algorithm 1
+        scat.set_processor(proc1, alg1)
+        ans1 = scat.get_grad_pdf(atoms)
+
+        # run algorithm 2
+        scat.set_processor(proc2, alg2)
+        ans2 = scat.get_grad_pdf(atoms)
+
+        # test
+        assert_allclose(ans1, ans2, atol=atol)
+'''
 
 if __name__ == '__main__':
     import nose

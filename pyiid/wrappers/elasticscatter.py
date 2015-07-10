@@ -1,14 +1,13 @@
 __author__ = 'christopher'
+import math
+
 from numba import cuda
 import numpy as np
-import math
-import sys
 
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf, \
     get_scatter_array
-
-from pyiid.wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
-from pyiid.wrappers.cpu_wrap import wrap_fq_grad as cpu_wrap_fq_grad
+from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
+from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq_grad as cpu_wrap_fq_grad
 
 
 def check_mpi():
@@ -47,6 +46,7 @@ class ElasticScatter(object):
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
         self.processor = 'CPU'
+        self.alg = 'nxn'
 
         # Get the fastest processor architecture available
         self.set_processor()
@@ -138,7 +138,7 @@ class ElasticScatter(object):
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
-                from pyiid.wrappers.flat_multi_cpu_wrap import wrap_fq, wrap_fq_grad
+                from pyiid.wrappers.cpu_wrappers.flat_multi_cpu_wrap import wrap_fq, wrap_fq_grad
 
                 self.fq = wrap_fq
                 self.grad = wrap_fq_grad

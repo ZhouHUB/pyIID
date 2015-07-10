@@ -1,10 +1,11 @@
 __author__ = 'christopher'
-from numba import *
 import math
-from pyiid.kernels.flat_kernel import cuda_ij_to_k, cuda_k_to_ij
+
+from numba import *
 import numpy as np
 from numbapro.cudalib import cufft
 import matplotlib.pyplot as plt
+
 
 # A[k, q] = norm*Q, B[k, q] = cos(Q*r), C[k, w] = d/r/r
 # D[k, q] = A*B - F(Q)
@@ -54,23 +55,6 @@ def get_grad_fq_e(E, D, C):
     for w in range(3):
         E[k, w, qx] = D[k, qx] * C[k, w]
 
-
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
-def fast_fast_flat_sum(new_grad, grad, k_cov):
-    i, j, qx = cuda.grid(3)
-    n = len(new_grad)
-    k_max = len(grad)
-    if i == j or i >= n or j >= n or qx >= grad.shape[2]:
-        return
-    for tz in xrange(3):
-        if j < i:
-            k = j + i * (i - 1) / 2 - k_cov
-            alpha = -1
-        elif i < j:
-            k = i + j * (j - 1) / 2 - k_cov
-            alpha = 1
-        if 0 <= k < k_max:
-            new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
 
 def fft_gr_to_fq(g, rstep, rmin):
     """
