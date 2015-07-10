@@ -30,8 +30,9 @@ while True:
             except KeyboardInterrupt:
                 print 'run ended'
                 pass
-            except:
+            except Exception as e:
                 print 'Simulation number {} has errored'.format(sim.id)
+                print e
                 sim.error = True
                 sim.skip = True
                 sim.save()
