@@ -23,7 +23,7 @@ def test_dynamics():
 
     e = .05
 
-    traj = classical_dynamics(ideal_atoms, e, 20)
+    traj = classical_dynamics(ideal_atoms, e, 200)
 
     pe_list = []
     for atoms in traj:
@@ -47,7 +47,7 @@ def test_reverse_dynamics():
 
     e = -.05
 
-    traj = classical_dynamics(ideal_atoms, e, 20)
+    traj = classical_dynamics(ideal_atoms, e, 200)
 
     pe_list = []
     for atoms in traj:

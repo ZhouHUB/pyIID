@@ -2,6 +2,7 @@ __author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
+from pympler import muppy, summary
 """
 These are non-unique tests, they are run for a combination of processors,
 algorithms, experiments, and atomic configurations.  The number of tests
@@ -11,8 +12,21 @@ number of potential configurations and get full code coverage.  Some of the
 good side effects of this extensive testing is that we find issues associated
 with memory leaks, and issues of how we break up tasks over multiprocessors.
 """
+'''
+def tearDownModule():
+    print 'final'
+    all_objects = muppy.get_objects()
+    sum1 = summary.summarize(all_objects)
+    summary.print_(sum1)
 
-# single proc/alg 
+@classmethod
+    def tearDownClass(cls):
+        all_objects = muppy.get_objects()
+        sum1 = summary.summarize(all_objects)
+        summary.print_(sum1)
+        del cls.test_data
+'''
+# single proc/alg to smoke test
 @ddt
 class TestScatterSmoke(TC):
     """
@@ -33,6 +47,7 @@ class TestScatterSmoke(TC):
         assert ans is not None
         # Check that all the values are not zero
         assert np.any(ans)
+        del atoms, exp, proc, alg, scat, ans
 
     @data(*test_data)
     def test_scatter_pdf(self, value):
@@ -47,6 +62,7 @@ class TestScatterSmoke(TC):
         assert ans is not None
         # Check that all the values are not zero
         assert np.any(ans)
+        del atoms, exp, proc, alg, scat, ans
 
     @data(*test_data)
     def test_scatter_grad_fq(self, value):
@@ -61,6 +77,7 @@ class TestScatterSmoke(TC):
         assert ans is not None
         # Check that all the values are not zero
         assert np.any(ans)
+        del atoms, exp, proc, alg, scat, ans
 
     @data(*test_data)
     def test_scatter_grad_pdf(self, value):
@@ -75,7 +92,7 @@ class TestScatterSmoke(TC):
         assert ans is not None
         # Check that all the values are not zero
         assert np.any(ans)
-
+        del atoms, exp, proc, alg, scat, ans
 
 @ddt
 class TestPDFCalcKnown(TC):
@@ -101,6 +118,7 @@ class TestPDFCalcKnown(TC):
 
         ans = atoms2.get_potential_energy()
         assert ans >= thresh
+        del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, ans
 
     @data(*test_data)
     def test_forces(self, value):
@@ -122,9 +140,10 @@ class TestPDFCalcKnown(TC):
             dist = atoms2[i].position - com
             # print i, dist, forces[i], np.cross(dist, forces[i])
             assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
+        del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, forces, com, dist
 
 
-# double proc/alg
+# double proc/alg for comparison between kernels
 @ddt
 class TestPDFCalc(TC):
     """
@@ -153,8 +172,8 @@ class TestPDFCalc(TC):
         calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
         atoms2.set_calculator(calc)
         ans2 = atoms2.get_potential_energy()
-        print np.max(np.abs(ans2 - ans1)), np.mean(
-            np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
+        # print np.max(np.abs(ans2 - ans1)), np.mean(
+        #     np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
         assert_allclose(ans2, ans1,
                         # rtol=5e-4,
                         atol=1e-3)
@@ -179,8 +198,8 @@ class TestPDFCalc(TC):
         calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
         atoms2.set_calculator(calc)
         ans2 = atoms2.get_forces()
-        print np.max(np.abs(ans2 - ans1)), np.mean(
-            np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
+        # print np.max(np.abs(ans2 - ans1)), np.mean(
+        #     np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
         assert_allclose(ans2, ans1,
                         # rtol=5e-4,
                         atol=1e-3)
@@ -202,7 +221,7 @@ class TestScatter(TC):
         scat = ElasticScatter(exp_dict=exp)
         proc1, alg1 = value[-1][0]
         proc2, alg2 = value[-1][1]
-        
+
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_fq(atoms)
@@ -212,8 +231,8 @@ class TestScatter(TC):
         ans2 = scat.get_fq(atoms)
 
         # test
-        print np.max(np.abs(ans1 - ans2)), np.mean(
-            np.abs(ans1 - ans2)), np.std(np.abs(ans1 - ans2))
+        # print np.max(np.abs(ans1 - ans2)), np.mean(
+        #     np.abs(ans1 - ans2)), np.std(np.abs(ans1 - ans2))
         assert_allclose(ans1, ans2, atol=atol)
         # assert False
 
@@ -225,7 +244,7 @@ class TestScatter(TC):
         scat = ElasticScatter(exp_dict=exp)
         proc1, alg1 = value[-1][0]
         proc2, alg2 = value[-1][1]
-        
+
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_sq(atoms)
@@ -245,7 +264,7 @@ class TestScatter(TC):
         scat = ElasticScatter(exp_dict=exp)
         proc1, alg1 = value[-1][0]
         proc2, alg2 = value[-1][1]
-        
+
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_iq(atoms)
@@ -265,7 +284,7 @@ class TestScatter(TC):
         scat = ElasticScatter(exp_dict=exp)
         proc1, alg1 = value[-1][0]
         proc2, alg2 = value[-1][1]
-        
+
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_pdf(atoms)
@@ -285,7 +304,7 @@ class TestScatter(TC):
         scat = ElasticScatter(exp_dict=exp)
         proc1, alg1 = value[-1][0]
         proc2, alg2 = value[-1][1]
-        
+
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_grad_fq(atoms)
@@ -305,7 +324,7 @@ class TestScatter(TC):
         scat = ElasticScatter(exp_dict=exp)
         proc1, alg1 = value[-1][0]
         proc2, alg2 = value[-1][1]
-        
+
         # run algorithm 1
         scat.set_processor(proc1, alg1)
         ans1 = scat.get_grad_pdf(atoms)
@@ -316,11 +335,15 @@ class TestScatter(TC):
 
         # test
         assert_allclose(ans1, ans2, atol=atol)
-
+# '''
 if __name__ == '__main__':
     import nose
 
     nose.runmodule(argv=[
-        '-s',
+        # '-s',
         '--with-doctest',
-        '-v'], exit=False)
+        '--nocapture',
+        # '-v'
+    ],
+        # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
+        exit=False)

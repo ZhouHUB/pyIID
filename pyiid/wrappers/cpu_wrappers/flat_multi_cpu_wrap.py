@@ -2,7 +2,7 @@ __author__ = 'christopher'
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
-
+import psutil
 from pyiid.kernels.multi_flat_cpu_kernel import *
 from pyiid.wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
 
@@ -68,12 +68,15 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
         k_cov += m
     # multiprocessing map problem
     fqs = p.map(atomic_fq, tasks)
+    # p.join()
+    # p.close()
     # sum the answers
     final = np.sum(fqs, axis=0)
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     final = np.nan_to_num(1 / na * final)
     np.seterr(**old_settings)
+    del q, n, qmax_bin, scatter_array, k_max, p, task, fqs
     return 2 * final
 
 
@@ -121,7 +124,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     tasks = []
     k_cov = 0
     while k_cov < k_max:
-        m = atoms_per_gpu_grad_fq(n, qmax_bin, 64e9 / 8.)
+        m = atoms_per_gpu_grad_fq(n, qmax_bin, float(psutil.virtual_memory().available)/pool_size)
         if m > k_max - k_cov:
             m = k_max - k_cov
         task = (q, scatter_array, qbin, m, k_cov)
@@ -129,6 +132,8 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
         k_cov += m
     # multiprocessing map problem
     fqs = p.map(atomic_grad_fq, tasks)
+    # p.join()
+    # p.close()
     # sum the answers
     grad_p = np.sum(fqs, axis=0)
     # '''
@@ -139,6 +144,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
             grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
     np.seterr(**old_settings)
     # '''
+    del q, n, qmax_bin, scatter_array, k_max, p, task, fqs
     return grad_p
 
 

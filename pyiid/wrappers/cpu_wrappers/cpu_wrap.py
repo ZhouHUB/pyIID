@@ -38,11 +38,12 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
     get_d_array(d, q)
+    del q
 
     # Get pair distance array
     r = np.zeros((n, n))
     get_r_array(r, d)
-
+    del d
     # get non-normalized fq
     fq = np.zeros(qmax_bin)
     get_fq_array(fq, r, scatter_array, qbin)
@@ -52,7 +53,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(1 / na * fq)
     np.seterr(**old_settings)
-    del r, d, q, scatter_array
+    del r, scatter_array, na
     return fq
 
 
@@ -92,6 +93,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
     get_d_array(d, q)
+    del q
 
     # Get pair distance array
     r = np.zeros((n, n))
@@ -113,7 +115,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
             dfq_dq[tx, tz] = np.nan_to_num(
                 1 / (n * norm_array) * dfq_dq[tx, tz])
     np.seterr(**old_settings)
-    del q, d, r, scatter_array, norm_array
+    del d, r, scatter_array, norm_array
     return dfq_dq
 
 

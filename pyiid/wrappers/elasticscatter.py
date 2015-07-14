@@ -4,8 +4,9 @@ import math
 from numba import cuda
 import numpy as np
 
-from pyiid.kernels.master_kernel import get_pdf_at_qmin, grad_pdf, \
-    get_scatter_array
+from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
+# from pyiid.kernels.master_kernel import grad_pdf
+from pyiid.kernels.experimental_kernels import grad_pdf
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq_grad as cpu_wrap_fq_grad
 

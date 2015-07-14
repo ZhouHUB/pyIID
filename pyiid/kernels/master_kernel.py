@@ -10,7 +10,7 @@ from numpy.testing import assert_allclose
 targ = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
-@autojit(target=targ)
+@jit(target=targ)
 def get_scatter_array(scatter_array, numbers, qbin):
     """
     Generate the scattering array, which holds all the Q dependant scatter
@@ -35,7 +35,7 @@ def get_scatter_array(scatter_array, numbers, qbin):
                                                     kq * qbin / 4 / np.pi)
 
 
-@jit(target='cpu')# @autojit(target=targ)
+# @jit(target='cpu')# @autojit(target=targ)
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     """
     Get the atomic pair distribution function
@@ -72,6 +72,17 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     gpad = fft_fq_to_gr(fpad, qstep, qmin)
 
     drpad = math.pi / (len(gpad) * qstep)
+
+    # pdf0a = np.zeros(len(rgrid))
+    pdf0 = np.zeros(len(rgrid))
+    axdrp = rgrid/drpad/2
+    aiplo = axdrp.astype(np.int)
+    aiphi = aiplo + 1
+    awphi = axdrp - aiplo
+    awplo = 1.0 - awphi
+    # pdf0a[:] = awplo[:] * gpad[aiplo] + awphi * gpad[aiphi]
+    pdf0[:] = awplo[:] * gpad[aiplo] + awphi * gpad[aiphi]
+    '''
     pdf0 = np.zeros(len(rgrid))
     for i, r in enumerate(rgrid):
         xdrp = r / drpad / 2
@@ -82,12 +93,19 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
         wplo = 1.0 - wphi
         pdf0[i] = wplo * gpad[iplo] + wphi * gpad[iphi]
     pdf1 = pdf0 * 2
-    assert_allclose(pdf1.real ** 2, pdf1 ** 2)
+    pdf1a = pdf0a * 2
+    # '''
+    pdf1 = pdf0 * 2
+    # plt.plot(pdf1)
+    # plt.plot(pdf1a)
+    # plt.show()
+    # assert_allclose(pdf1a, pdf1)
+    # assert_allclose(pdf1.real ** 2, pdf1 ** 2)
     return pdf1.real
     # return gpad
 
 
-# @autojit(target='cpu')
+# @jit(target='cpu')
 def fft_fq_to_gr(f, qbin, qmin):
     """
     Fourier Transform from F(Q) to G(r)
@@ -111,7 +129,7 @@ def fft_fq_to_gr(f, qbin, qmin):
     return g
 
 
-@jit(target='cpu')
+# @jit(target='cpu')
 def fft_gr_to_fq(g, rstep, rmin):
     """
     Fourier Transform from G(r) to F(Q)
@@ -140,19 +158,32 @@ def fft_gr_to_fq(g, rstep, rmin):
     npad4 = 4 * npad2
     # gpadc array has to be doubled for complex coefficients
     gpadc = np.zeros(npad4)
+    gpadc2 = np.zeros(npad4)
     # copy the original g signal
     ilo = 0
     # ilo = padrmin
-    for i in range(len(g)):
+    # ilo = len(g)
+    gpadc[:2 * len(g):2] = g[:]
+    # gpadc2[:2 * len(g):2] = g[:]
+    '''
+    for i in xrange(len(g)):
         gpadc[2 * ilo] = g[i]
         ilo += 1
+
+    assert_allclose(gpadc2, gpadc)
+    # '''
     # copy the odd part of g skipping the first point,
     # because it is periodic image of gpadc[0]
+    gpadc[-2:-2 * len(g) + 1:-2] = -1 * g[1:]
+    # gpadc2[-2:-2 * len(g) + 1:-2] = -1 * g[1:]
+    '''
     ihi = 2 * npad2 - 1
-    for ilo in range(1, npad2):
+    for ilo in xrange(1, npad2):
         gpadc[2 * ihi] = -1 * gpadc[2 * ilo]
         ihi -= 1
 
+    assert_allclose(gpadc2, gpadc)
+    # '''
     # plt.plot(gpadc)
     # plt.show()
 
@@ -162,9 +193,15 @@ def fft_gr_to_fq(g, rstep, rmin):
     # plt.show()
 
     f = np.zeros(npad2, dtype=complex)
-    for i in range(npad2):
+    # f2 = np.zeros(npad2, dtype=complex)
+    f[:] = gpadcfft[:npad2 * 2:2] * npad2 * rstep
+    # f2[:] = gpadcfft[:npad2 * 2:2] * npad2 * rstep
+    '''
+    for i in xrange(npad2):
         # f[i] = gpadcfft[2 * i + 1] * npad2 * rstep
         f[i] = gpadcfft[2 * i] * npad2 * rstep
+    assert_allclose(f2, f)
+    # '''
     return f.imag
 
 
@@ -249,10 +286,11 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     if pool_size <= 0:
         pool_size = 1
     p = Pool(pool_size)
-    # pdf_grad_l = []
+    pdf_grad_l = []
     for tx in range(n):
         for tz in range(3):
-            # pdf_grad_l.append(get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
+            # pdf_grad_l.append(
+            #     get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
     pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
     p.close()
@@ -365,7 +403,7 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
 
 # Misc. Kernels----------------------------------------------------------------
 
-@autojit(target=targ)
+@jit(target=targ)
 def get_dw_sigma_squared(s, u, r, d, n):
     for tx in range(n):
         for ty in range(n):
@@ -379,7 +417,7 @@ def get_dw_sigma_squared(s, u, r, d, n):
             s[tx, ty] = u_dot_r * u_dot_r
 
 
-@autojit(target=targ)
+@jit(target=targ)
 def get_gr(gr, r, rbin, n):
     """
     Generate gr the histogram of the atomic distances
@@ -413,7 +451,7 @@ def simple_grad(grad_p, d, r):
                     grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
 
 
-@autojit(target=targ)
+@jit(target=targ)
 def spring_force_kernel(direction, d, r, mag):
     n = len(r)
     for i in range(n):

@@ -104,7 +104,7 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
     i, qx = cuda.grid(2)
     n = len(new_grad)
     k_max = len(grad)
-    # if i == j or i >= n or j >= n or qx >= grad.shape[2]:
+    # if i >= n or j >= n or qx >= grad.shape[2]:
     #     return
     if i >= n or qx >= grad.shape[2]:
         return
