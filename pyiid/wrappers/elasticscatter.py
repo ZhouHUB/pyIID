@@ -3,6 +3,7 @@ import math
 
 from numba import cuda
 import numpy as np
+from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf
 
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
@@ -44,6 +45,7 @@ class ElasticScatter(object):
         # Just in case something blows up down the line
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
+        self.grad_pdf = cpu_grad_pdf
         self.processor = 'CPU'
         self.alg = 'nxn'
 
@@ -126,8 +128,8 @@ class ElasticScatter(object):
                 self.fq = flat_fq
                 self.grad = flat_grad
                 self.alg = 'flat'
-            from pyiid.kernels.experimental_kernels import grad_pdf
-            self.grad_pdf = grad_pdf
+            # from pyiid.kernels.experimental_kernels import grad_pdf
+            # self.grad_pdf = grad_pdf
             self.processor = processor
             return True
 
@@ -143,8 +145,8 @@ class ElasticScatter(object):
                 self.fq = wrap_fq
                 self.grad = wrap_fq_grad
                 self.alg = 'flat'
-            from pyiid.kernels.master_kernel import grad_pdf
-            self.grad_pdf = grad_pdf
+
+            self.grad_pdf = cpu_grad_pdf
             self.processor = processor
             return True
 

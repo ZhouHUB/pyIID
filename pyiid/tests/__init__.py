@@ -55,9 +55,9 @@ test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [('rw', .9), ('chi_sq', 250)]
 
-if os.getenv('TRAVIS'):
+if os.getenv('TRAVIS') or True:
     # use a smaller test size otherwise travis stalls
-    ns = [100]
+    ns = [10, 100]
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
 
