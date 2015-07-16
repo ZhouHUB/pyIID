@@ -161,7 +161,7 @@ def plot_waterfall_diff_pdf_2d(scatter, gobs, traj, save_file=None, show=True,
     return
 
 
-def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True,
+def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, index=-1,
                **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -170,7 +170,7 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True,
     if target_configuration is not None:
         stru_l['Target'] = target_configuration
     stru_l['Start'] = traj[0]
-    stru_l['Finish'] = traj[-1]
+    stru_l['Finish'] = traj[index]
     for atoms in stru_l.values():
         tag_surface_atoms(atoms)
 
@@ -222,13 +222,13 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True,
 
 
 def plot_coordination(cut, traj, target_configuration=None, save_file=None,
-                      show=True, **kwargs):
+                      show=True, index=-1, **kwargs):
     stru_l = {}
     # If the PDF document created with atomic config, use that as target
     if target_configuration is not None:
         stru_l['Target'] = target_configuration
     stru_l['Start'] = traj[0]
-    stru_l['Finish'] = traj[-1]
+    stru_l['Finish'] = traj[index]
     for atoms in stru_l.values():
         tag_surface_atoms(atoms)
 
@@ -298,7 +298,7 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None,
     return
 
 
-def plot_bonds(sim, cut, save_file=None, show=True):
+def plot_bonds(sim, cut, save_file=None, show=True, index=-1):
     atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
     traj = atomic_config.file_payload
     stru_l = {}
@@ -313,7 +313,7 @@ def plot_bonds(sim, cut, save_file=None, show=True):
     #     stru_l['Target'] = target_atoms.file_payload
 
     stru_l['Start'] = traj[0]
-    stru_l['Finish'] = traj[-1]
+    stru_l['Finish'] = traj[index]
     for atoms in stru_l.values():
         tag_surface_atoms(atoms, cut)
 
@@ -355,33 +355,38 @@ def ase_view(traj, **kwargs):
     view(traj)
 
 
-def plot_radial_bond_length(atoms, cut):
+def plot_radial_bond_length(cut, atoms):
     com = atoms.get_center_of_mass()
     n_list = list(FullNeighborList(cut, atoms))
     dist_from_center = []
     bond_lengths = []
     ave = []
     std = []
+    stat_dist = []
     for i, coord in enumerate(n_list):
+        dist = np.sqrt(np.sum((atoms[i].position - com)) ** 2)
+        stat_dist.append(dist)
+        sub_bond_lengths = []
         for j in coord:
-            dist_from_center.append(
-                np.sqrt(np.sum((atoms[i].position - com)) ** 2))
-            bond_lengths.append(atoms.get_distance(i, j))
-        ave.append(np.mean(bond_lengths))
-        std.append(np.std(bond_lengths))
+            dist_from_center.append(dist)
+            sub_bond_lengths.append(atoms.get_distance(i, j))
+        bond_lengths.extend(sub_bond_lengths)
+        ave.append(np.mean(sub_bond_lengths))
+        std.append(np.std(sub_bond_lengths))
     fig = plt.figure()
-    plt.scatter(dist_from_center, bond_lengths)
+    plt.scatter(dist_from_center, bond_lengths, c='b', marker='o')
+    plt.scatter(stat_dist, ave, c='red', marker='*', s=40)
     plt.show()
 
 
 def plot_average_coordination(cut, traj, target_configuration=None, save_file=None,
-                      show=True, **kwargs):
+                      show=True, index=-1, **kwargs):
     stru_l = {}
     # If the PDF document created with atomic config, use that as target
     if target_configuration is not None:
         stru_l['Target'] = target_configuration
     stru_l['Start'] = traj[0]
-    stru_l['Equilibrium'] = traj[-1]
+    stru_l['Equilibrium'] = traj[index]
     for atoms in stru_l.values():
         tag_surface_atoms(atoms)
 
@@ -451,13 +456,21 @@ def plot_average_coordination(cut, traj, target_configuration=None, save_file=No
     return
 
 
-def mass_plot(sims, cut):
+def mass_plot(sims, cut, type='last'):
     if not isgenerator(sims) or not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
         d = sim_unpack(sim)
+        if type == 'mini':
+            pel = []
+            for atoms in d['traj']:
+                if atoms._calc != None:
+                    pel.append(atoms.get_total_energy())
+            index = np.argmin(pel)
+        elif type == 'last':
+            index = -1
         ase_view(**d)
-        plot_pdf(atoms=d['traj'][-1], **d)
+        plot_pdf(atoms=d['traj'][index], **d)
         plot_angle(cut, **d)
         plot_coordination(cut, **d)
 

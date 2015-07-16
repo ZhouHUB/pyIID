@@ -277,24 +277,24 @@ def get_grad_fq_e(E, D, C):
 
 def get_pdf_at_qmin(fpad_array, rstep, qstep, rgrid, qmin):
     n = len(fpad_array)
-    fpad_array[:, :, int(math.ceil(qmin / qstep))] = 0.0
+    fpad_array[:, int(math.ceil(qmin / qstep))] = 0.0
     # Expand F(Q)
     nfromdr = int(math.ceil(math.pi / rstep / qstep))
     if nfromdr > int(fpad_array.shape[-1]):
         # put in a bunch of zeros
-        fpad2 = np.zeros((n, 3, nfromdr))
-        fpad2[:, :, :fpad_array.shape[-1]] = fpad_array[:, :, :]
+        fpad2 = np.zeros((n, nfromdr))
+        fpad2[:, :fpad_array.shape[-1]] = fpad_array[:, :]
         fpad_array = fpad2
-    print fpad_array.shape
+
     batch_input = np.ravel(fpad_array).astype(np.complex64)
-    input_shape = (fpad_array[0, 0].shape)
-    batch_operations = n * 3
+    input_shape = (fpad_array[0].shape)
+    batch_operations = n
     plan = cufft.FFTPlan(input_shape, batch_input.dtype, np.complex64,
                          batch_operations)
     batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
     _ = plan.inverse(batch_input, out=batch_output)
 
-    data_out = np.reshape(batch_output, (n, 3, input_shape[0]))
+    data_out = np.reshape(batch_output, (n, input_shape[0]))
     fft_len = input_shape
 
     data_out = data_out.imag
@@ -308,16 +308,16 @@ def get_pdf_at_qmin(fpad_array, rstep, qstep, rgrid, qmin):
     awphi = axdrp - aiplo
     awplo = 1.0 - awphi
     # pdf0a[:] = awplo[:] * data_out[aiplo] + awphi * data_out[aiphi]
-    pdf0 = awplo[:] * data_out[:, :, aiplo] + awphi[:] * data_out[:, :, aiphi]
+    pdf0 = awplo[:] * data_out[:, aiplo] + awphi[:] * data_out[:, aiphi]
     pdf1 = pdf0 * 2
     return pdf1
 
 
 def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     gpus, mem = get_gpus_mem()
-    pdf_grad = np.zeros(len(grad_fq), 3, len(rgrid))
+    pdf_grad = np.zeros((len(grad_fq), 3, len(rgrid)))
     for i in range(3):
-        pdf_grad[:, i, :]= get_pdf_at_qmin(grad_fq[:, i, :], rstep, qstep, rgrid, qmin)
+        pdf_grad[:, i, :] = get_pdf_at_qmin(grad_fq[:, i, :], rstep, qstep, rgrid, qmin)
     return pdf_grad
 
 '''

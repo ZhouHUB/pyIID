@@ -81,8 +81,11 @@ def run_simulation(sim):
     out_traj, samples, l_p_i = nuts(atoms, target_acceptance, iterations,
                                     ensemble_temp, wtraj)
     sim.end_time = ttime.time()
-    if sim.total_iterations != 0:
-        sim.total_iterations += sim.params.iterations
+    if 'total_iterations' in sim.__dict__.keys():
+        if sim.total_iterations != 0:
+            sim.total_iterations += sim.params.iterations
+        else:
+            sim.total_iterations = sim.params.iterations
     else:
         sim.total_iterations = sim.params.iterations
     if sim.total_samples is not None:
