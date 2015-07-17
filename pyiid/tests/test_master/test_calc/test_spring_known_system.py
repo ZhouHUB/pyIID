@@ -12,7 +12,7 @@ def test_spring():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, _, _ = setup_atomic_square()
+    atoms1, _ = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     calc = Spring(k=100, rt=5.)
@@ -24,7 +24,7 @@ def test_grad_spring():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, _, _ = setup_atomic_square()
+    atoms1, _ = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
@@ -42,7 +42,7 @@ def test_spring2():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, _, _ = setup_atomic_square()
+    atoms1, _= setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     calc = Spring(k=100, rt=1., sp_type='com')
@@ -54,7 +54,7 @@ def test_grad_spring2():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, _, _ = setup_atomic_square()
+    atoms1, _ = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')
@@ -71,7 +71,7 @@ def test_spring3():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, _, _ = setup_atomic_square()
+    atoms1, _ = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     calc = Spring(k=100, rt=1., sp_type='att')
@@ -83,7 +83,7 @@ def test_grad_spring3():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, _, _ = setup_atomic_square()
+    atoms1, _ = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     scat.set_processor('CPU')

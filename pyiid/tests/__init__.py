@@ -56,16 +56,16 @@ test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [('rw', .9), ('chi_sq', 250)]
 
-# if os.getenv('TRAVIS') or True:
-if os.getenv('TRAVIS'):
+if os.getenv('TRAVIS') or True:
+# if os.getenv('TRAVIS'):
     # use a smaller test size otherwise travis stalls
-    ns = [10, 100]
+    ns = [10]
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
 
     # Travis doesn't have GPUs so only CPU testing
-    # proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
-    proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
+    proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
+    # proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
     comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 else:

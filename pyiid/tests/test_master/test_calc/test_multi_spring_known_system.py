@@ -13,7 +13,7 @@ def test_spring():
     """
     Test two random systems against one another for Rw
     """
-    atoms1, atoms2, scale = setup_atomic_square()
+    atoms1, atoms2 = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     calc = MultiCalc(calc_list=[Spring(k=100, rt=5.), Spring(k=100, rt=5.)])
@@ -25,7 +25,7 @@ def test_grad_spring():
     """
     Test two random systems against one another for grad rw
     """
-    atoms1, atoms2, scale = setup_atomic_square()
+    atoms1, atoms2 = setup_atomic_square()
     scat = ElasticScatter()
     scat.set_processor('CPU')
     calc = MultiCalc(calc_list=[Spring(k=100, rt=5.), Spring(k=100, rt=5.)])
