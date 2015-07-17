@@ -70,7 +70,7 @@ if os.getenv('TRAVIS') or True:
 
 else:
     ns = np.logspace(1, 3, 3)
-    test_exp.extend([generate_experiment() for i in range(1)])
+    test_exp.extend([generate_experiment() for i in range(3)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
     proc_alg_pairs = list(product(['CPU', 'Multi-GPU'], ['nxn', 'flat']))
@@ -81,9 +81,9 @@ else:
     # which is much faster.  Then we run all tests agains the CPU flat kernels.
     # Thus it is imperative that the flat CPU runs with no errors.
 
-    # comparison_pro_alg_pairs = [(('CPU', 'nxn'), ('CPU', 'flat'))]
+    comparison_pro_alg_pairs = [(('CPU', 'nxn'), ('CPU', 'flat'))]
     # comparison_pro_alg_pairs = []
-    # comparison_pro_alg_pairs.extend(
-    #     list(combinations(proc_alg_pairs[1:], 2))[:-1])
-    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
+    comparison_pro_alg_pairs.extend(
+        list(combinations(proc_alg_pairs[1:], 2))[:-1])
+    # comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
 test_qbin = [.1]
