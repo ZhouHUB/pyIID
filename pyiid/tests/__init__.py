@@ -9,6 +9,7 @@ from ddt import ddt, data, unpack
 from numpy.testing import assert_allclose
 from itertools import *
 import os
+from copy import deepcopy as dc
 
 TC = unittest.TestCase
 
@@ -55,7 +56,8 @@ test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [('rw', .9), ('chi_sq', 250)]
 
-if os.getenv('TRAVIS') or True:
+# if os.getenv('TRAVIS') or True:
+if os.getenv('TRAVIS'):
     # use a smaller test size otherwise travis stalls
     ns = [10, 100]
     test_atoms = [setup_atoms(int(n)) for n in ns]
@@ -71,12 +73,14 @@ else:
     test_exp.extend([generate_experiment() for i in range(1)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
-    # proc_alg_pairs = list(product(['CPU', 'Multi-GPU'], ['nxn', 'flat']))
-    proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
+    proc_alg_pairs = list(product(['CPU', 'Multi-GPU'], ['nxn', 'flat']))
+    # proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
+
     # Note there is only one CPU nxn comparison test, the CPU nxn code is
     # rather slow, thus we test it against the flattened Multi core CPU code,
     # which is much faster.  Then we run all tests agains the CPU flat kernels.
     # Thus it is imperative that the flat CPU runs with no errors.
+
     # comparison_pro_alg_pairs = [(('CPU', 'nxn'), ('CPU', 'flat'))]
     # comparison_pro_alg_pairs = []
     # comparison_pro_alg_pairs.extend(

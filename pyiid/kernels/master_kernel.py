@@ -158,9 +158,9 @@ def fft_gr_to_fq(g, rstep, rmin):
     npad4 = 4 * npad2
     # gpadc array has to be doubled for complex coefficients
     gpadc = np.zeros(npad4)
-    gpadc2 = np.zeros(npad4)
+    # gpadc2 = np.zeros(npad4)
     # copy the original g signal
-    ilo = 0
+    # ilo = 0
     # ilo = padrmin
     # ilo = len(g)
     gpadc[:2 * len(g):2] = g[:]
@@ -169,9 +169,8 @@ def fft_gr_to_fq(g, rstep, rmin):
     for i in xrange(len(g)):
         gpadc[2 * ilo] = g[i]
         ilo += 1
-
-    assert_allclose(gpadc2, gpadc)
     # '''
+    # assert_allclose(gpadc2, gpadc)
     # copy the odd part of g skipping the first point,
     # because it is periodic image of gpadc[0]
     gpadc[-2:-2 * len(g) + 1:-2] = -1 * g[1:]
@@ -181,9 +180,8 @@ def fft_gr_to_fq(g, rstep, rmin):
     for ilo in xrange(1, npad2):
         gpadc[2 * ihi] = -1 * gpadc[2 * ilo]
         ihi -= 1
-
-    assert_allclose(gpadc2, gpadc)
-    # '''
+    '''
+    # assert_allclose(gpadc2, gpadc)
     # plt.plot(gpadc)
     # plt.show()
 
