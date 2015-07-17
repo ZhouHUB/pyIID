@@ -5,7 +5,6 @@ setup(
     name='pyIID',
     version='',
     packages=['extra', 'pyiid', 'pyiid.sim', 'pyiid.calc', 'pyiid.tests',
-              'pyiid.tests.test_cpu', 'pyiid.tests.test_gpu',
               'pyiid.tests.test_master', 'pyiid.kernels', 'pyiid.testing',
               'pyiid.wrappers', 'pyiid.wrappers.mpi'],
     url='',
