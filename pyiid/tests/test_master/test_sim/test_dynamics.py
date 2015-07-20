@@ -33,7 +33,7 @@ def test_dynamics():
     min_pe = np.min(pe_list)
     del traj
     assert min_pe < .1
-
+'''
 def test_reverse_dynamics():
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
@@ -60,7 +60,7 @@ def test_reverse_dynamics():
     # view(traj)
     del traj
     assert min_pe < .1
-
+'''
 if __name__ == '__main__':
     import nose
     nose.runmodule(argv=['-s', '--with-doctest', '-v', '--nocapture'], exit=False)
