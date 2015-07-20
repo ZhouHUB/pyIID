@@ -14,6 +14,7 @@ def test_dynamics():
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
     s = ElasticScatter()
+    s.set_processor('CPU', 'flat')
     gobs = s.get_pdf(ideal_atoms)
 
     ideal_atoms.positions *= 1.02
@@ -30,15 +31,15 @@ def test_dynamics():
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.min(pe_list)
-    assert min_pe < .1
     del traj
+    assert min_pe < .1
 
 def test_reverse_dynamics():
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
     s = ElasticScatter()
-    # s.set_processor('CPU', 'flat')
+    s.set_processor('CPU', 'flat')
     gobs = s.get_pdf(ideal_atoms)
 
     ideal_atoms.positions *= 1.02
@@ -57,8 +58,9 @@ def test_reverse_dynamics():
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.min(pe_list)
     # view(traj)
+    del traj
     assert min_pe < .1
 
 if __name__ == '__main__':
     import nose
-    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    nose.runmodule(argv=['-s', '--with-doctest', '-v', '--nocapture'], exit=False)
