@@ -44,9 +44,9 @@ def test_reverse_dynamics():
     ideal_atoms.set_calculator(calc)
 
     e = -1.
-
+    print 'start traj'
     traj = classical_dynamics(ideal_atoms, e, 5)
-
+    print 'end traj'
     pe_list = []
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
