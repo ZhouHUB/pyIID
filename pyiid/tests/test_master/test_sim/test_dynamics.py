@@ -31,6 +31,7 @@ def test_dynamics():
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.min(pe_list)
     assert min_pe < .1
+    del traj
 
 def test_reverse_dynamics():
 
