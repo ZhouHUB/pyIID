@@ -8,7 +8,7 @@ from time import time as ttime
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 # from ase.visualize import view
-
+'''
 def test_dynamics():
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
@@ -33,7 +33,7 @@ def test_dynamics():
     min_pe = np.min(pe_list)
     del traj
     assert min_pe < .1
-'''
+
 def test_reverse_dynamics():
 
     ideal_atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
