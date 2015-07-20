@@ -3,7 +3,7 @@ from pyiid.sim.dynamics import classical_dynamics
 from copy import deepcopy as dc
 import numpy as np
 from ase.atoms import Atoms
-import time.time as ttime
+from time import time as ttime
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
