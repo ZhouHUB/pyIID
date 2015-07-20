@@ -19,6 +19,7 @@ while True:
         sleep(10)
 
     else:
+        i = 0
         print 'Found {0} simulation enteries which have not been ran or flagged' \
               ' to be skipped'.format(len(sims))
         # run the simulations in the order they were added.
