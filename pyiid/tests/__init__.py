@@ -76,7 +76,8 @@ if os.getenv('TRAVIS'):
     travis = True
 
     # use a smaller test size otherwise travis stalls
-    ns = [10]
+    ns = [10, 100]
+    test_exp.extend([generate_experiment() for i in range(3)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
 

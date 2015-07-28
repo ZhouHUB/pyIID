@@ -17,9 +17,9 @@ plugins = [KnownFailure, NoseExclude]
 env = {"NOSE_WITH_COVERAGE": 1,
        'NOSE_COVER_PACKAGE': 'pyiid',
        'NOSE_COVER_HTML': 1,
-       # 'NOSE_VERBOSE': 2,
+       'NOSE_VERBOSE': 2,
        'NOSE_PROCESS_TIMEOUT': 599,
-       'NOSE_WITH_PROFILE': 1
+       # 'NOSE_WITH_PROFILE': 1
        # 'NOSE_PROCESSES': -1
        }
 
