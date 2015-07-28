@@ -91,8 +91,8 @@ else:
     test_exp.extend([generate_experiment() for i in range(3)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
-    # proc_alg_pairs = list(product(['CPU', 'Multi-GPU'], ['nxn', 'flat']))
-    proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
+    proc_alg_pairs = list(product(['CPU', 'Multi-GPU'], ['nxn', 'flat']))
+    # proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
 
     # Note there is only one CPU nxn comparison test, the CPU nxn code is
     # rather slow, thus we test it against the flattened Multi core CPU code,

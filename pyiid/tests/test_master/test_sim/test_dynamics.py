@@ -2,7 +2,6 @@ __author__ = 'christopher'
 from pyiid.sim.dynamics import classical_dynamics
 import numpy as np
 from ase.atoms import Atoms
-from time import time as ttime
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
@@ -26,9 +25,7 @@ def test_dynamics():
     ideal_atoms.set_calculator(calc)
 
     e = 1.
-    st = ttime()
     traj = classical_dynamics(ideal_atoms, e, 5)
-    print (ttime() - st)/60., 'mins'
 
     pe_list = []
     for atoms in traj:
@@ -55,11 +52,7 @@ def test_reverse_dynamics():
     ideal_atoms.set_calculator(calc)
 
     e = -1.
-    print 'start traj'
-    st = ttime()
     traj = classical_dynamics(ideal_atoms, e, 5)
-    print (ttime() - st)/60., 'mins'
-    print 'end traj'
     pe_list = []
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
