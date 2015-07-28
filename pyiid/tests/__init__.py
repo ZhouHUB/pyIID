@@ -63,12 +63,13 @@ def setup_atomic_square():
 def stats_check(ans1, ans2):
     return np.max(np.abs(ans2 - ans1)), np.mean(
         np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
+
 # Setup lists of test variables
 test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [
     ('rw', .9),
-    ('chi_sq', 30)
+    ('chi_sq', 10)
 ]
 test_qbin = [.1]
 
