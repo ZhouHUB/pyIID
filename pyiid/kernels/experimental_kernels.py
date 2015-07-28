@@ -101,7 +101,7 @@ def grad_pdf(fpad, rstep, qstep, rgrid, qmin):
             data_out /= input_shape[0]
 
             gpadcfft[n_cov:n_cov + j, i, :] = data_out
-            del data_out
+            del data_out, batch_output
         n_cov += j
 
     g = np.zeros((n, 3, npad2), dtype=complex)

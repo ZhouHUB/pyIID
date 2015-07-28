@@ -38,8 +38,7 @@ def check_nrg(value):
     calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_potential_energy()
-    # print np.max(np.abs(ans2 - ans1)), np.mean(
-    #     np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
+    print stats_check(ans1, ans2)
     assert_allclose(ans2, ans1,
                     # rtol=5e-4,
                     atol=1e-3)
@@ -68,8 +67,7 @@ def check_forces(value):
     calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_forces()
-    # print np.max(np.abs(ans2 - ans1)), np.mean(
-    #     np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
+    print stats_check(ans1, ans2)
     assert_allclose(ans2, ans1,
                     rtol=5e-4,
                     atol=1e-7
@@ -155,7 +153,7 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        # '-v'
+        '-v'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

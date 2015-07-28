@@ -7,7 +7,8 @@ from numba import cuda
 
 from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
     atoms_per_gpu_grad_fq
-
+print 'Warning: this module is no longer fully supported/test, and may not be' \
+      'complete or robust. Please use the flat_gpu_wrap module'
 
 def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
     with gpu:
