@@ -17,10 +17,6 @@ import traceback
 
 exp = None
 scat = ElasticScatter()
-atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
-atoms2 = dc(atoms)
-pdf = scat.get_pdf(atoms)
-atoms.positions *= .95
 
 type_list = []
 time_list = []

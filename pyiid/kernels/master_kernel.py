@@ -35,7 +35,7 @@ def get_scatter_array(scatter_array, numbers, qbin):
                                                     kq * qbin / 4 / np.pi)
 
 
-# @jit(target='cpu')# @autojit(target=targ)
+# @jit(target='cpu')
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     """
     Get the atomic pair distribution function

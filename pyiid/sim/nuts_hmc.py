@@ -119,7 +119,6 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
     return traj, samples_total, float(samples_total) / m
 
 
-# @autojit(target='cpu')
 def buildtree(input_atoms, u, v, j, e, atoms0, e0):
     if j == 0:
         atoms_prime = leapfrog(input_atoms, v * e)
