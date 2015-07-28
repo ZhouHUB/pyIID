@@ -161,7 +161,8 @@ def plot_waterfall_diff_pdf_2d(scatter, gobs, traj, save_file=None, show=True,
     return
 
 
-def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, index=-1,
+def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True,
+               index=-1,
                **kwargs):
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -172,7 +173,8 @@ def plot_angle(cut, traj, target_configuration=None, save_file=None, show=True, 
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[index]
     for atoms in stru_l.values():
-        tag_surface_atoms(atoms)
+        if len(set(atoms.get_tags())) == 1:
+            tag_surface_atoms(atoms)
 
     symbols = set(stru_l['Start'].get_chemical_symbols())
 
@@ -230,7 +232,8 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None,
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[index]
     for atoms in stru_l.values():
-        tag_surface_atoms(atoms)
+        if len(set(atoms.get_tags())) == 1:
+            tag_surface_atoms(atoms)
 
     symbols = set(stru_l.itervalues().next().get_chemical_symbols())
     tags = {'Core': (0, '+'), 'Surface': (1, '*')}
@@ -298,6 +301,51 @@ def plot_coordination(cut, traj, target_configuration=None, save_file=None,
     return
 
 
+def plot_radial_bond_length(cut, traj, target_configuration=None,
+                            save_file=None,
+                            show=True, index=-1, **kwargs):
+    stru_l = {}
+    # If the PDF document created with atomic config, use that as target
+    if target_configuration is not None:
+        stru_l['Target'] = target_configuration
+    stru_l['Start'] = traj[0]
+    stru_l['Finish'] = traj[index]
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    for n, key in enumerate(stru_l.keys()):
+        atoms = stru_l[key]
+        com = atoms.get_center_of_mass()
+        n_list = list(FullNeighborList(cut, atoms))
+        dist_from_center = []
+        bond_lengths = []
+        stat_dist = []
+        for i, coord in enumerate(n_list):
+            dist = np.sqrt(np.sum((atoms[i].position - com)) ** 2)
+            stat_dist.append(dist)
+            sub_bond_lengths = []
+            for j in coord:
+                dist_from_center.append(dist)
+                sub_bond_lengths.append(atoms.get_distance(i, j))
+            bond_lengths.extend(sub_bond_lengths)
+        ax.scatter(dist_from_center, bond_lengths, c=colors[n], marker='o',
+                   label='{0}'.format(key), s=40)
+
+    ax.set_xlabel('Distance from Center $(\AA)$')
+    ax.set_ylabel('Bond Distance $(\AA)$')
+    ax2 = plt.twinx()
+    ax2.set_ylim(ax.get_ylim())
+    ax.legend(loc='best', prop={'size': 12})
+    if save_file is not None:
+        plt.savefig(save_file + '_rbonds.eps', bbox_inches='tight',
+                    transparent='True')
+        plt.savefig(save_file + '_rbonds.png', bbox_inches='tight',
+                    transparent='True')
+    if show is True:
+        plt.show()
+    return
+
+
 def plot_bonds(sim, cut, save_file=None, show=True, index=-1):
     atomic_config, = find_atomic_config_document(_id=sim.atoms.id)
     traj = atomic_config.file_payload
@@ -355,32 +403,9 @@ def ase_view(traj, **kwargs):
     view(traj)
 
 
-def plot_radial_bond_length(cut, atoms):
-    com = atoms.get_center_of_mass()
-    n_list = list(FullNeighborList(cut, atoms))
-    dist_from_center = []
-    bond_lengths = []
-    ave = []
-    std = []
-    stat_dist = []
-    for i, coord in enumerate(n_list):
-        dist = np.sqrt(np.sum((atoms[i].position - com)) ** 2)
-        stat_dist.append(dist)
-        sub_bond_lengths = []
-        for j in coord:
-            dist_from_center.append(dist)
-            sub_bond_lengths.append(atoms.get_distance(i, j))
-        bond_lengths.extend(sub_bond_lengths)
-        ave.append(np.mean(sub_bond_lengths))
-        std.append(np.std(sub_bond_lengths))
-    fig = plt.figure()
-    plt.scatter(dist_from_center, bond_lengths, c='b', marker='o')
-    plt.scatter(stat_dist, ave, c='red', marker='*', s=40)
-    plt.show()
-
-
-def plot_average_coordination(cut, traj, target_configuration=None, save_file=None,
-                      show=True, index=-1, **kwargs):
+def plot_average_coordination(cut, traj, target_configuration=None,
+                              save_file=None,
+                              show=True, index=-1, **kwargs):
     stru_l = {}
     # If the PDF document created with atomic config, use that as target
     if target_configuration is not None:
@@ -457,25 +482,28 @@ def plot_average_coordination(cut, traj, target_configuration=None, save_file=No
 
 
 def mass_plot(sims, cut, type='last'):
-    if not isgenerator(sims) or not isinstance(sims, list):
+    if not isgenerator(sims) and not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
         d = sim_unpack(sim)
-        if type == 'mini':
+        if type == 'min':
             pel = []
             for atoms in d['traj']:
                 if atoms._calc != None:
-                    pel.append(atoms.get_total_energy())
+                    pel.append(atoms.get_potential_energy())
             index = np.argmin(pel)
+            print index
+            print pel[index]
         elif type == 'last':
             index = -1
         ase_view(**d)
         plot_pdf(atoms=d['traj'][index], **d)
-        plot_angle(cut, **d)
-        plot_coordination(cut, **d)
+        plot_angle(cut, index=index, **d)
+        plot_coordination(cut, index=index, **d)
+        plot_radial_bond_length(cut, index=index, **d)
 
 
-def mass_save(sims, cut, dir):
+def mass_save(sims, cut, dir, type='last'):
     if not isgenerator(sims) or not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
@@ -484,6 +512,16 @@ def mass_save(sims, cut, dir):
         if not os.path.exists(new_dir_path):
             os.mkdir(os.path.join(dir, sim.name))
         d = sim_unpack(sim)
+        if type == 'min':
+            pel = []
+            for atoms in d['traj']:
+                if atoms._calc != None:
+                    pel.append(atoms.get_potential_energy())
+            index = np.argmin(pel)
+            print index
+            print pel[index]
+        elif type == 'last':
+            index = -1
 
         aseio.write(os.path.join(new_dir_path, name + '_target.eps'),
                     d['target_configuration'])
@@ -491,7 +529,6 @@ def mass_save(sims, cut, dir):
                     d['target_configuration'])
         aseio.write(os.path.join(new_dir_path, name + '_target.xyz'),
                     d['target_configuration'])
-
 
         aseio.write(os.path.join(new_dir_path, name + '_start.eps'),
                     d['traj'][0])
@@ -501,24 +538,33 @@ def mass_save(sims, cut, dir):
                     d['traj'][0])
 
         aseio.write(os.path.join(new_dir_path, name + '.eps'),
-                    d['traj'][-1])
+                    d['traj'][index])
         aseio.write(os.path.join(new_dir_path, name + '.png'),
-                    d['traj'][-1])
+                    d['traj'][index])
         aseio.write(os.path.join(new_dir_path, name + '.xyz'),
-                    d['traj'][-1])
+                    d['traj'][index])
 
-        plot_pdf(atoms=d['traj'][-1], show=False,
+        plot_pdf(atoms=d['traj'][index], show=False,
                  save_file=os.path.join(new_dir_path, name), **d)
-        plot_angle(cut, show=False, save_file=os.path.join(new_dir_path, name), **d)
-        plot_coordination(cut, show=False, save_file=os.path.join(new_dir_path, name),
-                          **d)
 
+        plot_angle(cut, show=False, save_file=os.path.join(new_dir_path, name),
+                   index=index, **d)
+
+        plot_coordination(cut, show=False,
+                          save_file=os.path.join(new_dir_path, name),
+                          index=index, ** d)
+
+        plot_radial_bond_length(cut, show=False,
+                          save_file=os.path.join(new_dir_path, name),
+                          index=index, ** d)
 
 if __name__ == '__main__':
     from simdb.search import *
+
     sims = list(find_simulation_document())
-    sim = sims[8]
+    sim = sims[5]
     d = sim_unpack(sim)
     # plot_coordination(3.2, **d)
-    a, b = get_coord_list(d['traj'][50:], 1.45)
-
+    # a, b = get_coord_list(d['traj'][50:], 1.45)
+    # plot_radial_bond_length(3.5, **d)
+    mass_plot(sim, 3.5, 'min')

@@ -2,6 +2,7 @@ __author__ = 'christopher'
 from time import sleep
 from simdb.search import find_simulation_document
 from pyiid.workflow.simulation import run_simulation
+import traceback
 
 i = 0
 print 'Start job queue'
@@ -33,7 +34,7 @@ while True:
                 pass
             except Exception as e:
                 print 'Simulation number {} has errored'.format(sim.id)
-                print e
+                print traceback.format_exc()
                 sim.error = True
                 sim.skip = True
                 sim.save()

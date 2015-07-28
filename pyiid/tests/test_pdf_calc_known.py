@@ -14,6 +14,11 @@ def test_forces():
         yield check_forces, v
 
 def check_nrg(value):
+    """
+    Check for PDF energy against known value
+    :param value:
+    :return:
+    """
     # setup
     atoms1, atoms2 = value[0]
     proc, alg = value[-1]
@@ -31,6 +36,11 @@ def check_nrg(value):
     del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, ans
 
 def check_forces(value):
+    """
+    Check for PDF forces against known value
+    :param value:
+    :return:
+    """
     # setup
     atoms1, atoms2 = value[0]
     proc, alg = value[-1]

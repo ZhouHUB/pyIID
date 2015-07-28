@@ -7,7 +7,8 @@ from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf
 
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
-from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq_grad as cpu_wrap_fq_grad
+from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
+    wrap_fq_grad as cpu_wrap_fq_grad
 
 
 def check_mpi():
@@ -35,8 +36,9 @@ class ElasticScatter(object):
     def __init__(self, exp_dict=None):
         # Currently supported processor architectures
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
-        self.exp_dict_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep']
-        self.default_values = [0.0, 25, .1, 0.0, 40.0, .01]
+        self.exp_dict_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep',
+                              'sampling']
+        self.default_values = [0.0, 25, .1, 0.0, 40.0, .01, 'full']
         self.alg = None
         self.exp = None
         self.pdf_qbin = None
@@ -53,28 +55,6 @@ class ElasticScatter(object):
         self.set_processor()
 
         # Flag for scatter, if True update atoms
-        self.scatter_needs_update = True
-
-    def check_scatter(self, atoms):
-        if self.scatter_needs_update is True \
-                or 'exp' not in atoms.info.keys() \
-                or atoms.info['exp'] != self.exp:
-            wrap_atoms(atoms, self.exp)
-            self.scatter_needs_update = False
-
-    def update_experiment(self, exp_dict):
-        # Should be read in from the gr file, but if not here are some defaults
-        if exp_dict is None or bool(exp_dict) is False:
-            exp_dict = {}
-        for key, dv in zip(self.exp_dict_keys, self.default_values):
-            if key not in exp_dict.keys():
-                exp_dict[key] = dv
-                # if key == 'rstep':
-                #     exp_dict[key] = np.pi/exp_dict['qmax']
-        self.exp = exp_dict
-        # Technically we should use this for qbin:
-        self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
-                                 self.exp['qmax'])
         self.scatter_needs_update = True
 
     def set_processor(self, processor=None, kernel_type='flat'):
@@ -129,6 +109,7 @@ class ElasticScatter(object):
                 self.grad = flat_grad
                 self.alg = 'flat'
             from pyiid.kernels.experimental_kernels import grad_pdf
+
             self.grad_pdf = grad_pdf
             self.processor = processor
             return True
@@ -140,7 +121,8 @@ class ElasticScatter(object):
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
-                from pyiid.wrappers.cpu_wrappers.flat_multi_cpu_wrap import wrap_fq, wrap_fq_grad
+                from pyiid.wrappers.cpu_wrappers.flat_multi_cpu_wrap import \
+                    wrap_fq, wrap_fq_grad
 
                 self.fq = wrap_fq
                 self.grad = wrap_fq_grad
@@ -149,6 +131,28 @@ class ElasticScatter(object):
             self.grad_pdf = cpu_grad_pdf
             self.processor = processor
             return True
+
+    def check_scatter(self, atoms):
+        if self.scatter_needs_update is True \
+                or 'exp' not in atoms.info.keys() \
+                or atoms.info['exp'] != self.exp:
+            wrap_atoms(atoms, self.exp)
+            self.scatter_needs_update = False
+
+    def update_experiment(self, exp_dict):
+        # Should be read in from the gr file, but if not here are some defaults
+        if exp_dict is None or bool(exp_dict) is False:
+            exp_dict = {}
+        for key, dv in zip(self.exp_dict_keys, self.default_values):
+            if key not in exp_dict.keys():
+                exp_dict[key] = dv
+        if exp_dict['sampling'] == 'ns':
+            exp_dict['rstep'] = np.pi / exp_dict['qmax']
+        self.exp = exp_dict
+        # Technically we should use this for qbin:
+        self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
+                                 self.exp['qmax'])
+        self.scatter_needs_update = True
 
     def get_fq(self, atoms):
         self.check_scatter(atoms)
@@ -190,7 +194,7 @@ class ElasticScatter(object):
         img = np.zeros(fp.shape)
         for sub_s, i in zip(s, iq):
             c = np.intersect1d(np.where(sub_s - qb / 2. < fp)[0],
-                           np.where(sub_s + qb / 2. > fp)[0])
+                               np.where(sub_s + qb / 2. > fp)[0])
             img[c] = i
         return img.reshape(final_shape)
 
@@ -206,8 +210,8 @@ class ElasticScatter(object):
         rgrid = self.get_r()
 
         pdf_grad = self.grad_pdf(fq_grad, self.exp['rstep'], self.pdf_qbin,
-                            rgrid,
-                            self.exp['qmin'])
+                                 rgrid,
+                                 self.exp['qmin'])
         return pdf_grad
 
     def get_scatter_vector(self):

@@ -16,6 +16,7 @@ from pyiid.kernels.cpu_kernel import get_d_array, get_r_array
 from copy import deepcopy as dc
 import time
 import datetime
+from pyiid.asa import calculate_asa
 
 '''
 def convert_atoms_to_stru(atoms):
@@ -67,7 +68,6 @@ def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None, **kwargs):
     Load gr files produced from PDFgetx3
     """
     exp_keys = ['qmax', 'qbin', 'qmin', 'rmin', 'rmax', 'rstep']
-    # TODO: also give back the filename
     if skiplines is None:
         with open(gr_file) as f:
             exp_dict = {}
@@ -98,7 +98,7 @@ def load_gr_file(gr_file=None, skiplines=None, rmin=None, rmax=None, **kwargs):
         r = r[math.ceil(rmin / exp_dict['rstep']):]
         gr = gr[math.ceil(rmin / exp_dict['rstep']):]
         exp_dict['rmin'] = rmin
-
+    exp_dict['sampling'] = 'full'
     return r, gr, exp_dict
 
 
@@ -138,7 +138,7 @@ def build_sphere_np(file, radius):
     return atoms
 
 
-def tag_surface_atoms(atoms, tag=1, tol=0.5):
+def tag_surface_atoms(atoms, tag=1, probe=1.4, cutoff=None):
     """
     Find which are the surface atoms in a nanoparticle.
     ..note: We define the surface as a collection of atoms for which the
@@ -150,42 +150,7 @@ def tag_surface_atoms(atoms, tag=1, tol=0.5):
     :param atoms:
     :return:
     """
-    '''
-    n = len(atoms)
-    d = np.zeros((n, n, 3))
-    q = atoms.positions
-    get_d_array(d, q)
-    r = np.zeros((n, n))
-    get_r_array(r, d)
-    for i in range(n):
-        r[i,i] = np.inf
-        r[i,i] = np.inf
-        r[i,i] = np.inf
-
-    rmin = np.min(r)
-    print rmin
-    s_idx = GetLayerNumbers(atoms, rmin)
-    for i in range(len(atoms)):
-        if s_idx[i] == 1:
-            atoms[i].tag = tag
-    '''
-    n = len(atoms)
-    q = atoms.get_positions()
-    d_array = np.zeros((n, n, 3))
-    get_d_array(d_array, q)
-    com = atoms.get_center_of_mass()
-    for i in range(n):
-        pos = atoms[i].position
-        disp = pos - com
-        disp /= np.linalg.norm(disp)
-        dot = np.zeros(n)
-        for j in range(n):
-            if j != i:
-                dot[j] = np.dot(disp, d_array[i, j, :]/np.linalg.norm(d_array[i, j, :]))
-        if np.all(np.less_equal(dot, np.zeros(len(dot))+tol)):
-            atoms[i].tag = tag
-    # '''
-
+    calculate_asa(atoms, 1.4, tag=tag, cutoff=cutoff)
 
 def add_ligands(ligand, surface, distance, coverage, head, tail):
     atoms = dc(surface)

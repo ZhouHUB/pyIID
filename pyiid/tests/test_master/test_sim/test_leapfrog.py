@@ -8,6 +8,10 @@ from numpy.testing import assert_allclose
 
 
 def test_leapfrog_no_momentum():
+    """
+    Test leapfrog with null forces
+    :return:
+    """
     atoms, _ = setup_atomic_square()
     calc = Spring(rt=1, k=100)
     atoms.set_calculator(calc)
@@ -16,6 +20,10 @@ def test_leapfrog_no_momentum():
 
 
 def test_leapfrog_momentum():
+    """
+    Test leapfrog with non-trivial momentum
+    :return:
+    """
     atoms, _ = setup_atomic_square()
     calc = Spring(rt=1, k=100)
     atoms.set_momenta(np.ones((len(atoms), 3)))
@@ -25,6 +33,10 @@ def test_leapfrog_momentum():
 
 
 def test_leapfrog_reversibility():
+    """
+    Test leapfrog with non-trivial momentum in reverse
+    :return:
+    """
     atoms, _ = setup_atomic_square()
     calc = Spring(rt=1, k=100)
     atoms.set_momenta(np.ones((len(atoms), 3)))

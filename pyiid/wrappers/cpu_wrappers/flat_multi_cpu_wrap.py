@@ -69,7 +69,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # multiprocessing map problem
     fqs = p.map(atomic_fq, tasks)
     # p.join()
-    # p.close()
+    p.close()
     # sum the answers
     final = np.sum(fqs, axis=0)
     na = np.average(scatter_array, axis=0) ** 2 * n
@@ -133,7 +133,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # multiprocessing map problem
     fqs = p.map(atomic_grad_fq, tasks)
     # p.join()
-    # p.close()
+    p.close()
     # sum the answers
     grad_p = np.sum(fqs, axis=0)
     # '''

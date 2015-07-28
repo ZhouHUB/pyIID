@@ -58,7 +58,7 @@ def get_grad_fq_e(E, D, C):
         E[k, w, qx] = D[k, qx] * C[k, w]
 
 
-def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
+def grad_pdf(fpad, rstep, qstep, rgrid, qmin):
     n = len(fpad)
     fpad[:, :, :int(math.ceil(qmin / qstep))] = 0.0
     # Expand F(Q)
@@ -80,18 +80,29 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     gpadc[:, :, -2:-2 * fpad.shape[-1] + 1:-2] = -1 * fpad[:, :, 1:]
     gpadcfft = np.zeros(gpadc.shape, dtype=complex)
 
-    for i in range(3):
-        batch_input = np.ravel(gpadc[:, i, :]).astype(np.complex64)
-        input_shape = [gpadcfft.shape[-1]]
-        batch_operations = n
-        plan = cufft.FFTPlan(input_shape, batch_input.dtype, np.complex64,
-                             batch_operations)
-        batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
-        _ = plan.inverse(batch_input, out=batch_output)
+    input_shape = [gpadcfft.shape[-1]]
 
-        data_out = np.reshape(batch_output, (n, input_shape[0]))
-        data_out /= input_shape[0]
-        gpadcfft[:, i, :] = data_out
+    mem = cuda.current_context().get_memory_info()[0]
+    n_cov = 0
+    while n_cov < n:
+        j = int(math.floor(mem / gpadcfft.shape[-1] / 64 / 2))
+        if j > n - n_cov:
+            j = n - n_cov
+        batch_operations = j
+        plan = cufft.FFTPlan(input_shape, np.complex64, np.complex64,
+                                 batch_operations)
+        for i in range(3):
+            batch_input = np.ravel(gpadc[n_cov:n_cov + j, i, :]).astype(np.complex64)
+            batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
+
+            _ = plan.inverse(batch_input, out=batch_output)
+            del batch_input
+            data_out = np.reshape(batch_output, (j, input_shape[0]))
+            data_out /= input_shape[0]
+
+            gpadcfft[n_cov:n_cov + j, i, :] = data_out
+            del data_out
+        n_cov += j
 
     g = np.zeros((n, 3, npad2), dtype=complex)
     g[:, :, :] = gpadcfft[:, :, :npad2 * 2:2] * npad2 * qstep
@@ -100,7 +111,7 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     drpad = math.pi / (gpad.shape[-1] * qstep)
 
     pdf0 = np.zeros((n, 3, len(rgrid)))
-    axdrp = rgrid/drpad/2
+    axdrp = rgrid / drpad / 2
     aiplo = axdrp.astype(np.int)
     aiphi = aiplo + 1
     awphi = axdrp - aiplo
@@ -109,10 +120,9 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     pdf1 = pdf0 * 2
     return pdf1.real
 
-
-def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
-    pdf_grad = get_pdf_at_qmin(grad_fq, rstep, qstep, rgrid, qmin)
-    return pdf_grad
+# def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
+#     pdf_grad = get_pdf_at_qmin(grad_fq, rstep, qstep, rgrid, qmin)
+#     return pdf_grad
 
 '''
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])

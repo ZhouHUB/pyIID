@@ -29,15 +29,14 @@ class PDFCalc(Calculator):
         self.rw_to_eV = conv
 
         if obs_data is not None and exp_dict is not None:
-            if len(np.arange(exp_dict['rmin'], exp_dict['rmax'],
-                             exp_dict['rstep'])) < len(obs_data):
+            if len(np.arange(exp_dict['rmin'], exp_dict['rmax'], exp_dict['rstep'])) < len(obs_data):
                 obs_data = obs_data[math.floor(self.exp_dict['rmin'] / self.exp_dict['rstep']):math.ceil(self.exp_dict['rmax'] / self.exp_dict['rstep'])]
             self.gobs = obs_data
         elif obs_data is not None:
             self.gobs = obs_data
         else:
             raise NotImplementedError('Need an experimental PDF')
-
+        assert len(self.scatter.get_r()) == len(obs_data)
         if potential == 'chi_sq':
             self.potential = wrap_chi_sq
             self.grad = wrap_grad_chi_sq
