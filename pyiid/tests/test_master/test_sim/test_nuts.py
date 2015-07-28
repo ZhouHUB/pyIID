@@ -25,7 +25,7 @@ def test_nuts():
     ideal_atoms.set_calculator(calc)
 
     e = 1.
-    traj = nuts(ideal_atoms, .65, 3, 1.)
+    traj, _, _ = nuts(ideal_atoms, .65, 3, 1.)
 
     pe_list = []
     for atoms in traj:
