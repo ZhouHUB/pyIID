@@ -3,7 +3,6 @@ import numpy as np
 from ase.atoms import Atoms
 from pyiid.wrappers.elasticscatter import wrap_atoms
 import unittest
-from ddt import ddt, data, unpack
 from numpy.testing import assert_allclose
 from itertools import *
 import os

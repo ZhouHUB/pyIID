@@ -41,7 +41,7 @@ def find_step_size(input_atoms):
     return step_size
 
 
-def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
+def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None, tree_limit=13):
     """
     No U-Turn Sampling in the Canonical Ensemble, generating minima on the
     atoms' potential energy surface
@@ -131,7 +131,7 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None):
                 # If we have generated 8192 samples,
                 # then we are moving too slowly and should start a new iter
                 # hopefully with a larger step size
-                if j >= 13:
+                if j >= tree_limit:
                     print 'jmax emergency escape at {}'.format(j)
                     s = 0
             w = 1. / (m + t0)
