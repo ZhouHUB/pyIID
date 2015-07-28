@@ -178,7 +178,7 @@ def buildtree(input_atoms, u, v, j, e, e0):
     -------
     Many things
     """
-    # TODO: Continue documentation, fix pep8, and potentially remove atoms0
+    # TODO: Continue documentation, fix pep8
     if j == 0:
         atoms_prime = leapfrog(input_atoms, v * e)
         neg_delta_energy = e0 - atoms_prime.get_total_energy()

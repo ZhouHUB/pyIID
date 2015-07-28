@@ -68,7 +68,7 @@ test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [
     ('rw', .9),
-    # ('chi_sq', 250)
+    ('chi_sq', 30)
 ]
 test_qbin = [.1]
 

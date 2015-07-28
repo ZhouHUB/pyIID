@@ -17,12 +17,17 @@ import traceback
 
 exp = None
 scat = ElasticScatter()
+atoms = Atoms('Au4', [[0,0,0], [3,0,0], [0,3,0], [3,3,0]])
+pdf = scat.get_pdf(atoms)
 
 type_list = []
 time_list = []
-benchmarks = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
+benchmarks = [
+    ('CPU', 'flat'),
+    ('Multi-GPU', 'flat')
+]
 colors=['b', 'r']
-sizes = range(10, 105, 5)
+sizes = range(10, 65, 5)
 print sizes
 
 for proc, alg in benchmarks:
@@ -39,28 +44,27 @@ for proc, alg in benchmarks:
             atoms.set_calculator(calc)
 
             s = time.time()
-            nrg = atoms.get_potential_energy()
-            # scat.get_fq(atoms)
+            # nrg = atoms.get_potential_energy()
+            scat.get_fq(atoms)
             f = time.time()
 
             nrg_l.append(f-s)
 
             s = time.time()
-            force = atoms.get_forces()
-            # scat.get_grad_fq(atoms)
+            # force = atoms.get_forces()
+            scat.get_grad_fq(atoms)
             f = time.time()
             f_l.append(f-s)
     except:
         print traceback.format_exc()
         pass
     time_list.append((nrg_l, f_l))
-# f_name_list = [
-    # ('cpu_e.txt', cpu_e), ('cpu_f.txt', cpu_f),
-    # ('gpu_e.txt', multi_gpu_e), ('gpu_f.txt', multi_gpu_f)
-# ]
-# for f_str, lst in f_name_list:
-#     with open(f_str, 'w') as f:
-#         pickle.dump(lst, f)
+
+for i in range(len(benchmarks)):
+    for j, calc_type in enumerate(['energy', 'force']):
+        f_str = benchmarks[i][0]+'_'+benchmarks[i][0]+'_'+calc_type+'.pkl'
+        with open(f_str, 'w') as f:
+            pickle.dump(time_list[i][j], f)
 #
 for i in range(len(benchmarks)):
     for j, (calc_type, line) in enumerate(zip(['energy', 'force'], ['o', 's'])):
