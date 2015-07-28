@@ -17,7 +17,7 @@ from pyiid.calc.multi_calc import MultiCalc
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.spring_calc import Spring
 from pyiid.calc.fqcalc import FQCalc
-from pyiid.utils import load_gr_file
+from simdb.readers.pdfgetx3_gr import load_gr_file
 
 
 # We would like to have a way to setup and run the simulation, collecting

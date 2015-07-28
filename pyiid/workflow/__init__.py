@@ -8,8 +8,9 @@ import matplotlib
 
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc import wrap_rw
-from pyiid.utils import load_gr_file, tag_surface_atoms, get_angle_list, \
+from pyiid.utils import tag_surface_atoms, get_angle_list, \
     get_coord_list, get_bond_dist_list
+from simdb.readers.pdfgetx3_gr import load_gr_file
 
 from simdb.search import *
 from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
