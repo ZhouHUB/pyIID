@@ -18,7 +18,7 @@ install:
   - pip install python-ase pympler
   - pip install nose-exclude
   - wget http://dcwww.camp.dtu.dk/campos/download/Asap-3.8.4.tar.gz
-  - tar xvf Asap-3.8.4.tar.gz
+  - tar xf Asap-3.8.4.tar.gz
   - cd Asap-3.8.4
   - python setup.py install
   - cd ..
