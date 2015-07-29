@@ -71,7 +71,7 @@ def check_forces(value):
     if p == 'chi_sq':
         assert_allclose(ans2, ans1,
                     rtol=5e-4,
-                    atol=1e-6
+                    atol=1e-5
                     )
     else:
         assert_allclose(ans2, ans1,
