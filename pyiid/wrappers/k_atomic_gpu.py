@@ -83,8 +83,9 @@ def atomic_grad_fq(q, scatter_array, qbin, k_cov, k_max):
     from pyiid.kernels.flat_kernel import (get_d_array, get_r_array,
                                            get_normalization_array, get_fq,
                                            get_grad_fq, zero3d,
-                                           fast_fast_flat_sum)
-
+                                           # fast_fast_flat_sum
+                                           )
+    from pyiid.kernels.experimental_kernels import fast_fast_flat_sum
     n = len(q)
     # generate grids
     elements_per_dim_1 = [k_max]
@@ -141,10 +142,10 @@ def atomic_grad_fq(q, scatter_array, qbin, k_cov, k_max):
                                   stream=stream2)
     # dnew_grad = cuda.to_device(new_grad2, stream=stream2)
 
-    # zero3d[bpgnnq, tpbnnq, stream2](dnew_grad)
-    # fast_fast_flat_sum[bpgnnq, tpbnnq, stream2](dnew_grad, dgrad, k_cov)
+    zero3d[bpgnnq, tpbnnq, stream2](dnew_grad)
+    fast_fast_flat_sum[bpgnnq, tpbnnq, stream2](dnew_grad, dgrad, k_cov)
 
-    fast_fast_flat_sum[bpgnq, tpbnq, stream2](dnew_grad, dgrad, k_cov)
+    # fast_fast_flat_sum[bpgnq, tpbnq, stream2](dnew_grad, dgrad, k_cov)
     dnew_grad.copy_to_host(new_grad2, stream=stream2)
     del dgrad, dnew_grad
     del dq, dscat, dd, dr, dnorm, dfq

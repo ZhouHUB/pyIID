@@ -68,7 +68,13 @@ def check_forces(value):
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_forces()
     print stats_check(ans1, ans2)
-    assert_allclose(ans2, ans1,
+    if p == 'chi_sq':
+        assert_allclose(ans2, ans1,
+                        rtol=5e-4,
+                        atol=1e-5
+                        )
+    else:
+        assert_allclose(ans2, ans1,
                     rtol=5e-4,
                     atol=1e-7
                     )
