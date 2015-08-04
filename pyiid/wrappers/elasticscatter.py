@@ -108,7 +108,7 @@ class ElasticScatter(object):
                 self.fq = flat_fq
                 self.grad = flat_grad
                 self.alg = 'flat'
-            from pyiid.kernels.experimental_kernels import grad_pdf
+            from pyiid.wrappers.flat_gpu_wrap import grad_pdf
 
             self.grad_pdf = grad_pdf
             self.processor = processor

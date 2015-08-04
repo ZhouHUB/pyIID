@@ -1,4 +1,8 @@
+import math
+from numbapro.cudalib import cufft
+import numpy as np
 from pyiid.wrappers import *
+from pyiid.wrappers import get_gpus_mem
 
 __author__ = 'christopher'
 from threading import Thread
@@ -115,3 +119,82 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     np.seterr(**old_settings)
     # '''
     return grad_p
+
+
+def sub_grad_pdf(gpu, input_shape, gpadc, gpadcfft, j, n_cov):
+    with gpu:
+        batch_operations = j
+        plan = cufft.FFTPlan(input_shape, np.complex64, np.complex64,
+                                     batch_operations)
+        for i in range(3):
+            batch_input = np.ravel(gpadc[n_cov:n_cov + j, i, :]).astype(np.complex64)
+            batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
+
+            _ = plan.inverse(batch_input, out=batch_output)
+            del batch_input
+            data_out = np.reshape(batch_output, (j, input_shape[0]))
+            data_out /= input_shape[0]
+
+            gpadcfft[n_cov:n_cov + j, i, :] = data_out
+            del data_out, batch_output
+
+
+def grad_pdf(fpad, rstep, qstep, rgrid, qmin):
+    n = len(fpad)
+    fpad[:, :, :int(math.ceil(qmin / qstep))] = 0.0
+    # Expand F(Q)
+    nfromdr = int(math.ceil(math.pi / rstep / qstep))
+    if nfromdr > int(len(fpad)):
+        # put in a bunch of zeros
+        fpad2 = np.zeros((n, 3, nfromdr))
+        fpad2[:, :, :fpad.shape[-1]] = fpad
+        fpad = fpad2
+
+    padrmin = int(round(qmin / qstep))
+    npad1 = padrmin + fpad.shape[-1]
+
+    npad2 = (1 << int(math.ceil(math.log(npad1, 2)))) * 2
+
+    npad4 = 4 * npad2
+    gpadc = np.zeros((n, 3, npad4))
+    gpadc[:, :, :2 * fpad.shape[-1]:2] = fpad[:, :, :]
+    gpadc[:, :, -2:-2 * fpad.shape[-1] + 1:-2] = -1 * fpad[:, :, 1:]
+    gpadcfft = np.zeros(gpadc.shape, dtype=complex)
+
+    input_shape = [gpadcfft.shape[-1]]
+
+    gpus, mems = get_gpus_mem()
+    n_cov = 0
+    p_dict = {}
+
+    while n_cov < n:
+        for gpu, mem in zip(gpus, mems):
+            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                j = int(math.floor(mem / gpadcfft.shape[-1] / 64 / 2))
+                if j > n - n_cov:
+                    j = n - n_cov
+                if n_cov >= n:
+                    break
+                p = Thread(target=sub_grad_pdf, args=(gpu, input_shape, gpadc, gpadcfft, j, n_cov))
+                p.start()
+                p_dict[gpu] = p
+                n_cov += j
+                if n_cov >= n:
+                    break
+    for value in p_dict.values():
+        value.join()
+    g = np.zeros((n, 3, npad2), dtype=complex)
+    g[:, :, :] = gpadcfft[:, :, :npad2 * 2:2] * npad2 * qstep
+
+    gpad = g.imag * 2.0 / math.pi
+    drpad = math.pi / (gpad.shape[-1] * qstep)
+
+    pdf0 = np.zeros((n, 3, len(rgrid)))
+    axdrp = rgrid / drpad / 2
+    aiplo = axdrp.astype(np.int)
+    aiphi = aiplo + 1
+    awphi = axdrp - aiplo
+    awplo = 1.0 - awphi
+    pdf0[:, :, :] = awplo[:] * gpad[:, :, aiplo] + awphi * gpad[:, :, aiphi]
+    pdf1 = pdf0 * 2
+    return pdf1.real

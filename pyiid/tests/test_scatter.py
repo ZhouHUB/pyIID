@@ -11,7 +11,7 @@ def test_gen_scatter_smoke_fq():
     for v in test_data:
         yield check_scatter_fq, v
 
-
+'''
 def test_gen_scatter_smoke_pdf():
     for v in test_data:
         yield check_scatter_pdf, v
@@ -36,7 +36,7 @@ def test_gen_scatter_smoke_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
 
-
+'''
 def check_scatter_fq(value):
     """
     Check two processor, algorithm pairs against each other for FQ calculation
@@ -59,6 +59,7 @@ def check_scatter_fq(value):
     ans2 = scat.get_fq(atoms)
 
     # test
+    print stats_check(ans1, ans2)
     # print np.max(np.abs(ans1 - ans2)), np.mean(
     #     np.abs(ans1 - ans2)), np.std(np.abs(ans1 - ans2))
     assert_allclose(ans1, ans2, atol=atol)
@@ -198,7 +199,7 @@ if __name__ == '__main__':
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',
-        '--nocapture',
+        # '--nocapture',
         # '-v'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},

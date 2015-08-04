@@ -506,37 +506,42 @@ def plot_average_coordination(cut, traj, target_configuration=None,
 
 
 def save_config(new_dir_path, name, d, index=-1, rotation_atoms=None):
-
     if rotation_atoms is None:
         atoms = d['traj'][index]
         n = len(atoms)
         q = atoms.positions
-        d = np.zeros((n, n, 3), np.float32)
+        dist = np.zeros((n, n, 3), np.float32)
         r = np.zeros((n, n), np.float32)
-        get_d_array(d, q)
-        get_r_array(r, d)
+        get_d_array(dist, q)
+        get_r_array(r, dist)
         maxpos = np.argmax(r)
         rotation_atoms = np.unravel_index(maxpos, r.shape)
-
-    out_l = [d['traj'][index], d['target_configuration'], d['traj'][0]]
+    out_l = [
+        d['traj'][index],
+        d['target_configuration'],
+        d['traj'][0]
+    ]
     append_names = ['_min', '_target', '_start']
     file_endings = ['.eps', '.png', '.xyz', '.pov']
 
     for atoms, an in zip(out_l, append_names):
-        atoms.center(5)
+        atoms.center()
         # Rotate the config onto the viewing axis
         atoms.rotate(atoms[rotation_atoms[0]].position - atoms[rotation_atoms[1]].position, 'z')
+        atoms.center()
         # save the total configuration
         for e in file_endings:
             file_name = os.path.join(new_dir_path, name + an + e)
             aseio.write(file_name, atoms)
         # cut the config in half along the xy plane
         atoms2 = dc(atoms)
-        del atoms2[[atom.index for atom in atoms if atom.position[2] > 0]]
+        atoms2.set_constraint()
+        atoms2.translate(-1* atoms2.get_center_of_mass())
+        print atoms2.positions
+        del atoms2[[atom.index for atom in atoms2 if atom.position[2] >= 0]]
         for e in file_endings:
             file_name = os.path.join(new_dir_path, name + '_half' + an + e)
-            aseio.write(file_name, atoms)
-
+            aseio.write(file_name, atoms2)
 
 def mass_plot(sims, cut, type='last'):
     if not isgenerator(sims) and not isinstance(sims, list):
@@ -574,13 +579,13 @@ def mass_save(sims, cut, dir, type='last'):
             for atoms in d['traj']:
                 if atoms._calc != None:
                     pel.append(atoms.get_potential_energy())
-            index = np.argmin(pel)
+            index = int(np.argmin(pel))
             print index
             print pel[index]
         elif type == 'last':
             index = -1
 
-        save_config()
+        save_config(new_dir_path, name, d, index)
         plot_pdf(atoms=d['traj'][index], show=False,
                  save_file=os.path.join(new_dir_path, name), **d)
 
@@ -598,24 +603,25 @@ def mass_save(sims, cut, dir, type='last'):
 if __name__ == '__main__':
     from simdb.search import *
     sims = list(find_simulation_document())
-    sim = sims[20]
-    d = sim_unpack(sim)
+    # sim = sims[20]
+    # d = sim_unpack(sim)
 
-    atoms = d['target_configuration']
-    n = len(atoms)
-    q = atoms.positions
-    d = np.zeros((n, n, 3), np.float32)
-    r = np.zeros((n, n), np.float32)
-    get_d_array(d, q)
-    get_r_array(r, d)
-    maxr = np.max(r)
-    maxpos = np.argmax(r)
-    maxpos = np.unravel_index(maxpos, r.shape)
-    maxpos = (27, 28)
-    print maxr, maxpos
-    atoms.rotate(atoms[maxpos[0]].position - atoms[maxpos[1]].position, 'z')
-    view(atoms)
-
+    # atoms = d['target_configuration']
+    # n = len(atoms)
+    # q = atoms.positions
+    # d = np.zeros((n, n, 3), np.float32)
+    # r = np.zeros((n, n), np.float32)
+    # get_d_array(d, q)
+    # get_r_array(r, d)
+    # maxr = np.max(r)
+    # maxpos = np.argmax(r)
+    # maxpos = np.unravel_index(maxpos, r.shape)
+    # maxpos = (27, 28)
+    # print maxr, maxpos
+    # atoms.rotate(atoms[maxpos[0]].position - atoms[maxpos[1]].position, 'z')
+    # view(atoms)
+    dest = '/mnt/bulk-data/Dropbox/BNL_Project/HMC_paper/figures'
+    mass_save(sims[40], 3.5, dest, 'min')
 
     # ase_view(**d)
     # plot_radial_bond_length(3.5, **d)
