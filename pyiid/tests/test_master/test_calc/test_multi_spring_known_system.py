@@ -4,23 +4,32 @@ from pyiid.calc.spring_calc import Spring
 from pyiid.calc.multi_calc import MultiCalc
 __author__ = 'christopher'
 
+test_data = tuple(product(test_atom_squares, test_spring_kwargs))
 
-def test_spring():
+def test_gen_spring():
+    for v in test_data:
+        yield check_spring, v
+
+def test_gen_grad_spring():
+    for v in test_data:
+        yield check_grad_spring, v
+
+def check_spring(value):
     """
     Test two known square systems
     """
-    atoms1, atoms2 = setup_atomic_square()
-    calc = MultiCalc(calc_list=[Spring(k=100, rt=5.), Spring(k=100, rt=5.)])
+    atoms1, atoms2 = value[0]
+    calc = MultiCalc(calc_list=[Spring(**value[1]), Spring(**value[1])])
     atoms2.set_calculator(calc)
     assert atoms2.get_potential_energy() >= 100
 
 
-def test_grad_spring():
+def check_grad_spring(value):
     """
     Test two square systems
     """
-    atoms1, atoms2 = setup_atomic_square()
-    calc = MultiCalc(calc_list=[Spring(k=100, rt=5.), Spring(k=100, rt=5.)])
+    atoms1, atoms2 = value[0]
+    calc = MultiCalc(calc_list=[Spring(**value[1]), Spring(**value[1])])
     atoms2.set_calculator(calc)
     forces = atoms2.get_forces()
     com = atoms2.get_center_of_mass()

@@ -1,18 +1,19 @@
 __author__ = 'christopher'
-from pyiid.wrappers import *
-import math
 from threading import Thread
-import numpy as np
-from numba import cuda
 
-from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
+import numpy as np
+
+from pyiid.wrappers import *
+from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
     atoms_per_gpu_grad_fq
+
 print 'Warning: this module is no longer fully supported/test, and may not be' \
       'complete or robust. Please use the flat_gpu_wrap module'
 
+
 def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
     with gpu:
-        from pyiid.wrappers.nxn_atomic_gpu import atomic_fq
+        from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atomic_fq
 
         final = atomic_fq(q, scatter_array, qbin, m, n_cov)
         fq_q.append(final)
@@ -64,7 +65,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
 def sub_grad(gpu, q, scatter_array, grad_q, qbin, m, n_cov, index_list):
     with gpu:
-        from pyiid.wrappers.nxn_atomic_gpu import atomic_grad_fq
+        from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atomic_grad_fq
 
         final, _ = atomic_grad_fq(q, scatter_array, qbin, m, n_cov)
         grad_q.append(final)

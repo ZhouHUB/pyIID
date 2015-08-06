@@ -32,18 +32,19 @@ def test_gen_scatter_smoke_grad_pdf():
 def check_scatter_fq(value):
     """
     Smoke test for FQ
-    :param value:
-    :return:
     """
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
     scat = ElasticScatter(exp_dict=exp)
     scat.set_processor(proc, alg)
+
     # Test a set of different sized ensembles
     ans = scat.get_fq(atoms)
+
     # Check that Scatter gave back something
     assert ans is not None
+
     # Check that all the values are not zero
     assert np.any(ans)
     del atoms, exp, proc, alg, scat, ans

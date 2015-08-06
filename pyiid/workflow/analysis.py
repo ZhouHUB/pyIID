@@ -18,9 +18,8 @@ from simdb.search import *
 from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
     GetLayerNumbers
 from inspect import isgenerator
-from pyiid.kernels.cpu_kernel import get_d_array, get_r_array
+from pyiid.kernels.cpu_nxn import get_d_array, get_r_array
 from copy import deepcopy as dc
-
 
 font = {'family': 'normal',
         # 'weight' : 'bold',
@@ -358,8 +357,6 @@ def plot_radial_bond_length(cut, traj, target_configuration=None,
             ax.set_ylabel('Bond Distance $(\AA)$')
     ax.set_xlabel('Distance from Center $(\AA)$')
 
-
-
     if save_file is not None:
         plt.savefig(save_file + '_rbonds.eps', bbox_inches='tight',
                     transparent='True')
@@ -527,7 +524,8 @@ def save_config(new_dir_path, name, d, index=-1, rotation_atoms=None):
     for atoms, an in zip(out_l, append_names):
         atoms.center()
         # Rotate the config onto the viewing axis
-        atoms.rotate(atoms[rotation_atoms[0]].position - atoms[rotation_atoms[1]].position, 'z')
+        atoms.rotate(atoms[rotation_atoms[0]].position - atoms[
+            rotation_atoms[1]].position, 'z')
         atoms.center()
         # save the total configuration
         for e in file_endings:
@@ -536,27 +534,28 @@ def save_config(new_dir_path, name, d, index=-1, rotation_atoms=None):
         # cut the config in half along the xy plane
         atoms2 = dc(atoms)
         atoms2.set_constraint()
-        atoms2.translate(-1* atoms2.get_center_of_mass())
+        atoms2.translate(-1 * atoms2.get_center_of_mass())
         print atoms2.positions
         del atoms2[[atom.index for atom in atoms2 if atom.position[2] >= 0]]
         for e in file_endings:
             file_name = os.path.join(new_dir_path, name + '_half' + an + e)
             aseio.write(file_name, atoms2)
 
-def mass_plot(sims, cut, type='last'):
+
+def mass_plot(sims, cut, analysis_type='last'):
     if not isgenerator(sims) and not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
         d = sim_unpack(sim)
-        if type == 'min':
+        if analysis_type == 'min':
             pel = []
             for atoms in d['traj']:
-                if atoms._calc != None:
+                if atoms._calc is not None:
                     pel.append(atoms.get_potential_energy())
             index = np.argmin(pel)
             print index
             print pel[index]
-        elif type == 'last':
+        elif analysis_type == 'last':
             index = -1
         ase_view(**d)
         plot_pdf(atoms=d['traj'][index], **d)
@@ -565,24 +564,24 @@ def mass_plot(sims, cut, type='last'):
         plot_radial_bond_length(cut, index=index, **d)
 
 
-def mass_save(sims, cut, dir, type='last'):
+def mass_save(sims, cut, destination_dir, analysis_type='last'):
     if not isgenerator(sims) or not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
         name = str(sim.atoms.id)
-        new_dir_path = os.path.join(dir, str(sim.name))
+        new_dir_path = os.path.join(destination_dir, str(sim.name))
         if not os.path.exists(new_dir_path):
-            os.mkdir(os.path.join(dir, sim.name))
+            os.mkdir(os.path.join(destination_dir, sim.name))
         d = sim_unpack(sim)
-        if type == 'min':
+        if analysis_type == 'min':
             pel = []
             for atoms in d['traj']:
-                if atoms._calc != None:
+                if atoms._calc is not None:
                     pel.append(atoms.get_potential_energy())
             index = int(np.argmin(pel))
             print index
             print pel[index]
-        elif type == 'last':
+        elif analysis_type == 'last':
             index = -1
 
         save_config(new_dir_path, name, d, index)
@@ -594,14 +593,16 @@ def mass_save(sims, cut, dir, type='last'):
 
         plot_coordination(cut, show=False,
                           save_file=os.path.join(new_dir_path, name),
-                          index=index, ** d)
+                          index=index, **d)
 
         plot_radial_bond_length(cut, show=False,
-                          save_file=os.path.join(new_dir_path, name),
-                          index=index, ** d)
+                                save_file=os.path.join(new_dir_path, name),
+                                index=index, **d)
+
 
 if __name__ == '__main__':
     from simdb.search import *
+
     sims = list(find_simulation_document())
     # sim = sims[20]
     # d = sim_unpack(sim)

@@ -35,7 +35,6 @@ def get_scatter_array(scatter_array, numbers, qbin):
                                                     kq * qbin / 4 / np.pi)
 
 
-# @jit(target='cpu')
 def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     """
     Get the atomic pair distribution function
@@ -75,7 +74,7 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
 
     # pdf0a = np.zeros(len(rgrid))
     pdf0 = np.zeros(len(rgrid))
-    axdrp = rgrid/drpad/2
+    axdrp = rgrid / drpad / 2
     aiplo = axdrp.astype(np.int)
     aiphi = aiplo + 1
     awphi = axdrp - aiplo
@@ -284,11 +283,8 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     if pool_size <= 0:
         pool_size = 1
     p = Pool(pool_size)
-    pdf_grad_l = []
     for tx in range(n):
         for tz in range(3):
-            # pdf_grad_l.append(
-            #     get_pdf_at_qmin(grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
             grad_iter.append((grad_fq[tx, tz], rstep, qstep, rgrid, qmin))
     pdf_grad_l = p.map(grad_pdf_pool_worker, grad_iter)
     p.close()

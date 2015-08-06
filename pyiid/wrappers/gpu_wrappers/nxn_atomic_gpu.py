@@ -44,7 +44,7 @@ def atomic_fq(q, scatter_array, qbin, m, n_cov):
     qmax_bin = scatter_array.shape[1]
 
     # Import and compile the GPU kernels
-    from pyiid.kernels.multi_cuda import get_d_array, \
+    from pyiid.kernels.gpu_nxn import get_d_array, \
         get_normalization_array, get_r_array, \
         get_fq_step_0, get_fq_step_1, gpu_reduce_3D_to_2D, \
         gpu_reduce_2D_to_1D, zero_3D
@@ -138,11 +138,11 @@ def atomic_grad_fq(q, scatter_array, qbin, m, n_cov):
     qmax_bin = scatter_array.shape[1]
 
     # F(Q) kernels
-    from pyiid.kernels.multi_cuda import get_d_array, \
+    from pyiid.kernels.gpu_nxn import get_d_array, \
         get_normalization_array, get_r_array, \
         get_fq_step_0, get_fq_step_1, zero_3D
     # Grad kernels
-    from pyiid.kernels.multi_cuda import fq_grad_step_0, \
+    from pyiid.kernels.gpu_nxn import fq_grad_step_0, \
         fq_grad_step_1, fq_grad_step_2, fq_grad_step_3, \
         fq_grad_step_4, gpu_reduce_4D_to_3D, zero_4D
 

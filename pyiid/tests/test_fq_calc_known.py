@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
-from pyiid.calc.pdfcalc import PDFCalc
+from pyiid.calc.fqcalc import FQCalc
 
 test_data = tuple(
     product(test_atom_squares, test_exp, test_potentials, proc_alg_pairs))
@@ -31,8 +31,8 @@ def check_nrg(value):
     scat.update_experiment(exp_dict=value[1])
     scat.set_processor(proc, alg)
 
-    gobs = scat.get_pdf(atoms1)
-    calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
+    gobs = scat.get_fq(atoms1)
+    calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
 
     ans = atoms2.get_potential_energy()
@@ -54,8 +54,8 @@ def check_forces(value):
     scat.update_experiment(exp_dict=value[1])
     scat.set_processor(proc, alg)
 
-    gobs = scat.get_pdf(atoms1)
-    calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
+    gobs = scat.get_fq(atoms1)
+    calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
 
     forces = atoms2.get_forces()

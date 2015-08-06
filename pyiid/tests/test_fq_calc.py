@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
-from pyiid.calc.pdfcalc import PDFCalc
+from pyiid.calc.fqcalc import FQCalc
 
 test_data = tuple(product(test_double_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))
@@ -31,14 +31,14 @@ def check_nrg(value):
     scat.update_experiment(exp_dict=value[1])
     scat.set_processor(proc1, alg1)
     p, thresh = value[2]
-    gobs = scat.get_pdf(atoms1)
+    gobs = scat.get_fq(atoms1)
 
-    calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
+    calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans1 = atoms2.get_potential_energy()
 
     scat.set_processor(proc2, alg2)
-    calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
+    calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_potential_energy()
     print stats_check(ans1, ans2)
@@ -61,14 +61,14 @@ def check_forces(value):
     scat.update_experiment(exp_dict=value[1])
     scat.set_processor(proc1, alg1)
     p, thresh = value[2]
-    gobs = scat.get_pdf(atoms1)
+    gobs = scat.get_fq(atoms1)
 
-    calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
+    calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans1 = atoms2.get_forces()
 
     scat.set_processor(proc2, alg2)
-    calc = PDFCalc(obs_data=gobs, scatter=scat, potential=p)
+    calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_forces()
     print stats_check(ans1, ans2)
@@ -90,7 +90,7 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        '-v'
+        # '-v'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

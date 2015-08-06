@@ -76,14 +76,14 @@ def convert_stru_to_atoms(stru):
     return atoms
 
 
-def build_sphere_np(file, radius):
+def build_sphere_np(file_name, radius):
     """
     Build a spherical nanoparticle
-    :param file: ASE loadable atomic positions
+    :param file_name: ASE loadable atomic positions
     :param radius: Radius of particle in Angstroms
     :return:
     """
-    atoms = aseio.read(file)
+    atoms = aseio.read(file_name)
     cell_dist = atoms.get_cell()
     multiple = np.ceil(2 * radius / cell_dist.diagonal()).astype(int)
     atoms = atoms.repeat(multiple)
@@ -100,16 +100,11 @@ def build_sphere_np(file, radius):
 def tag_surface_atoms(atoms, tag=1, probe=1.4, cutoff=None):
     """
     Find which are the surface atoms in a nanoparticle.
-    ..note: We define the surface as a collection of atoms for which the
-    dot product between the displacement from the center of mass and all
-    the interatomic distances are negative.  Thus, all the interatomic
-    displacement vectors point inward or perpendicular.  This only works for
-    true crystals so we will include some tolerance to account for surface
-    disorder.
     :param atoms:
     :return:
     """
-    calculate_asa(atoms, 1.4, tag=tag, cutoff=cutoff)
+    calculate_asa(atoms, probe, tag=tag, cutoff=cutoff)
+
 
 def add_ligands(ligand, surface, distance, coverage, head, tail):
     atoms = dc(surface)
@@ -185,10 +180,12 @@ def get_coord_list(atoms, cutoff, element=None, tag=None):
         for atms in atoms:
             a = CoordinationNumbers(atms, cutoff)
             if element is not None and tag is not None:
-                coord_l.append(a[(np.asarray(atoms.get_chemical_symbols()) == element)
-                         & (atoms.get_tags() == tag)])
+                coord_l.append(
+                    a[(np.asarray(atoms.get_chemical_symbols()) == element)
+                      & (atoms.get_tags() == tag)])
             elif element is not None:
-                coord_l.append(a[np.asarray(atoms.get_chemical_symbols()) == element])
+                coord_l.append(
+                    a[np.asarray(atoms.get_chemical_symbols()) == element])
             elif tag is not None:
                 coord_l.append(a[atoms.get_tags() == tag])
             else:

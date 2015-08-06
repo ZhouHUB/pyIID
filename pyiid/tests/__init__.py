@@ -1,15 +1,16 @@
-from ase import Atoms
 import numpy as np
 from ase.atoms import Atoms
 from pyiid.wrappers.elasticscatter import wrap_atoms
-import unittest
-from ddt import ddt, data, unpack
 from numpy.testing import assert_allclose
 from itertools import *
 import os
 from copy import deepcopy as dc
 import random
 from pyiid.testing.decorators import *
+
+from pyiid.calc.spring_calc import Spring
+from pyiid.sim.dynamics import classical_dynamics
+from pyiid.sim.nuts_hmc import nuts
 
 __author__ = 'christopher'
 
@@ -63,7 +64,8 @@ def setup_atomic_square():
 
 def stats_check(ans1, ans2):
     return np.max(np.abs(ans2 - ans1)), np.min(np.abs(ans2 - ans1)), np.mean(
-        np.abs(ans2 - ans1)), np.std(np.abs(ans2 - ans1))
+        np.abs(ans2 - ans1)), np.median(np.abs(ans2 - ans1)), np.std(
+        np.abs(ans2 - ans1))
 
 # Setup lists of test variables
 test_exp = [None]
@@ -73,6 +75,11 @@ test_potentials = [
     # ('chi_sq', 10)
 ]
 test_qbin = [.1]
+test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
+                      {'k': 100, 'rt': 1., 'sp_type': 'com'},
+                      {'k': 100, 'rt': 1., 'sp_type': 'att'}]
+
+test_calcs = [Spring(**t_kwargs) for t_kwargs in test_spring_kwargs]
 
 # Travis CI has certain restrictions on memory and GPU availability so we
 # change the size of the tests to run
@@ -116,3 +123,4 @@ else:
     # comparison_pro_alg_pairs.extend(
     #     list(combinations(proc_alg_pairs[1:], 2))[:-1])
     # comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
+    test_calcs.extend(['PDF', 'FQ'])

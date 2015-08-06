@@ -13,5 +13,5 @@ setup(
     author_email='wright1@email.sc.edu',
     description='',
     requires=['numba', 'numpy', 'ase', 'nose', 'mpi4py', 'simdb', 'matplotlib',
-              'matplotlib']
+              'matplotlib', 'psutil', 'six']
 )

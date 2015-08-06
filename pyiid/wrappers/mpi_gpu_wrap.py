@@ -1,11 +1,11 @@
 __author__ = 'christopher'
-import numpy as np
-import math
 import os
+
+import numpy as np
 from numba import cuda
 
 from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
-from pyiid.wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
+from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
     atoms_per_gpu_grad_fq
 
 
