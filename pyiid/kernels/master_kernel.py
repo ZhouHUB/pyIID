@@ -396,55 +396,6 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
 
 
 # Misc. Kernels----------------------------------------------------------------
-
-@jit(target=targ)
-def get_dw_sigma_squared(s, u, r, d, n):
-    for tx in range(n):
-        for ty in range(n):
-            rnormx = d[tx, ty, 0] / r[tx, ty]
-            rnormy = d[tx, ty, 1] / r[tx, ty]
-            rnormz = d[tx, ty, 2] / r[tx, ty]
-            ux = u[tx, 0] - u[ty, 0]
-            uy = u[tx, 1] - u[ty, 1]
-            uz = u[tx, 2] - u[ty, 2]
-            u_dot_r = rnormx * ux + rnormy * uy + rnormz * uz
-            s[tx, ty] = u_dot_r * u_dot_r
-
-
-@jit(target=targ)
-def get_gr(gr, r, rbin, n):
-    """
-    Generate gr the histogram of the atomic distances
-
-    Parameters
-    ----------
-    gr: Nd array
-    r: NxN array
-    rbin: float
-    n: Nd array
-    :return:
-    """
-    for tx in range(n):
-        for ty in range(n):
-            gr[int(r[tx, ty] / rbin)] += 1
-
-
-def simple_grad(grad_p, d, r):
-    """
-    Gradient of the delta function gr
-    grad_p:
-    d:
-    r:
-    :return:
-    """
-    n = len(r)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for tz in range(3):
-                    grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
-
-
 @jit(target=targ)
 def spring_force_kernel(direction, d, r, mag):
     n = len(r)

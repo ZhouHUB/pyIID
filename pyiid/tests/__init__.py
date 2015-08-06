@@ -85,9 +85,7 @@ test_calcs = [Spring(**t_kwargs) for t_kwargs in test_spring_kwargs]
 # change the size of the tests to run
 travis = False
 if os.getenv('TRAVIS'):
-    # if os.getenv('TRAVIS') or True:
     travis = True
-
     # use a smaller test size otherwise travis stalls
     ns = [10, 100]
     test_exp.extend([generate_experiment() for i in range(3)])
@@ -96,31 +94,24 @@ if os.getenv('TRAVIS'):
 
     # Travis doesn't have GPUs so only CPU testing
     proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
-
-    # proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
     comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
+    test_calcs.extend(['PDF', 'FQ'])
 
 else:
     ns = np.logspace(1, 3, 3)
     test_exp.extend([generate_experiment() for i in range(3)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
-    # proc_alg_pairs = list(product(['CPU', 'Multi-GPU'], ['nxn', 'flat']))
-    proc_alg_pairs = [
-        # ('CPU', 'nxn'),
-        ('CPU', 'flat'), ('Multi-GPU', 'flat')]
+    proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
+                      # ('CPU', 'nxn'),
+                      ]
 
     # Note there is only one CPU nxn comparison test, the CPU nxn code is
     # rather slow, thus we test it against the flattened Multi core CPU code,
     # which is much faster.  Then we run all tests agains the CPU flat kernels.
     # Thus it is imperative that the flat CPU runs with no errors.
 
-    comparison_pro_alg_pairs = [
-        # (('CPU', 'nxn'), ('CPU', 'flat')),
-        (('CPU', 'flat'), ('Multi-GPU', 'flat'))
-    ]
-    # comparison_pro_alg_pairs = []
-    # comparison_pro_alg_pairs.extend(
-    #     list(combinations(proc_alg_pairs[1:], 2))[:-1])
-    # comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
+    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))
+                                # (('CPU', 'nxn'), ('CPU', 'flat')),
+                                ]
     test_calcs.extend(['PDF', 'FQ'])
