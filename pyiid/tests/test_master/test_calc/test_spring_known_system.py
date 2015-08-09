@@ -3,80 +3,44 @@ from pyiid.tests import *
 import numpy as np
 from pyiid.calc.spring_calc import Spring
 
+test_data = tuple(product(test_atom_squares, test_spring_kwargs))
 
-def test_spring():
+def test_gen_spring():
+    for v in test_data:
+        yield check_spring, v
+
+def test_gen_grad_spring():
+    for v in test_data:
+        yield check_grad_spring, v
+
+def check_spring(value):
     """
     Test spring for atomic square
     """
-    atoms1, _ = setup_atomic_square()
-    calc = Spring(k=100, rt=5.)
+    atoms1, _ = value[0]
+    calc = Spring(**value[1])
     atoms1.set_calculator(calc)
     assert atoms1.get_potential_energy() >= 100
 
 
-def test_grad_spring():
+def check_grad_spring(value):
     """
     Test gradient of spring for atomic square
     """
     atoms1, _ = setup_atomic_square()
-    calc = Spring(k=100, rt=5.)
+    calc = Spring(**value[1])
     atoms1.set_calculator(calc)
     forces = atoms1.get_forces()
     com = atoms1.get_center_of_mass()
     for i in range(len(atoms1)):
         dist = atoms1[i].position - com
-        # print i, dist, forces[i], np.cross(dist, forces[i])
+        print i, dist, forces[i], np.cross(dist, forces[i])
+        # make certain the forces are not zero automatically
+        assert np.any(forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
-
-def test_spring2():
-    """
-    Test center of mass attractive spring
-    """
-    atoms1, _= setup_atomic_square()
-    calc = Spring(k=100, rt=1., sp_type='com')
-    atoms1.set_calculator(calc)
-    assert atoms1.get_potential_energy() >= 100
-
-
-def test_grad_spring2():
-    """
-    Test center of mass attractive spring gradient
-    """
-    atoms1, _ = setup_atomic_square()
-    calc = Spring(k=100, rt=1., sp_type='com')
-    atoms1.set_calculator(calc)
-    forces = atoms1.get_forces()
-    com = atoms1.get_center_of_mass()
-    for i in range(len(atoms1)):
-        dist = atoms1[i].position - com
-        # print i, dist, forces[i], np.cross(dist, forces[i])
-        assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
-
-def test_spring3():
-    """
-    Test pair attractive spring
-    """
-    atoms1, _ = setup_atomic_square()
-    calc = Spring(k=100, rt=1., sp_type='att')
-    atoms1.set_calculator(calc)
-    assert atoms1.get_potential_energy() >= 100
-
-
-def test_grad_spring3():
-    """
-    Test pair attractive spring gradient
-    """
-    atoms1, _ = setup_atomic_square()
-    calc = Spring(k=100, rt=1., sp_type='att')
-    atoms1.set_calculator(calc)
-    forces = atoms1.get_forces()
-    com = atoms1.get_center_of_mass()
-    for i in range(len(atoms1)):
-        dist = atoms1[i].position - com
-        # print i, dist, forces[i], np.cross(dist, forces[i])
-        assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)

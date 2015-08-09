@@ -3,8 +3,9 @@ from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import psutil
-from pyiid.kernels.multi_flat_cpu_kernel import *
-from pyiid.wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
+
+from pyiid.kernels.cpu_flat import *
+from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
 
 
 def setup_gpu_calc(atoms, sum_type):
@@ -124,7 +125,8 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     tasks = []
     k_cov = 0
     while k_cov < k_max:
-        m = atoms_per_gpu_grad_fq(n, qmax_bin, float(psutil.virtual_memory().available)/pool_size)
+        m = atoms_per_gpu_grad_fq(n, qmax_bin, float(
+            psutil.virtual_memory().available) / pool_size)
         if m > k_max - k_cov:
             m = k_max - k_cov
         task = (q, scatter_array, qbin, m, k_cov)
@@ -146,7 +148,6 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # '''
     del q, n, qmax_bin, scatter_array, k_max, p, task, fqs
     return grad_p
-
 
 
 if __name__ == '__main__':

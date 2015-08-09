@@ -18,6 +18,8 @@ from simdb.search import *
 from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
     GetLayerNumbers
 from inspect import isgenerator
+from pyiid.kernels.cpu_nxn import get_d_array, get_r_array
+from copy import deepcopy as dc
 
 font = {'family': 'normal',
         # 'weight' : 'bold',
@@ -312,9 +314,17 @@ def plot_radial_bond_length(cut, traj, target_configuration=None,
     stru_l['Start'] = traj[0]
     stru_l['Finish'] = traj[index]
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    for n, key in enumerate(stru_l.keys()):
+
+    # fig = plt.figure()
+    # axes = []
+    # for i, key in enumerate(stru_l.keys()):
+    #     axes.append(fig.add_subplot(len(stru_l.keys()), 1, i + 1))
+    fig, axes = plt.subplots(len(stru_l.keys()), sharey=True)
+    maxdist = 0.
+    maxbond = 0.
+    minbond = 10.
+    for n, (key, ax) in enumerate(zip(stru_l.keys(), axes)):
+        print n, 1, len(stru_l.keys())
         atoms = stru_l[key]
         com = atoms.get_center_of_mass()
         n_list = list(FullNeighborList(cut, atoms))
@@ -331,12 +341,22 @@ def plot_radial_bond_length(cut, traj, target_configuration=None,
             bond_lengths.extend(sub_bond_lengths)
         ax.scatter(dist_from_center, bond_lengths, c=colors[n], marker='o',
                    label='{0}'.format(key), s=40)
+        if np.max(dist_from_center) > maxdist:
+            maxdist = np.max(dist_from_center)
+        if np.max(bond_lengths) > maxbond:
+            maxbond = np.max(bond_lengths)
+        if np.min(bond_lengths) < minbond:
+            minbond = np.min(bond_lengths)
 
+        ax.legend(loc='best', prop={'size': 12})
+
+    for i, ax in enumerate(axes):
+        ax.set_xlim(-0.5, maxdist + .5)
+        ax.set_ylim(minbond - .1, maxbond + .1)
+        if i == 1:
+            ax.set_ylabel('Bond Distance $(\AA)$')
     ax.set_xlabel('Distance from Center $(\AA)$')
-    ax.set_ylabel('Bond Distance $(\AA)$')
-    ax2 = plt.twinx()
-    ax2.set_ylim(ax.get_ylim())
-    ax.legend(loc='best', prop={'size': 12})
+
     if save_file is not None:
         plt.savefig(save_file + '_rbonds.eps', bbox_inches='tight',
                     transparent='True')
@@ -482,20 +502,60 @@ def plot_average_coordination(cut, traj, target_configuration=None,
     return
 
 
-def mass_plot(sims, cut, type='last'):
+def save_config(new_dir_path, name, d, index=-1, rotation_atoms=None):
+    if rotation_atoms is None:
+        atoms = d['traj'][index]
+        n = len(atoms)
+        q = atoms.positions
+        dist = np.zeros((n, n, 3), np.float32)
+        r = np.zeros((n, n), np.float32)
+        get_d_array(dist, q)
+        get_r_array(r, dist)
+        maxpos = np.argmax(r)
+        rotation_atoms = np.unravel_index(maxpos, r.shape)
+    out_l = [
+        d['traj'][index],
+        d['target_configuration'],
+        d['traj'][0]
+    ]
+    append_names = ['_min', '_target', '_start']
+    file_endings = ['.eps', '.png', '.xyz', '.pov']
+
+    for atoms, an in zip(out_l, append_names):
+        atoms.center()
+        # Rotate the config onto the viewing axis
+        atoms.rotate(atoms[rotation_atoms[0]].position - atoms[
+            rotation_atoms[1]].position, 'z')
+        atoms.center()
+        # save the total configuration
+        for e in file_endings:
+            file_name = os.path.join(new_dir_path, name + an + e)
+            aseio.write(file_name, atoms)
+        # cut the config in half along the xy plane
+        atoms2 = dc(atoms)
+        atoms2.set_constraint()
+        atoms2.translate(-1 * atoms2.get_center_of_mass())
+        print atoms2.positions
+        del atoms2[[atom.index for atom in atoms2 if atom.position[2] >= 0]]
+        for e in file_endings:
+            file_name = os.path.join(new_dir_path, name + '_half' + an + e)
+            aseio.write(file_name, atoms2)
+
+
+def mass_plot(sims, cut, analysis_type='last'):
     if not isgenerator(sims) and not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
         d = sim_unpack(sim)
-        if type == 'min':
+        if analysis_type == 'min':
             pel = []
             for atoms in d['traj']:
-                if atoms._calc != None:
+                if atoms._calc is not None:
                     pel.append(atoms.get_potential_energy())
             index = np.argmin(pel)
             print index
             print pel[index]
-        elif type == 'last':
+        elif analysis_type == 'last':
             index = -1
         ase_view(**d)
         plot_pdf(atoms=d['traj'][index], **d)
@@ -504,47 +564,27 @@ def mass_plot(sims, cut, type='last'):
         plot_radial_bond_length(cut, index=index, **d)
 
 
-def mass_save(sims, cut, dir, type='last'):
+def mass_save(sims, cut, destination_dir, analysis_type='last'):
     if not isgenerator(sims) or not isinstance(sims, list):
         sims = [sims]
     for sim in sims:
         name = str(sim.atoms.id)
-        new_dir_path = os.path.join(dir, str(sim.name))
+        new_dir_path = os.path.join(destination_dir, str(sim.name))
         if not os.path.exists(new_dir_path):
-            os.mkdir(os.path.join(dir, sim.name))
+            os.mkdir(os.path.join(destination_dir, sim.name))
         d = sim_unpack(sim)
-        if type == 'min':
+        if analysis_type == 'min':
             pel = []
             for atoms in d['traj']:
-                if atoms._calc != None:
+                if atoms._calc is not None:
                     pel.append(atoms.get_potential_energy())
-            index = np.argmin(pel)
+            index = int(np.argmin(pel))
             print index
             print pel[index]
-        elif type == 'last':
+        elif analysis_type == 'last':
             index = -1
 
-        aseio.write(os.path.join(new_dir_path, name + '_target.eps'),
-                    d['target_configuration'])
-        aseio.write(os.path.join(new_dir_path, name + '_target.png'),
-                    d['target_configuration'])
-        aseio.write(os.path.join(new_dir_path, name + '_target.xyz'),
-                    d['target_configuration'])
-
-        aseio.write(os.path.join(new_dir_path, name + '_start.eps'),
-                    d['traj'][0])
-        aseio.write(os.path.join(new_dir_path, name + '_start.png'),
-                    d['traj'][0])
-        aseio.write(os.path.join(new_dir_path, name + '_start.xyz'),
-                    d['traj'][0])
-
-        aseio.write(os.path.join(new_dir_path, name + '.eps'),
-                    d['traj'][index])
-        aseio.write(os.path.join(new_dir_path, name + '.png'),
-                    d['traj'][index])
-        aseio.write(os.path.join(new_dir_path, name + '.xyz'),
-                    d['traj'][index])
-
+        save_config(new_dir_path, name, d, index)
         plot_pdf(atoms=d['traj'][index], show=False,
                  save_file=os.path.join(new_dir_path, name), **d)
 
@@ -553,19 +593,40 @@ def mass_save(sims, cut, dir, type='last'):
 
         plot_coordination(cut, show=False,
                           save_file=os.path.join(new_dir_path, name),
-                          index=index, ** d)
+                          index=index, **d)
 
         plot_radial_bond_length(cut, show=False,
-                          save_file=os.path.join(new_dir_path, name),
-                          index=index, ** d)
+                                save_file=os.path.join(new_dir_path, name),
+                                index=index, **d)
+
 
 if __name__ == '__main__':
     from simdb.search import *
 
     sims = list(find_simulation_document())
-    sim = sims[5]
-    d = sim_unpack(sim)
+    # sim = sims[20]
+    # d = sim_unpack(sim)
+
+    # atoms = d['target_configuration']
+    # n = len(atoms)
+    # q = atoms.positions
+    # d = np.zeros((n, n, 3), np.float32)
+    # r = np.zeros((n, n), np.float32)
+    # get_d_array(d, q)
+    # get_r_array(r, d)
+    # maxr = np.max(r)
+    # maxpos = np.argmax(r)
+    # maxpos = np.unravel_index(maxpos, r.shape)
+    # maxpos = (27, 28)
+    # print maxr, maxpos
+    # atoms.rotate(atoms[maxpos[0]].position - atoms[maxpos[1]].position, 'z')
+    # view(atoms)
+    dest = '/mnt/bulk-data/Dropbox/BNL_Project/HMC_paper/figures'
+    mass_save(sims[40], 3.5, dest, 'min')
+
+    # ase_view(**d)
+    # plot_radial_bond_length(3.5, **d)
     # plot_coordination(3.2, **d)
     # a, b = get_coord_list(d['traj'][50:], 1.45)
     # plot_radial_bond_length(3.5, **d)
-    mass_plot(sim, 3.5, 'min')
+    # mass_plot(sim, 3.5, 'min')

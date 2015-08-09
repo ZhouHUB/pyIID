@@ -27,7 +27,8 @@ def sim_unpack(sim):
             d['scatter'] = calc.payload.scatter
             d['gobs'] = calc.payload.gobs
             if calc.calc_exp['ase_config_id'] is not None:
-                ac, = find_atomic_config_document(_id=calc.calc_exp.ase_config_id.id)
+                ac, = find_atomic_config_document(
+                    _id=calc.calc_exp.ase_config_id.id)
                 d['target_configuration'], = ac.file_payload
     atomic_configs, = find_atomic_config_document(_id=sim.atoms.id)
 

@@ -1,0 +1,300 @@
+from threading import Thread
+
+from numbapro.cudalib import cufft
+
+from pyiid.wrappers import *
+from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import *
+
+__author__ = 'christopher'
+
+
+def subs_fq(gpu, q, scatter_array, fq, qbin, k_cov, k_per_thread):
+    """
+    Thread function to calculate a chunk of F(Q)
+
+    Parameters
+    ----------
+    gpu: numba GPU context
+        The GPU on which to run
+    q: Nx3 array
+        Atomic positions
+    scatter_array: NxQ array
+        Atomic scatter factors
+    fq: 1darray
+        The F(Q), note that we add to it which prevents a rather nasty
+        memory leak
+    qbin: float
+        The Q resolution in A**-1
+    k_cov: int
+        Number of atomic pairs previously covered
+    k_per_thread: int
+        Number of atomic pairs to cover in this instance
+    """
+    # set up GPU
+    with gpu:
+        fq += atomic_fq(q, scatter_array, qbin, k_cov, k_per_thread)
+
+
+def wrap_fq(atoms, qbin=.1, sum_type='fq'):
+    """
+    Function which handles all the threads for the computation of F(Q)
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The Q resolution in A**-1
+    sum_type: str
+        The type of calculation being run, defaults to F(Q), but runs PDF
+        if anything other than 'fq' is provided.  This is needed because
+        the PDF runs at a different Q resolution and thus a different scatter
+        factor array for the atoms
+    Returns
+    -------
+    1darray;
+        The reduced structure factor
+    """
+    q, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(atoms,
+                                                                   sum_type)
+
+    # k is used as a counter to describe the inter-atomic distances
+    k_max = int((n ** 2 - n) / 2.)
+
+    fq = np.zeros(qmax_bin, np.float32)
+    k_cov = 0
+    p_dict = {}
+
+    while k_cov < k_max:
+        for gpu, mem in zip(gpus, mem_list):
+            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                k_per_thread = atoms_pdf_gpu_fq(n, qmax_bin, mem)
+                if k_per_thread > k_max - k_cov:
+                    k_per_thread = k_max - k_cov
+                if k_cov >= k_max:
+                    break
+                p = Thread(target=subs_fq, args=(
+                    gpu, q, scatter_array, fq, qbin, k_cov, k_per_thread
+                ))
+                p.start()
+                p_dict[gpu] = p
+                k_cov += k_per_thread
+
+                if k_cov >= k_max:
+                    break
+    for value in p_dict.values():
+        value.join()
+    na = np.average(scatter_array, axis=0) ** 2 * n
+    old_settings = np.seterr(all='ignore')
+    fq = np.nan_to_num(1 / na * fq)
+    np.seterr(**old_settings)
+    # Note we only calculated half of the scattering, but the symmetry allows
+    # us to multiply by 2 and get it correct
+    return 2 * fq
+
+
+def subs_grad_fq(gpu, q, scatter_array, grad_p, qbin, k_cov, k_per_thread):
+    """
+    Thread function to calculate a chunk of F(Q)
+
+    Parameters
+    ----------
+    gpu: numba GPU context
+        The GPU on which to run
+    q: Nx3 array
+        Atomic positions
+    scatter_array: NxQ array
+        Atomic scatter factors
+    grad_p: 3darray
+        The grad F(Q), note that we add to it which prevents a rather nasty
+        memory leak
+    qbin: float
+        The Q resolution in A**-1
+    k_cov: int
+        Number of atomic pairs previously covered
+    k_per_thread: int
+        Number of atomic pairs to cover in this instance
+    """
+    # set up GPU
+    with gpu:
+        grad_p += atomic_grad_fq(q, scatter_array, qbin, k_cov, k_per_thread)
+
+
+def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
+    """
+    Function which handles all the threads for the computation of grad F(Q)
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The Q resolution in A**-1
+    sum_type: str
+        The type of calculation being run, defaults to F(Q), but runs PDF
+        if anything other than 'fq' is provided.  This is needed because
+        the PDF runs at a different Q resolution and thus a different scatter
+        factor array for the atoms
+    Returns
+    -------
+    1darray;
+        The reduced structure factor
+    """
+    q, n, qmax_bin, scatter_array, gpus, mem_lst = setup_gpu_calc(atoms,
+                                                                  sum_type)
+
+    # k is used as a counter to describe the inter-atomic distances
+    k_max = int((n ** 2 - n) / 2.)
+
+    gpus, mem_list = get_gpus_mem()
+    k_cov = 0
+    p_dict = {}
+    grad_p = np.zeros((n, 3, qmax_bin))
+    while k_cov < k_max:
+        for gpu, mem in zip(gpus, mem_list):
+            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
+                if m > k_max - k_cov:
+                    m = k_max - k_cov
+                p = Thread(target=subs_grad_fq, args=(
+                    gpu, q, scatter_array, grad_p, qbin, k_cov, m,
+                ))
+                p.start()
+                p_dict[gpu] = p
+                k_cov += m
+                # print float(k_cov) / k_max * 100., '%'
+                if k_cov >= k_max:
+                    break
+    for value in p_dict.values():
+        value.join()
+    na = np.average(scatter_array, axis=0) ** 2 * n
+    old_settings = np.seterr(all='ignore')
+    for tx in range(n):
+        for tz in range(3):
+            grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
+    np.seterr(**old_settings)
+    return grad_p
+
+
+def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
+    """
+    Thread function to calculate a chunk of grad PDF
+
+    Parameters
+    ----------
+    gpu: numba GPU context
+        The GPU to use
+    gpadc: Nx3xQ array
+        The input grad F(Q) array, padded and symmetry corrected
+    gpadcfft: Nx3xr array
+        The output grad PDF array, needs to be post processed
+    atoms_per_thread: int
+        Number of atoms being processed in this thread
+    n_cov: int
+        Number of atoms previously covered
+    Returns
+    """
+    input_shape = [gpadcfft.shape[-1]]
+    with gpu:
+        batch_operations = atoms_per_thread
+        plan = cufft.FFTPlan(input_shape, np.complex64, np.complex64,
+                             batch_operations)
+        for i in xrange(3):
+            batch_input = np.ravel(gpadc[n_cov:n_cov + atoms_per_thread, i, :]).astype(
+                np.complex64)
+            batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
+
+            _ = plan.inverse(batch_input, out=batch_output)
+            del batch_input
+            data_out = np.reshape(batch_output, (atoms_per_thread, input_shape[0]))
+            data_out /= input_shape[0]
+
+            gpadcfft[n_cov:n_cov + atoms_per_thread, i, :] = data_out
+            del data_out, batch_output
+
+
+def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
+    """
+    Function which handles all the threads for the computation of grad PDF
+
+    Parameters
+    ----------
+    grad_fq: Nx3xQ array
+        The gradient of F(Q)
+    rstep: float
+        The r resolution in A
+    qstep: float
+        The Q resolution in A**-1
+    rgrid: 1darray
+        The inter-atomic distance grid to map onto
+    qmin: float
+        The minimum Q in the experiment in A**-1
+    Returns
+    """
+    # Number of atoms
+    n = len(grad_fq)
+
+    # set values below Qmin to zero
+    grad_fq[:, :, :int(math.ceil(qmin / qstep))] = 0.0
+
+    # Pad to the correct length for FFT
+    nfromdr = int(math.ceil(math.pi / rstep / qstep))
+    if nfromdr > int(len(grad_fq)):
+        # put in a bunch of zeros
+        fpad2 = np.zeros((n, 3, nfromdr))
+        fpad2[:, :, :grad_fq.shape[-1]] = grad_fq
+        grad_fq = fpad2
+
+    # make the symmetry correct for the PDF FFT
+    padrmin = int(round(qmin / qstep))
+    npad1 = padrmin + grad_fq.shape[-1]
+
+    npad2 = (1 << int(math.ceil(math.log(npad1, 2)))) * 2
+
+    npad4 = 4 * npad2
+    gpadc = np.zeros((n, 3, npad4))
+    gpadc[:, :, :2 * grad_fq.shape[-1]:2] = grad_fq[:, :, :]
+    gpadc[:, :, -2:-2 * grad_fq.shape[-1] + 1:-2] = -1 * grad_fq[:, :, 1:]
+    gpadcfft = np.zeros(gpadc.shape, dtype=complex)
+
+    gpus, mems = get_gpus_mem()
+    n_cov = 0
+    p_dict = {}
+
+    # Put jobs onto GPUs while we haven't finished all the atoms
+    while n_cov < n:
+        for gpu, mem in zip(gpus, mems):
+            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
+                atoms_per_thread = int(
+                    math.floor(mem / gpadcfft.shape[-1] / 64 / 2))
+                if atoms_per_thread > n - n_cov:
+                    atoms_per_thread = n - n_cov
+                if n_cov >= n:
+                    break
+                p = Thread(target=sub_grad_pdf,
+                           args=(
+                               gpu, gpadc, gpadcfft, atoms_per_thread,
+                               n_cov))
+                p.start()
+                p_dict[gpu] = p
+                n_cov += atoms_per_thread
+                if n_cov >= n:
+                    break
+    for value in p_dict.values():
+        value.join()
+    # cleanup data to correct size
+    g = np.zeros((n, 3, npad2), dtype=complex)
+    g[:, :, :] = gpadcfft[:, :, :npad2 * 2:2] * npad2 * qstep
+
+    gpad = g.imag * 2.0 / math.pi
+    drpad = math.pi / (gpad.shape[-1] * qstep)
+    # re-bin the data onto the correct rgrid
+    pdf0 = np.zeros((n, 3, len(rgrid)))
+    axdrp = rgrid / drpad / 2
+    aiplo = axdrp.astype(np.int)
+    aiphi = aiplo + 1
+    awphi = axdrp - aiplo
+    awplo = 1.0 - awphi
+    pdf0[:, :, :] = awplo[:] * gpad[:, :, aiplo] + awphi * gpad[:, :, aiphi]
+    pdf1 = pdf0 * 2
+    return pdf1.real

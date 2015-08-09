@@ -1,6 +1,4 @@
 from copy import deepcopy as dc
-from ase.units import kB
-import numpy as np
 
 __author__ = 'christopher'
 

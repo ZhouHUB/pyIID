@@ -1,10 +1,15 @@
+"""
+The main class in this module `ElasticScatter` holds the experimental details,
+and processor information needed to calculate the elastic powder scattering
+from a collection of atoms.
+"""
 __author__ = 'christopher'
 import math
 
 from numba import cuda
 import numpy as np
-from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf
 
+from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
@@ -17,12 +22,16 @@ def check_mpi():
     return False
 
 
-def check_multi_gpu():
+def check_gpu():
+    """
+    Check if GPUs are available on this machine
+    """
     try:
         cuda.gpus.lst
-        return True
-    except:
-        return False
+        tf = True
+    except cuda.CudaSupportError:
+        tf = False
+    return tf
 
 
 class ElasticScatter(object):
@@ -34,17 +43,26 @@ class ElasticScatter(object):
     """
 
     def __init__(self, exp_dict=None):
-        # Currently supported processor architectures
+        # Currently supported processor architectures, in order of most
+        # advanced to least
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
+
+        # needed parameters to specify an experiment
         self.exp_dict_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep',
                               'sampling']
+        # default experimental parameters
         self.default_values = [0.0, 25, .1, 0.0, 40.0, .01, 'full']
+        # Initiate the algorithm, processor, and experiments
         self.alg = None
+        self.processor = None
         self.exp = None
         self.pdf_qbin = None
+
+        # set the experimental parameters
         self.update_experiment(exp_dict)
 
-        # Just in case something blows up down the line
+        # Just in case something blows up down the line set to the most base
+        # processor
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
         self.grad_pdf = cpu_grad_pdf
@@ -67,6 +85,10 @@ class ElasticScatter(object):
         -----------
         processor: ['MPI-GPU', 'Multi-GPU', 'Serial-CPU']
             The processor to use
+        Returns
+        -------
+        bool:
+            True on successful setup of the algorithm and processor
         """
         # If a processor is given try to use that processor,
         # but check if it is viable first.
@@ -89,11 +111,11 @@ class ElasticScatter(object):
             self.processor = processor
             return True
 
-        elif processor == self.avail_pro[1] and check_multi_gpu() is True:
+        elif processor == self.avail_pro[1] and check_gpu() is True:
             if kernel_type == 'nxn':
-                from pyiid.wrappers.multi_gpu_wrap import \
+                from pyiid.wrappers.gpu_wrappers.multi_gpu_wrap import \
                     wrap_fq as node_0_gpu_wrap_fq
-                from pyiid.wrappers.multi_gpu_wrap import \
+                from pyiid.wrappers.gpu_wrappers.multi_gpu_wrap import \
                     wrap_fq_grad as node_0_gpu_wrap_fq_grad
 
                 self.fq = node_0_gpu_wrap_fq
@@ -101,14 +123,15 @@ class ElasticScatter(object):
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
-                from pyiid.wrappers.flat_gpu_wrap import wrap_fq as flat_fq
-                from pyiid.wrappers.flat_gpu_wrap import \
+                from pyiid.wrappers.gpu_wrappers.flat_gpu_wrap import \
+                    wrap_fq as flat_fq
+                from pyiid.wrappers.gpu_wrappers.flat_gpu_wrap import \
                     wrap_fq_grad as flat_grad
 
                 self.fq = flat_fq
                 self.grad = flat_grad
                 self.alg = 'flat'
-            from pyiid.kernels.experimental_kernels import grad_pdf
+            from pyiid.wrappers.gpu_wrappers.flat_gpu_wrap import grad_pdf
 
             self.grad_pdf = grad_pdf
             self.processor = processor
@@ -133,6 +156,15 @@ class ElasticScatter(object):
             return True
 
     def check_scatter(self, atoms):
+        """
+        Check if the scatter vectors associated with the atoms need to be
+        updated.
+
+        Parameters
+        ----------
+        atoms: ase.Atoms object
+            The atoms to be checked
+        """
         if self.scatter_needs_update is True \
                 or 'exp' not in atoms.info.keys() \
                 or atoms.info['exp'] != self.exp:
@@ -140,25 +172,62 @@ class ElasticScatter(object):
             self.scatter_needs_update = False
 
     def update_experiment(self, exp_dict):
+        """
+        Change the scattering experiment parameters.
+
+        Parameters
+        ----------
+        exp_dict: dict or None
+            Dictionary of parameters to be updated, if None use defaults
+        """
+        # TODO: support partial updates, eg change only the Qmax leave the rest
         # Should be read in from the gr file, but if not here are some defaults
         if exp_dict is None or bool(exp_dict) is False:
             exp_dict = {}
         for key, dv in zip(self.exp_dict_keys, self.default_values):
             if key not in exp_dict.keys():
                 exp_dict[key] = dv
+
+        # If sampling is ns then generate the PDF at
+        # the Nyquist Shannon Sampling Frequency
         if exp_dict['sampling'] == 'ns':
             exp_dict['rstep'] = np.pi / exp_dict['qmax']
+
         self.exp = exp_dict
-        # Technically we should use this for qbin:
+        # Technically we should use this for qbin
         self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
     def get_fq(self, atoms):
+        """
+        Calculate the reduced structure factor F(Q)
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate F(Q)
+        Returns
+        -------
+        1darray:
+            The reduced structure factor
+        """
         self.check_scatter(atoms)
         return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
+        """
+        Calculate the atomic pair distribution factor, PDF, G(r)
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate the PDF
+        Returns
+        -------
+        1darray:
+            The PDF
+        """
         self.check_scatter(atoms)
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
         r = self.get_r()
@@ -173,6 +242,18 @@ class ElasticScatter(object):
         return pdf0
 
     def get_sq(self, atoms):
+        """
+        Calculate the structure factor S(Q)
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate S(Q)
+        Returns
+        -------
+        1darray:
+            The structure factor
+        """
         fq = self.get_fq(atoms)
         scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
         old_settings = np.seterr(all='ignore')
@@ -182,10 +263,38 @@ class ElasticScatter(object):
         return sq
 
     def get_iq(self, atoms):
+        """
+        Calculate the scattering intensity, I(Q)
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate I(Q)
+        Returns
+        -------
+        1darray:
+            The scattering intensity
+        """
         return self.get_sq(atoms) * np.average(
             atoms.get_array('F(Q) scatter')) ** 2
 
     def get_2d_scatter(self, atoms, pixel_array):
+        """
+        Calculate the scattering intensity as projected onto a detector
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate I(Q)
+        pixel_array: 2darray
+            A map from Q to the xy coordinates of the detector, each element
+            has a Q value
+        Returns
+        -------
+        2darray:
+            The scattering intensity on the detector
+        """
+
         iq = self.get_iq(atoms)
         s = self.get_scatter_vector()
         qb = self.exp['qbin']
@@ -199,10 +308,34 @@ class ElasticScatter(object):
         return img.reshape(final_shape)
 
     def get_grad_fq(self, atoms):
+        """
+        Calculate the gradient of the reduced structure factor F(Q)
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate grad F(Q)
+        Returns
+        -------
+        3darray:
+            The gradient of the reduced structure factor
+        """
         self.check_scatter(atoms)
         return self.grad(atoms, self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
+        """
+        Calculate the gradient of the PDF
+
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration for which to calculate grad PDF
+        Returns
+        -------
+        3darray:
+            The gradient of the PDF
+        """
         self.check_scatter(atoms)
         fq_grad = self.grad(atoms, self.pdf_qbin, 'PDF')
         qmin_bin = int(self.exp['qmin'] / self.pdf_qbin)
@@ -215,9 +348,25 @@ class ElasticScatter(object):
         return pdf_grad
 
     def get_scatter_vector(self):
+        """
+        Calculate the scatter vector Q for the current experiment
+
+        Returns
+        -------
+        1darray:
+            The Q range for this experiment
+        """
         return np.arange(self.exp['qmin'], self.exp['qmax'], self.exp['qbin'])
 
     def get_r(self):
+        """
+        Calculate the inter-atomic distance range for the current experiment
+
+        Returns
+        -------
+        1darray:
+            The r range for this experiment
+        """
         return np.arange(self.exp['rmin'], self.exp['rmax'], self.exp['rstep'])
 
 
@@ -225,10 +374,13 @@ def wrap_atoms(atoms, exp_dict=None):
     """
     Call this function before applying calculator, it will generate static
     arrays for the scattering, preventing recalculation
-    :param exp_dict:
-    :param atoms:
-    :param qbin:
-    :return:
+
+    Parameters
+    -----------
+    atoms: ase.Atoms
+        The atoms to which scatter factors are added
+    exp_dict: dict or None
+        The experimental parameters, if None defaults are used
     """
 
     if exp_dict is None:

@@ -23,11 +23,11 @@ pdf = scat.get_pdf(atoms)
 type_list = []
 time_list = []
 benchmarks = [
-    ('CPU', 'flat'),
+    # ('CPU', 'flat'),
     ('Multi-GPU', 'flat')
 ]
 colors=['b', 'r']
-sizes = range(10, 65, 5)
+sizes = range(10, 55, 5)
 print sizes
 
 for proc, alg in benchmarks:
@@ -44,20 +44,20 @@ for proc, alg in benchmarks:
             atoms.set_calculator(calc)
 
             s = time.time()
-            # nrg = atoms.get_potential_energy()
-            scat.get_fq(atoms)
+            nrg = atoms.get_potential_energy()
+            # scat.get_fq(atoms)
             f = time.time()
 
             nrg_l.append(f-s)
 
             s = time.time()
             # force = atoms.get_forces()
-            scat.get_grad_fq(atoms)
+            # scat.get_grad_fq(atoms)
             f = time.time()
             f_l.append(f-s)
     except:
         print traceback.format_exc()
-        pass
+        break
     time_list.append((nrg_l, f_l))
 
 for i in range(len(benchmarks)):
@@ -65,24 +65,24 @@ for i in range(len(benchmarks)):
         f_str = benchmarks[i][0]+'_'+benchmarks[i][0]+'_'+calc_type+'.pkl'
         with open(f_str, 'w') as f:
             pickle.dump(time_list[i][j], f)
-#
+'''
 for i in range(len(benchmarks)):
     for j, (calc_type, line) in enumerate(zip(['energy', 'force'], ['o', 's'])):
-        plt.plot(sizes,time_list[i][j], color=colors[i], marker=line, label= '{0} {1}'.format(benchmarks[i], calc_type[0]))
+        plt.plot(sizes,time_list[i][j], color=colors[i], marker=line, label= '{0} {1}'.format(benchmarks[i][0], calc_type))
 plt.legend(loc='best')
 plt.xlabel('NP diameter in Angstrom')
 plt.ylabel('time (s) [lower is better]')
-plt.savefig('speed.eps', bbox_inches='tight', transparent=True)
-plt.savefig('speed.png', bbox_inches='tight', transparent=True)
+plt.savefig('speed3.eps', bbox_inches='tight', transparent=True)
+plt.savefig('speed3.png', bbox_inches='tight', transparent=True)
 plt.show()
-
+'''
 
 for i in range(len(benchmarks)):
     for j, (calc_type, line) in enumerate(zip(['energy', 'force'], ['o', 's'])):
-        plt.semilogy(sizes,time_list[i][j], color=colors[i], marker=line, label= '{0} {1}'.format(benchmarks[i], calc_type[0]))
+        plt.semilogy(sizes,time_list[i][j], color=colors[i], marker=line, label= '{0} {1}'.format(benchmarks[i][0], calc_type))
 plt.legend(loc='best')
 plt.xlabel('NP diameter in Angstrom')
 plt.ylabel('time (s) [lower is better]')
-plt.savefig('speed_log.eps', bbox_inches='tight', transparent=True)
-plt.savefig('speed_log.png', bbox_inches='tight', transparent=True)
+# plt.savefig('speed_log3.eps', bbox_inches='tight', transparent=True)
+# plt.savefig('speed_log3.png', bbox_inches='tight', transparent=True)
 plt.show()
