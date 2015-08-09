@@ -3,10 +3,10 @@ from numba import *
 
 from pyiid.kernels import *
 
-targ = 'cpu'
+processor_target = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
-@jit(target=targ, nopython=True)
+@jit(target=processor_target, nopython=True)
 def get_d_array(d, q, offset):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
@@ -24,7 +24,7 @@ def get_d_array(d, q, offset):
             d[k, tz] = q[i, tz] - q[j, tz]
 
 
-@jit(target=targ, nopython=True)
+@jit(target=processor_target, nopython=True)
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -39,7 +39,7 @@ def get_r_array(r, d):
         r[k] = math.sqrt(d[k, 0] ** 2 + d[k, 1] ** 2 + d[k, 2] ** 2)
 
 
-@jit(target=targ, nopython=True)
+@jit(target=processor_target, nopython=True)
 def get_normalization_array(norm, scat, offset):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -58,7 +58,7 @@ def get_normalization_array(norm, scat, offset):
             norm[k, qx] = scat[i, qx] * scat[j, qx]
 
 
-@jit(target=targ, nopython=True)
+@jit(target=processor_target, nopython=True)
 def get_fq(fq, r, norm, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
@@ -83,7 +83,7 @@ def get_fq(fq, r, norm, qbin):
 
 
 # Gradient test_kernels -------------------------------------------------------
-@jit(target=targ, nopython=True)
+@jit(target=processor_target, nopython=True)
 def get_grad_fq(grad, fq, r, d, norm, qbin):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -107,13 +107,14 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
             Q = float32(qbin) * float32(qx)
             rk = r[k]
             # A = (norm[k, qx] * Q * math.cos(Q * r[k]) - fq[k, qx]) / float32(r[k] ** 2)
-            A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / float32(rk ** 2)
+            A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / float32(
+                rk ** 2)
             for w in range(3):
                 grad[k, w, qx] = A * d[k, w]
                 # grad[k, w, qx] = float32(qbin)
 
 
-@jit(target=targ, nopython=True)
+@jit(target=processor_target, nopython=True)
 def fast_fast_flat_sum(new_grad, grad, k_cov):
     n = len(new_grad)
     k_max = len(grad)

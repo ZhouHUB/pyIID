@@ -1,12 +1,10 @@
 __author__ = 'christopher'
 if __name__ == '__main__':
     import numpy as np
-    import math
-    import sys
     from mpi4py import MPI
     from numba import cuda
 
-    from ..nxn_atomic_gpu import atomic_fq
+    from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atomic_fq
 
     comm = MPI.Comm.Get_parent()
     rank = comm.Get_rank()

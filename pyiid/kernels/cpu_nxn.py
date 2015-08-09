@@ -3,11 +3,11 @@ import math
 from numba import *
 import mkl
 
-targ = 'cpu'
+processor_target = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
 
-@jit(target=targ)
+@jit(target=processor_target)
 def get_d_array(d, q):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
@@ -25,7 +25,7 @@ def get_d_array(d, q):
                 d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
 
 
-@jit(target=targ)
+@jit(target=processor_target)
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -43,7 +43,7 @@ def get_r_array(r, d):
                 d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
 
 
-@jit(target=targ)
+@jit(target=processor_target)
 def get_fq_array(fq, r, scatter_array, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
@@ -77,7 +77,7 @@ def get_fq_array(fq, r, scatter_array, qbin):
                               math.sin(kq * qbin * r[tx, ty])
 
 
-@jit(target=targ)
+@jit(target=processor_target)
 def get_normalization_array(norm_array, scatter_array):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -100,7 +100,7 @@ def get_normalization_array(norm_array, scatter_array):
 
 
 # Gradient test_kernels -------------------------------------------------------
-@jit(target=targ)
+@jit(target=processor_target)
 def fq_grad_position(grad_p, d, r, scatter_array, qbin):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -141,7 +141,7 @@ def fq_grad_position(grad_p, d, r, scatter_array, qbin):
 
 # Misc. Kernels----------------------------------------------------------------
 
-@jit(target=targ)
+@jit(target=processor_target)
 def get_dw_sigma_squared(s, u, r, d, n):
     for tx in range(n):
         for ty in range(n):
@@ -155,7 +155,7 @@ def get_dw_sigma_squared(s, u, r, d, n):
             s[tx, ty] = u_dot_r * u_dot_r
 
 
-@jit(target=targ)
+@jit(target=processor_target)
 def get_gr(gr, r, rbin, n):
     """
     Generate gr the histogram of the atomic distances
@@ -189,7 +189,7 @@ def simple_grad(grad_p, d, r):
                     grad_p[tx, tz] += d[tx, ty, tz] / (r[tx, ty] ** 3)
 
 
-@jit(target=targ)
+@jit(target=processor_target)
 def spring_force_kernel(direction, d, r, mag):
     n = len(r)
     for i in range(n):

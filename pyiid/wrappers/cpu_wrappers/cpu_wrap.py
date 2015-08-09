@@ -1,6 +1,7 @@
 __author__ = 'christopher'
-from pyiid.kernels.cpu_kernel import *
+from pyiid.kernels.cpu_nxn import *
 import numpy as np
+
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     """
@@ -168,7 +169,7 @@ def com_spring_nrg(atoms, k, rt):
     com = atoms.get_center_of_mass()
     q = atoms.positions
     disp = q - com
-    dist = np.sqrt(np.sum(disp**2, axis=1))
+    dist = np.sqrt(np.sum(disp ** 2, axis=1))
     thresh = np.greater(dist, rt)
     mag = np.zeros(len(atoms))
 
@@ -176,11 +177,12 @@ def com_spring_nrg(atoms, k, rt):
     energy = np.sum(mag[thresh] / 2. * (dist[thresh] - rt))
     return energy
 
+
 def com_spring_force(atoms, k, rt):
     com = atoms.get_center_of_mass()
     q = atoms.positions
     disp = q - com
-    dist = np.sqrt(np.sum(disp**2, axis=1))
+    dist = np.sqrt(np.sum(disp ** 2, axis=1))
     thresh = np.greater(dist, rt)
     mag = np.zeros(len(atoms))
 

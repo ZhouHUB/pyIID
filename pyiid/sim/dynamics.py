@@ -2,7 +2,7 @@ __author__ = 'christopher'
 from pyiid.sim import leapfrog
 
 
-def classical_dynamics(atoms, stepsize, n_steps, temp=0):
+def classical_dynamics(atoms, stepsize, n_steps):
     """
     Create a new atomic configuration by simulating the hamiltonian dynamics
     of the system
