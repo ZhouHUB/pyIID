@@ -9,7 +9,7 @@ print 'Start job queue'
 while True:
     print 'search for simulations to be run'
     sims = list(find_simulation_document(ran=False, skip=False,
-                                         # error=False
+                                         error=False
                                          ))
     if len(sims) == 0:
         # we didn't find anything, implying that there were no more un-run simulations
@@ -36,6 +36,5 @@ while True:
                 print 'Simulation number {} has errored'.format(sim.id)
                 print traceback.format_exc()
                 sim.error = True
-                sim.skip = True
                 sim.save()
                 pass
