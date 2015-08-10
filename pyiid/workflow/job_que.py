@@ -9,7 +9,8 @@ print 'Start job queue'
 while True:
     if i%10 == 0:
         print 'search for simulations to be run'
-    sims = list(find_simulation_document(ran=False, skip=False, error=False))
+    sims = list(find_simulation_document(priority=True, ran=False, skip=False,
+                                         error=False))
     if len(sims) == 0:
         # we didn't find anything, implying that there were no more un-run
         # simulations
