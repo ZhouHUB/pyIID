@@ -69,13 +69,14 @@ def run_simulation(sim):
 
     # Simulate
     # TODO: eventually support different simulation engines
-    out_traj, samples, l_p_i = nuts(atoms, target_acceptance, iterations,
+    out_traj, samples, l_p_i, seed = nuts(atoms, target_acceptance, iterations,
                                     ensemble_temp, wtraj)
     sim.end_time.append(ttime.time())
     sim.total_iterations.append(sim.params.iterations)
     sim.total_samples.append(samples)
     sim.leapfrog_per_iter.append(l_p_i)
     sim.finished = True
+    sim.seed.append(seed)
     sim.save()
     # Write info to DB
     sim.final_potential_energy.append(out_traj[-1].get_potential_energy())
