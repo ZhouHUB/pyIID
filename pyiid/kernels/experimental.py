@@ -1,7 +1,10 @@
 __author__ = 'christopher'
-from numba import *
 import math
+
+from numba import *
+
 from gpu_flat import cuda_k_to_ij
+
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_normalization_array(norm_array, scat, offset):
@@ -110,3 +113,4 @@ def experimental_sum_grad_fq2(new_grad, grad, k_cov):
         cuda.atomic.add(new_grad, (j, tz, qx), 1)
         # new_grad[i, tz, qx] = j
         # cuda.atomic.add(new_grad, (i, tz, qx), j)
+

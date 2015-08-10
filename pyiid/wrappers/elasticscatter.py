@@ -11,8 +11,8 @@ import numpy as np
 
 from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf
 from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
-from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
-from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
+from pyiid.wrappers.cpu_wrappers.nxn_cpu_wrap import wrap_fq as cpu_wrap_fq
+from pyiid.wrappers.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
 
 

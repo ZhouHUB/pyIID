@@ -7,6 +7,8 @@ import psutil
 from pyiid.kernels.cpu_flat import *
 from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
 
+from pyiid.kernels.cpu_experimental import experimental_sum_grad_cpu
+
 
 def setup_gpu_calc(atoms, sum_type):
     # atoms info
@@ -107,7 +109,8 @@ def atomic_grad_fq(task):
 
     # rtn = np.empty((n, 3, qmax_bin), np.float32)
     rtn = np.zeros((n, 3, qmax_bin), np.float32)
-    fast_fast_flat_sum(rtn, grad, k_cov)
+    # fast_fast_flat_sum(rtn, grad, k_cov)
+    experimental_sum_grad_cpu(rtn, grad, k_cov)
     del grad
     return rtn
 
@@ -153,15 +156,15 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from pyiid.wrappers.elasticscatter import wrap_atoms
-    from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq_grad as mfqg
+    # from pyiid.wrappers.cpu_wrappers.nxn_cpu_wrap import wrap_fq_grad as mfqg
     import matplotlib.pyplot as plt
     from numpy.testing import assert_allclose
 
     plt.ion()
-    # n = 1000
-    # pos = np.random.random((n, 3)) * 10.
-    # atoms = Atoms('Au' + str(n), pos)
-    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    n = 5000
+    pos = np.random.random((n, 3)) * 10.
+    atoms = Atoms('Au' + str(n), pos)
+    # atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     wrap_atoms(atoms)
 
     # fq = wrap_fq(atoms, atoms.info['exp']['qbin'])
@@ -173,6 +176,7 @@ if __name__ == '__main__':
     # plt.show()
     # assert_allclose(fq, fq2, 3e-4)
     grad_fq = wrap_fq_grad(atoms, atoms.info['exp']['qbin'])
-    mgrad_fq = mfqg(atoms, atoms.info['exp']['qbin'])
-    assert_allclose(grad_fq, mgrad_fq)
+    print grad_fq
+    # mgrad_fq = mfqg(atoms, atoms.info['exp']['qbin'])
+    # assert_allclose(grad_fq, mgrad_fq)
     # raw_input()
