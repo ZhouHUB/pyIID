@@ -62,7 +62,7 @@ def setup_atomic_square():
     return atoms1, atoms2
 
 
-def stats_check(ans1, ans2, rtol, atol):
+def stats_check(ans1, ans2, rtol=None, atol=None):
     print 'bulk statistics:'
     print 'max', np.max(np.abs(ans2 - ans1)),
     print 'min', np.min(np.abs(ans2 - ans1)),
@@ -72,15 +72,16 @@ def stats_check(ans1, ans2, rtol, atol):
 
     print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
         np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
-    fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
-    print
-    print 'allclose failures'
-    print ans1[fails].tolist()
-    print ans2[fails].tolist()
-    print
-    print 'allclose internals'
-    print 'a', np.abs(ans1[fails] - ans2[fails]).tolist()
-    print 'p', (atol + rtol * np.abs(ans2[fails])).tolist()
+    if rtol is not None and atol is not None:
+        fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
+        print
+        print 'allclose failures'
+        print ans1[fails].tolist()
+        print ans2[fails].tolist()
+        print
+        print 'allclose internals'
+        print 'a', np.abs(ans1[fails] - ans2[fails]).tolist()
+        print 'p', (atol + rtol * np.abs(ans2[fails])).tolist()
 
     return (np.max(np.abs(ans2 - ans1)),
             np.min(np.abs(ans2 - ans1)),
