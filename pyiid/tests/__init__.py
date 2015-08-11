@@ -72,7 +72,7 @@ def stats_check(ans1, ans2, rtol=None, atol=None):
 
     print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
         np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
-    if rtol is not None and atol is not None:
+    if rtol is not None and atol is not None and len(ans1) > 1:
         fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
         print
         print 'allclose failures'
