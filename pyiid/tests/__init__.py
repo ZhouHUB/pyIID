@@ -62,17 +62,43 @@ def setup_atomic_square():
     return atoms1, atoms2
 
 
-def stats_check(ans1, ans2):
-    return np.max(np.abs(ans2 - ans1)), np.min(np.abs(ans2 - ans1)), np.mean(
-        np.abs(ans2 - ans1)), np.median(np.abs(ans2 - ans1)), np.std(
-        np.abs(ans2 - ans1))
+def stats_check(ans1, ans2, rtol, atol):
+    print 'bulk statistics:'
+    print 'max', np.max(np.abs(ans2 - ans1)),
+    print 'min', np.min(np.abs(ans2 - ans1)),
+    print 'men', np.mean(np.abs(ans2 - ans1)),
+    print 'med', np.median(np.abs(ans2 - ans1)),
+    print 'std', np.std(np.abs(ans2 - ans1))
+
+    print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
+        np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
+    fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
+    print
+    print 'allclose failures'
+    print ans1[fails].tolist()
+    print ans2[fails].tolist()
+    print
+    print 'allclose internals'
+    print 'a', np.abs(ans1[fails] - ans2[fails]).tolist()
+    print 'p', (atol + rtol * np.abs(ans2[fails])).tolist()
+
+    return (np.max(np.abs(ans2 - ans1)),
+            np.min(np.abs(ans2 - ans1)),
+            np.mean(np.abs(ans2 - ans1)),
+            np.median(np.abs(ans2 - ans1)),
+            np.std(np.abs(ans2 - ans1))), \
+           (np.max(np.abs(ans2 - ans1)) / ans2[np.unravel_index(np.argmax(
+               np.abs(ans2 - ans1)), ans2.shape)],
+            np.min(np.abs(ans2 - ans1)) / ans2[np.unravel_index(np.argmin(
+                np.abs(ans2 - ans1)), ans2.shape)])
+
 
 # Setup lists of test variables
 test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [
     ('rw', .9),
-    # ('chi_sq', 10)
+    ('chi_sq', 10)
 ]
 test_qbin = [.1]
 test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
@@ -84,7 +110,7 @@ test_calcs = [Spring(**t_kwargs) for t_kwargs in test_spring_kwargs]
 # Travis CI has certain restrictions on memory and GPU availability so we
 # change the size of the tests to run
 travis = False
-if os.getenv('TRAVIS'):
+if os.getenv('TRAVIS') or True:
     travis = True
     # use a smaller test size otherwise travis stalls
     ns = [10, 100]

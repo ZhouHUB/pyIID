@@ -2,33 +2,43 @@ __author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
 
+atol = 4e-5
+rtol = 1e-6
+
 test_data = tuple(product(test_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))
 
-def test_gen_scatter_smoke_fq():
+# Test Generators
+def test_gen_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
 
-def test_gen_scatter_smoke_pdf():
-    for v in test_data:
-        yield check_scatter_pdf, v
 
-def test_gen_scatter_smoke_sq():
-    for v in test_data:
-        yield check_scatter_sq, v
-
-def test_gen_scatter_smoke_iq():
-    for v in test_data:
-        yield check_scatter_iq, v
-
-def test_gen_scatter_smoke_grad_fq():
+def test_gen_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
 
-def test_gen_scatter_smoke_grad_pdf():
+# ''' Tests which derive from F(Q) and Grad F(Q)
+def test_gen_scatter_pdf():
+    for v in test_data:
+        yield check_scatter_pdf, v
+
+
+def test_gen_scatter_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
 
+
+def test_gen_scatter_sq():
+    for v in test_data:
+        yield check_scatter_sq, v
+
+
+def test_gen_scatter_iq():
+    for v in test_data:
+        yield check_scatter_iq, v
+# '''
+# Actual Tests
 def check_scatter_fq(value):
     """
     Check two processor, algorithm pairs against each other for FQ calculation
@@ -37,7 +47,6 @@ def check_scatter_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -51,10 +60,8 @@ def check_scatter_fq(value):
     ans2 = scat.get_fq(atoms)
 
     # test
-    print stats_check(ans1, ans2)
-    # print np.max(np.abs(ans1 - ans2)), np.mean(
-    #     np.abs(ans1 - ans2)), np.std(np.abs(ans1 - ans2))
-    assert_allclose(ans1, ans2, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
     # assert False
 
 
@@ -66,7 +73,6 @@ def check_scatter_sq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -80,7 +86,8 @@ def check_scatter_sq(value):
     ans2 = scat.get_sq(atoms)
 
     # test
-    assert_allclose(ans1, ans2, rtol=1e-3, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_iq(value):
@@ -91,7 +98,6 @@ def check_scatter_iq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -105,7 +111,8 @@ def check_scatter_iq(value):
     ans2 = scat.get_iq(atoms)
 
     # test
-    assert_allclose(ans1, ans2, rtol=1e-3, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_pdf(value):
@@ -116,7 +123,6 @@ def check_scatter_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -130,7 +136,8 @@ def check_scatter_pdf(value):
     ans2 = scat.get_pdf(atoms)
 
     # test
-    assert_allclose(ans1, ans2, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_grad_fq(value):
@@ -142,7 +149,6 @@ def check_scatter_grad_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -156,8 +162,8 @@ def check_scatter_grad_fq(value):
     ans2 = scat.get_grad_fq(atoms)
 
     # test
-    print stats_check(ans1, ans2)
-    assert_allclose(ans1, ans2, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_grad_pdf(value):
@@ -169,7 +175,6 @@ def check_scatter_grad_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -183,7 +188,9 @@ def check_scatter_grad_pdf(value):
     ans2 = scat.get_grad_pdf(atoms)
 
     # test
-    assert_allclose(ans1, ans2, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+
 
 if __name__ == '__main__':
     import nose
