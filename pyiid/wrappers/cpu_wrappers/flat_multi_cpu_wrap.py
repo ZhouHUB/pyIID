@@ -5,7 +5,7 @@ import numpy as np
 import psutil
 
 from pyiid.kernels.cpu_flat import *
-from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
+from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
 
 from pyiid.kernels.cpu_experimental import experimental_sum_grad_cpu
 
@@ -63,7 +63,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     tasks = []
     k_cov = 0
     while k_cov < k_max:
-        m = atoms_pdf_gpu_fq(n, qmax_bin, 64e9 / 8.)
+        m = gpu_fq_atoms_allocation(n, qmax_bin, 64e9 / 8.)
         if m > k_max - k_cov:
             m = k_max - k_cov
         task = (q, scatter_array, qbin, m, k_cov)

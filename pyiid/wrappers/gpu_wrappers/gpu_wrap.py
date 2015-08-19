@@ -68,7 +68,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     while k_cov < k_max:
         for gpu, mem in zip(gpus, mem_list):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                k_per_thread = atoms_pdf_gpu_fq(n, qmax_bin, mem)
+                k_per_thread = gpu_fq_atoms_allocation(n, qmax_bin, mem)
                 if k_per_thread > k_max - k_cov:
                     k_per_thread = k_max - k_cov
                 if k_cov >= k_max:

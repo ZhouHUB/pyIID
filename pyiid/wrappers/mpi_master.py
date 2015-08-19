@@ -8,7 +8,7 @@ from numba import cuda
 import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
 import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
 import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
-from pyiid.wrappers.gpu_wrappers.multi_gpu_wrap import sub_fq
+from pyiid.wrappers.gpu_wrappers.gpu_wrap import subs_fq
 
 
 def gpu_avail(n_nodes):
@@ -73,7 +73,7 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
         if p is None or p.is_alive() is False:
             cuda.close()
             p = Thread(
-                target=sub_fq, args=(
+                target=subs_fq, args=(
                     cuda.gpus.lst[0], q, scatter_array, thread_q,
                     qbin, m,
                     n_cov))

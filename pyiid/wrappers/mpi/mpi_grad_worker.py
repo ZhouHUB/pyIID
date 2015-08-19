@@ -3,7 +3,7 @@ if __name__ == '__main__':
     from mpi4py import MPI
     from numba import cuda
 
-    from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atomic_grad_fq
+    from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atomic_grad_fq
 
     grad_cov = []
     comm = MPI.Comm.Get_parent()

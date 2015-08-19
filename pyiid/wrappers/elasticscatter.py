@@ -111,32 +111,6 @@ class ElasticScatter(object):
             self.processor = processor
             return True
 
-        elif processor == self.avail_pro[1] and check_gpu() is True:
-            if kernel_type == 'nxn':
-                from pyiid.wrappers.gpu_wrappers.multi_gpu_wrap import \
-                    wrap_fq as node_0_gpu_wrap_fq
-                from pyiid.wrappers.gpu_wrappers.multi_gpu_wrap import \
-                    wrap_fq_grad as node_0_gpu_wrap_fq_grad
-
-                self.fq = node_0_gpu_wrap_fq
-                self.grad = node_0_gpu_wrap_fq_grad
-                self.alg = 'nxn'
-
-            elif kernel_type == 'flat':
-                from pyiid.wrappers.gpu_wrappers.flat_gpu_wrap import \
-                    wrap_fq as flat_fq
-                from pyiid.wrappers.gpu_wrappers.flat_gpu_wrap import \
-                    wrap_fq_grad as flat_grad
-
-                self.fq = flat_fq
-                self.grad = flat_grad
-                self.alg = 'flat'
-            from pyiid.wrappers.gpu_wrappers.flat_gpu_wrap import grad_pdf
-
-            self.grad_pdf = grad_pdf
-            self.processor = processor
-            return True
-
         elif processor == self.avail_pro[2]:
             if kernel_type == 'nxn':
                 self.fq = cpu_wrap_fq

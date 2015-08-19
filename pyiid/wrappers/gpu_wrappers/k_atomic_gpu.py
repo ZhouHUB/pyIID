@@ -7,7 +7,7 @@ from pyiid.wrappers import generate_grid
 __author__ = 'christopher'
 
 
-def atoms_pdf_gpu_fq(n, Q, mem):
+def gpu_fq_atoms_allocation(n, Q, mem):
     """
     Determine the maximum amount of atoms which can be placed on a gpu for a
     computation of F(Q).  This depends on how exactly the F(Q) function makes
