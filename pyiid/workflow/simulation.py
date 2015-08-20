@@ -15,7 +15,7 @@ def run_simulation(sim):
     # Load info from simulation request
     sim_params, = find_simulation_parameter_document(_id=sim.params.id)
 
-    # TODO: Throw in some statments about timeouts etc.
+    # TODO: Throw in some statments about timeouts, acceptable U(q), etc.
     iterations = sim_params.iterations
     target_acceptance = sim_params.target_acceptance
     ensemble_temp = sim_params.temperature

@@ -5,7 +5,7 @@ import numpy as np
 from numba import cuda
 
 from pyiid.wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
-from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atoms_per_gpu_fq, \
+from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import gpu_fq_atoms_allocation, \
     atoms_per_gpu_grad_fq
 
 
@@ -47,7 +47,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     m_list = []
     while n_cov < n:
         for mem in mem_list:
-            m = atoms_per_gpu_fq(n, qmax_bin, mem)
+            m = gpu_fq_atoms_allocation(n, qmax_bin, mem)
             if m > n - n_cov:
                 m = n - n_cov
             m_list.append(m)
@@ -72,7 +72,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     return fq
 
 
-def wrap_fq_grad(atoms, qmax=25., qbin=.1, sum_type='fq'):
+def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -109,21 +109,11 @@ def wrap_fq_grad(atoms, qmax=25., qbin=.1, sum_type='fq'):
 
     # list of list of tuples, I think
     reports = mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin)
-    # list of tuples
-    flat_reports = [item for sublist in reports for item in sublist]
-    # seperate lists of grads and indices
-    grads, indices = [x[0] for x in flat_reports], [x[1] for x in flat_reports]
+    grad_p = np.zeros((n, 3, qmax_bin), dtype=np.float32)
+    for r in reports:
+        grad_p += r
 
-    # Sort grads to make certain indices are in order
-    sort_grads = [x for (y, x) in sorted(zip(indices, grads))]
-
-    # Stitch arrays together
-    if len(sort_grads) > 1:
-        grad_p = np.concatenate(sort_grads, axis=0)
-    else:
-        grad_p = sort_grads[0]
     na = np.average(scatter_array, axis=0) ** 2 * n
-
     old_settings = np.seterr(all='ignore')
     grad_p[:, :] = np.nan_to_num(grad_p[:, :] / na)
     np.seterr(**old_settings)

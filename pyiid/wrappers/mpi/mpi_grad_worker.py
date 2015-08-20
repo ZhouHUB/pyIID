@@ -5,15 +5,16 @@ if __name__ == '__main__':
 
     from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atomic_grad_fq
 
-    grad_cov = []
+    grad_cov = None
     comm = MPI.Comm.Get_parent()
     rank = comm.Get_rank()
     for task in iter(lambda: comm.sendrecv(dest=0), StopIteration):
-        gpus = cuda.gpus.lst
-        gpu = gpus[0]
-        grad_cov.append(atomic_grad_fq(*task))
-        cuda.close()
+        if grad_cov is None:
+            grad_cov = atomic_grad_fq(*task)
+        else:
+            grad_cov += atomic_grad_fq(*task)
     # Return Finished Data
+    # TODO: Use MPI Buffer object to do this for speed enhancement
     comm.gather(sendobj=grad_cov, root=0)
     # Shutdown
     comm.Disconnect()

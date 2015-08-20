@@ -70,28 +70,17 @@ def stats_check(ans1, ans2, rtol=None, atol=None):
     print 'med', np.median(np.abs(ans2 - ans1)),
     print 'std', np.std(np.abs(ans2 - ans1))
 
-    print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
-        np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
     if rtol is not None and atol is not None and len(ans1) > 1:
+        print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
+        np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
         fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
         print
         print 'allclose failures'
-        print ans1[fails].tolist()
-        print ans2[fails].tolist()
+        print zip(ans1[fails].tolist(), ans2[fails].tolist())
         print
         print 'allclose internals'
-        print 'a', np.abs(ans1[fails] - ans2[fails]).tolist()
-        print 'p', (atol + rtol * np.abs(ans2[fails])).tolist()
-
-    return (np.max(np.abs(ans2 - ans1)),
-            np.min(np.abs(ans2 - ans1)),
-            np.mean(np.abs(ans2 - ans1)),
-            np.median(np.abs(ans2 - ans1)),
-            np.std(np.abs(ans2 - ans1))), \
-           (np.max(np.abs(ans2 - ans1)) / ans2[np.unravel_index(np.argmax(
-               np.abs(ans2 - ans1)), ans2.shape)],
-            np.min(np.abs(ans2 - ans1)) / ans2[np.unravel_index(np.argmin(
-                np.abs(ans2 - ans1)), ans2.shape)])
+        print zip(np.abs(ans1[fails] - ans2[fails]).tolist(),
+                  (atol + rtol * np.abs(ans2[fails])).tolist())
 
 
 # Setup lists of test variables

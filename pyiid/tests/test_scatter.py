@@ -8,6 +8,7 @@ rtol = 1e-6
 test_data = tuple(product(test_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))
 
+
 # Test Generators
 def test_gen_scatter_fq():
     for v in test_data:
@@ -17,6 +18,7 @@ def test_gen_scatter_fq():
 def test_gen_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
+
 
 # ''' Tests which derive from F(Q) and Grad F(Q)
 def test_gen_scatter_pdf():
@@ -38,6 +40,8 @@ def test_gen_scatter_iq():
     for v in test_data:
         yield check_scatter_iq, v
 # '''
+
+
 # Actual Tests
 def check_scatter_fq(value):
     """
