@@ -30,6 +30,8 @@ def add_atom(atoms, chem_potentials, beta):
 
 
 def del_atom(atoms, chem_potentials, beta):
+    if len(atoms) ==1:
+        return None
     atoms.center()
     # make the proposed system
     atoms_prime = dc(atoms)
@@ -70,16 +72,16 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from ase.visualize import view
 
-    atoms = Octahedron('Au', 6)
-    atoms.center(1)
+    atoms = Octahedron('Au', 3)
+    atoms.center()
     calc = Spring(
-        rt=100,
+        rt=20,
         sp_type='att'
     )
     atoms.set_calculator(calc)
     traj = [atoms]
     n = []
-    for i in range(1000):
+    for i in range(10000):
         grand_cannonical_move(traj, {'Au': -4.25}, 1)
         n.append(len(traj[-1]))
     plt.plot(n)

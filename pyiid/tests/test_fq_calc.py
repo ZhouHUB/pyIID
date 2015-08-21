@@ -23,6 +23,8 @@ def check_nrg(value):
     :param value:
     :return:
     """
+    rtol = 2e-6
+    atol=1e-7
     # setup
     atoms1, atoms2 = value[0]
     scat = ElasticScatter()
@@ -41,10 +43,8 @@ def check_nrg(value):
     calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_potential_energy()
-    print stats_check(ans1, ans2)
-    assert_allclose(ans2, ans1,
-                    # rtol=5e-4,
-                    atol=1e-3)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans2, ans1, rtol, atol)
 
 
 def check_forces(value):
@@ -54,6 +54,8 @@ def check_forces(value):
     :return:
     """
     # setup
+    rtol = 4e-5
+    atol = 6e-5
     atoms1, atoms2 = value[0]
     scat = ElasticScatter()
     proc1, alg1 = value[-1][0]
@@ -71,17 +73,11 @@ def check_forces(value):
     calc = FQCalc(obs_data=gobs, scatter=scat, potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_forces()
-    print stats_check(ans1, ans2)
-    if p == 'chi_sq':
-        assert_allclose(ans2, ans1,
-                        rtol=5e-3,
-                        atol=1e-5
-                        )
-    else:
-        assert_allclose(ans2, ans1,
-                        rtol=5e-4,
-                        atol=1e-7
-                        )
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans2, ans1,
+                    rtol=rtol,
+                    atol=atol
+                    )
 
 if __name__ == '__main__':
     import nose
@@ -91,6 +87,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         # '-v'
+        '-x'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

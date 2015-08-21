@@ -11,8 +11,59 @@ from pyiid.testing.decorators import *
 from pyiid.calc.spring_calc import Spring
 from pyiid.sim.dynamics import classical_dynamics
 from pyiid.sim.nuts_hmc import nuts
-
+srfit = False
+try:
+    from diffpy.Structure.structure import Structure
+    from diffpy.Structure.atom import Atom as dAtom
+    from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+    srfit = True
+except:
+    pass
 __author__ = 'christopher'
+
+if srfit:
+    def convert_atoms_to_stru(atoms):
+        """
+        Convert between ASE and Diffpy structural objects
+
+        Parameters:
+        -----------
+        atoms: ase.Atoms object
+
+        Return:
+        diffpy.Structure object:
+        """
+        diffpy_atoms = []
+        symbols = atoms.get_chemical_symbols()
+        q = atoms.get_positions()
+        tags = atoms.get_tags()
+        for symbol, xyz, tag, in zip(symbols, q, tags):
+            d_atom = dAtom(symbol, xyz=xyz,
+                           label=tag, occupancy=1)
+            diffpy_atoms.append(d_atom)
+        stru = Structure(diffpy_atoms)
+        return stru
+
+
+    def update_stru(new_atoms, stru):
+        aatomq = new_atoms.get_positions()
+        datomq = np.reshape([datom.xyz for datom in stru], (len(new_atoms), 3))
+        # aatome = new_atoms.get_chemical_symbols()
+        # datome = np.array([datom.element for datom in stru])
+        changedq = np.in1d(aatomq, datomq).reshape((len(new_atoms), 3))
+
+        changed_array = np.sum(changedq, 1) != 3
+        stru[changed_array].xyz = new_atoms[changed_array].get_positions()
+        # for i in len(changed_array):
+        #     if changed_array[i] == True:
+        #         stru[i]._set_xyz_cartn(new_atoms[i].position)
+        # changed_list = []
+        # for i in len(new_atoms):
+        #     if np.sum(changedq[i, :]) != 3:
+        #         changed_list.append(i)
+        # for j in changed_list:
+        #     stru[j]._set_xyz_cartn(new_atoms[j].position)
+        return stru
 
 
 def setup_atoms(n):
@@ -62,7 +113,7 @@ def setup_atomic_square():
     return atoms1, atoms2
 
 
-def stats_check(ans1, ans2, rtol=None, atol=None):
+def stats_check(ans1, ans2, rtol=1e-7, atol=0):
     print 'bulk statistics:'
     print 'max', np.max(np.abs(ans2 - ans1)),
     print 'min', np.min(np.abs(ans2 - ans1)),
@@ -70,17 +121,25 @@ def stats_check(ans1, ans2, rtol=None, atol=None):
     print 'med', np.median(np.abs(ans2 - ans1)),
     print 'std', np.std(np.abs(ans2 - ans1))
 
-    if rtol is not None and atol is not None and len(ans1) > 1:
+    if isinstance(ans1, type(np.asarray([1]))):
         print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
         np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
         fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
-        print
-        print 'allclose failures'
+        print '\n allclose failures'
         print zip(ans1[fails].tolist(), ans2[fails].tolist())
-        print
-        print 'allclose internals'
+        print '\n allclose internals'
         print zip(np.abs(ans1[fails] - ans2[fails]).tolist(),
                   (atol + rtol * np.abs(ans2[fails])).tolist())
+        print '\n', 'without atol rtol = ', '\n'
+        print np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
+        print 'without rtol atol = ', '\n'
+        print np.abs(ans1[fails] - ans2[fails])
+    else:
+        print np.abs(ans1 - ans2)
+        print atol + rtol * np.abs(ans2)
+        print 'without atol'
+        print rtol * np.abs(ans2)
+        print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
 
 
 # Setup lists of test variables
