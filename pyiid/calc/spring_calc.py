@@ -14,7 +14,10 @@ class Spring(Calculator):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
-
+        from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
+            import spring_nrg as nrg
+        from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
+            import spring_force as force
         if sp_type == 'com':
             from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
                 com_spring_nrg as nrg

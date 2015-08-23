@@ -6,7 +6,8 @@ from a collection of atoms.
 import math
 from numba import cuda
 import numpy as np
-from pyiid.experiments.elasticscatter import wrap_fq_grad as cpu_wrap_fq_grad
+from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+    wrap_fq_grad as cpu_wrap_fq_grad
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq as cpu_wrap_fq, wrap_fq_grad
 from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf, \
