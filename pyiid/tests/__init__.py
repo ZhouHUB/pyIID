@@ -1,6 +1,6 @@
 import numpy as np
 from ase.atoms import Atoms
-from pyiid.wrappers.elasticscatter import wrap_atoms
+from pyiid.experiments.elasticscatter import wrap_atoms
 from numpy.testing import assert_allclose
 from itertools import *
 import os
@@ -147,7 +147,7 @@ test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [
     ('rw', .9),
-    ('chi_sq', 10)
+    ('chi_sq', 1)
 ]
 test_qbin = [.1]
 test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},

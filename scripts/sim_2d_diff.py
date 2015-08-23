@@ -1,7 +1,7 @@
 __author__ = 'christopher'
 import numpy as np
 from ase.atoms import Atoms
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 import ase.io

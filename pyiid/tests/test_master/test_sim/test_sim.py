@@ -4,7 +4,7 @@ from pyiid.tests import *
 from pyiid.sim.dynamics import classical_dynamics
 import numpy as np
 
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.fqcalc import FQCalc
 __author__ = 'christopher'

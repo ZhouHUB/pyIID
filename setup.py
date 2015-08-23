@@ -6,7 +6,7 @@ setup(
     version='',
     packages=['extra', 'pyiid', 'pyiid.sim', 'pyiid.calc', 'pyiid.tests',
               'pyiid.tests.test_master', 'pyiid.kernels', 'pyiid.testing',
-              'pyiid.wrappers', 'pyiid.wrappers.mpi'],
+              'pyiid.experiments', 'pyiid.experiments.mpi'],
     url='',
     license='',
     author='Christopher J. Wright',

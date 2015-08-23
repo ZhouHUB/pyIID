@@ -1,6 +1,6 @@
 __author__ = 'christopher'
 from pyiid.tests import *
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 
 local_test_atoms = setup_atomic_square()[0] * 3
 test_data = tuple(product([local_test_atoms], [None]))

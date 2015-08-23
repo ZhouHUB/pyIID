@@ -2,8 +2,7 @@ from threading import Thread
 
 from numbapro.cudalib import cufft
 
-from pyiid.wrappers import *
-from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import *
+from pyiid.experiments import *
 
 __author__ = 'christopher'
 

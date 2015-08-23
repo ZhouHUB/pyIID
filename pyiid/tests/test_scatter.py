@@ -1,9 +1,9 @@
 __author__ = 'christopher'
 from pyiid.tests import *
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 
 atol = 4e-5
-rtol = 1e-6
+rtol = 2e-6
 
 test_data = tuple(product(test_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))

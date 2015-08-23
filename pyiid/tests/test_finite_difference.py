@@ -1,6 +1,6 @@
 __author__ = 'christopher'
 from pyiid.tests import *
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 
 dq = 1e-4
 

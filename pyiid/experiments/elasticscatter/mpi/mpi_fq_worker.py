@@ -1,9 +1,8 @@
 __author__ = 'christopher'
 if __name__ == '__main__':
     from mpi4py import MPI
-    from numba import cuda
 
-    from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atomic_fq
+    from pyiid.experiments.elasticscatter.gpu_wrappers import atomic_fq
 
     comm = MPI.Comm.Get_parent()
     rank = comm.Get_rank()

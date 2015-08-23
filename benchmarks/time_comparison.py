@@ -2,7 +2,7 @@ __author__ = 'christopher'
 from ase.atoms import Atoms
 import ase.io as aseio
 
-from pyiid.wrappers.elasticscatter import wrap_atoms
+from pyiid.experiments.elasticscatter import wrap_atoms
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.utils import build_sphere_np
 
@@ -12,7 +12,7 @@ import time
 from copy import deepcopy as dc
 from collections import OrderedDict
 import pickle
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 import traceback
 
 exp = None

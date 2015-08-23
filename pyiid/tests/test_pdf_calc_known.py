@@ -1,6 +1,6 @@
 __author__ = 'christopher'
 from pyiid.tests import *
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 
 test_data = tuple(

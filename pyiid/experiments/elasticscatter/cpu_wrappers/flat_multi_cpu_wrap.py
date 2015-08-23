@@ -5,8 +5,7 @@ import numpy as np
 import psutil
 
 from pyiid.kernels.cpu_flat import *
-from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
-
+from pyiid.experiments.elasticscatter.gpu_wrappers import gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
 from pyiid.kernels.cpu_experimental import experimental_sum_grad_cpu
 
 
@@ -155,10 +154,9 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 
 if __name__ == '__main__':
     from ase.atoms import Atoms
-    from pyiid.wrappers.elasticscatter import wrap_atoms
-    # from pyiid.wrappers.cpu_wrappers.nxn_cpu_wrap import wrap_fq_grad as mfqg
+    from pyiid.experiments.elasticscatter import wrap_atoms
+    # from pyiid.experiments.cpu_wrappers.nxn_cpu_wrap import wrap_fq_grad as mfqg
     import matplotlib.pyplot as plt
-    from numpy.testing import assert_allclose
 
     plt.ion()
     n = 5000

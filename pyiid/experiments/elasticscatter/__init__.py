@@ -3,17 +3,16 @@ The main class in this module `ElasticScatter` holds the experimental details,
 and processor information needed to calculate the elastic powder scattering
 from a collection of atoms.
 """
-__author__ = 'christopher'
 import math
-
 from numba import cuda
 import numpy as np
+from pyiid.experiments.elasticscatter import wrap_fq_grad as cpu_wrap_fq_grad
+from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+    wrap_fq as cpu_wrap_fq, wrap_fq_grad
+from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf, \
+    get_pdf_at_qmin, get_scatter_array
 
-from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf
-from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
-from pyiid.wrappers.cpu_wrappers.nxn_cpu_wrap import wrap_fq as cpu_wrap_fq
-from pyiid.wrappers.cpu_wrappers.nxn_cpu_wrap import \
-    wrap_fq_grad as cpu_wrap_fq_grad
+__author__ = 'christopher'
 
 
 def check_mpi():
@@ -101,15 +100,31 @@ class ElasticScatter(object):
                     break
 
         elif processor == self.avail_pro[0] and check_mpi() is True:
-            from pyiid.wrappers.mpi_gpu_wrap import \
+            from pyiid.experiments.elasticscatter.mpi.mpi_gpu_wrap import \
                 wrap_fq as multi_node_gpu_wrap_fq
-            from pyiid.wrappers.mpi_gpu_wrap import \
+            from pyiid.experiments.elasticscatter.mpi.mpi_gpu_wrap import \
                 wrap_fq_grad as multi_node_gpu_wrap_fq_grad
 
             self.fq = multi_node_gpu_wrap_fq
             self.grad = multi_node_gpu_wrap_fq_grad
             self.processor = processor
             return True
+
+        elif processor == self.avail_pro[1] and check_gpu() is True:
+            from pyiid.experiments.elasticscatter.gpu_wrappers import \
+                wrap_fq as flat_fq
+            from pyiid.experiments.elasticscatter.gpu_wrappers import \
+                wrap_fq_grad as flat_grad
+
+            self.fq = flat_fq
+            self.grad = flat_grad
+            self.alg = 'flat'
+            from pyiid.experiments.elasticscatter.gpu_wrappers import grad_pdf
+
+            self.grad_pdf = grad_pdf
+            self.processor = processor
+            return True
+
 
         elif processor == self.avail_pro[2]:
             if kernel_type == 'nxn':
@@ -118,7 +133,8 @@ class ElasticScatter(object):
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
-                from pyiid.wrappers.cpu_wrappers.flat_multi_cpu_wrap import \
+                from pyiid.experiments.elasticscatter.cpu_wrappers\
+                    .flat_multi_cpu_wrap import \
                     wrap_fq, wrap_fq_grad
 
                 self.fq = wrap_fq

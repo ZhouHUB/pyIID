@@ -2,7 +2,7 @@ import math
 import numpy as np
 from numba import *
 
-from pyiid.wrappers import generate_grid
+from pyiid.experiments import generate_grid
 
 __author__ = 'christopher'
 

@@ -5,10 +5,10 @@ from threading import Thread
 
 from numba import cuda
 
-import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
-import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
-import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
-from pyiid.wrappers.gpu_wrappers.gpu_wrap import subs_fq
+import pyiid.experiments.mpi.mpi_gpu_avail as mpi_gpu_avail
+import pyiid.experiments.mpi.mpi_fq_worker as mpi_fq_worker
+import pyiid.experiments.elasticscatter.mpi.mpi_grad_worker as mpi_grad_worker
+from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import subs_fq
 
 
 def gpu_avail(n_nodes):
@@ -86,7 +86,7 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     p.join()
     # Make certain we have covered all the atoms
     assert n_cov == len(q)
-    # TODO: Make Numpy based Gather for faster memory transfer
+    # TODO: Make Numpy based Gather for faster memory transfer or Sum Reduce
     reports = comm.gather(root=MPI.ROOT)
     comm.Disconnect()
     reports += thread_q
