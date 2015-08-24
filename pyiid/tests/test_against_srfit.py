@@ -5,13 +5,15 @@ from pyiid.experiments.elasticscatter import ElasticScatter
 local_test_atoms = setup_atomic_square()[0] * 3
 test_data = tuple(product([local_test_atoms], [None]))
 
-# @known_fail_if(not srfit)
+
 def test_fq_against_srfit():
     for value in test_data:
         yield check_fq_against_srfit, value
 
 
 def check_fq_against_srfit(value):
+    if not srfit:
+        KnownFailureTest()
     # unpack the atoms and experiment
     atoms = value[0]
     exp = value[1]
