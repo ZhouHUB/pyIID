@@ -6,17 +6,11 @@ local_test_atoms = setup_atomic_square()[0] * 3
 test_data = tuple(product([local_test_atoms], [None]))
 
 
-def test_fq_against_srfit():
-    for value in test_data:
-        yield check_fq_against_srfit, value
-
-
-def check_fq_against_srfit(value):
-    if not srfit:
-        KnownFailureTest()
+@known_fail_if(not srfit)
+def check_fq_against_srfit():
     # unpack the atoms and experiment
-    atoms = value[0]
-    exp = value[1]
+    atoms = local_test_atoms
+    exp = None
 
     # get the pyIID F(Q)
     s = ElasticScatter(exp)
