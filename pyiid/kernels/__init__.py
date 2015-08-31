@@ -4,6 +4,8 @@ from numba import *
 __author__ = 'christopher'
 #TODO: develop tests for GPU and CPU kernels
 
+
+@jit(target='cpu', nopython=True)
 def ij_to_k(i, j):
     return int(j + i * (i - 1) / 2)
 

@@ -2,6 +2,8 @@ __author__ = 'christopher'
 from copy import deepcopy as dc
 import numpy as np
 from ase.atom import Atom
+from ase.units import _hplanck
+from ase.units import *
 
 
 def add_atom(atoms, chem_potentials, beta):
@@ -21,16 +23,17 @@ def add_atom(atoms, chem_potentials, beta):
     # get chemical potential
     mu = chem_potentials[new_symbol]
     # calculate acceptance
-    if np.random.random((1,)) < np.exp(min([0, np.log(atoms.get_volume() / (len(atoms) + 1)) - beta * delta_energy +
+    if np.random.random((1,)) < np.exp(min([0, np.log(atoms.get_volume() / (
+        len(atoms) + 1)) - beta * delta_energy +
                     beta * mu
-            ])):
+                                            ])):
         return atoms_prime
     else:
         return None
 
 
 def del_atom(atoms, chem_potentials, beta):
-    if len(atoms) ==1:
+    if len(atoms) == 1:
         return None
     atoms.center()
     # make the proposed system
@@ -45,6 +48,8 @@ def del_atom(atoms, chem_potentials, beta):
     delta_energy = atoms_prime.get_total_energy() - atoms.get_total_energy()
     # get chemical potential
     mu = chem_potentials[del_symbol]
+    thermal_wave = _hplanck * J * s * np.sqrt(beta) / \
+                   np.sqrt(2 * np.pi * np.average(atoms.get_masses()))
     # calculate acceptance
     if np.random.random() < np.exp(min([0,
                                         np.log(len(atoms) / atoms.get_volume())
@@ -66,6 +71,22 @@ def grand_cannonical_move(traj, chem_potentials, beta):
         traj.append(new_atoms)
 
 
+class GCMove:
+    def __init__(self, traj, chemical_potentials, beta=1):
+        self.traj = traj
+        self.beta = beta
+        self.chem_pot = chemical_potentials
+
+    def step(self):
+        rand = np.random.random()
+        if rand >= .5:
+            new_atoms = del_atom(traj[-1], self.chem_pot, self.beta)
+        else:
+            new_atoms = add_atom(traj[-1], self.chem_pot, self.beta)
+        if new_atoms is not None:
+            self.traj.append(new_atoms)
+
+
 if __name__ == '__main__':
     from ase.cluster.octahedron import Octahedron
     from pyiid.calc.spring_calc import Spring
@@ -73,17 +94,28 @@ if __name__ == '__main__':
     from ase.visualize import view
 
     atoms = Octahedron('Au', 3)
+    atoms.rattle(.1)
     atoms.center()
     calc = Spring(
-        rt=20,
-        sp_type='att'
+        rt=2.5,
+        k=200,
+        # sp_type='att'
     )
     atoms.set_calculator(calc)
     traj = [atoms]
     n = []
-    for i in range(10000):
-        grand_cannonical_move(traj, {'Au': -4.25}, 1)
+    pe = []
+    gc = GCMove(traj, {'Au': 0.0}, 1/kB/3000)
+    for i in range(5000):
+        gc.step()
         n.append(len(traj[-1]))
+        pe.append(traj[-1].get_potential_energy())
+
+    min_pe = np.argmin(pe)
+    print min_pe
+    # view(traj[min_pe])
+    view(traj[-1])
     plt.plot(n)
+    # plt.plot(np.exp(pe))
     plt.show()
-    # view(traj[-1])
+

@@ -7,7 +7,7 @@ test_data = tuple(product([local_test_atoms], [None]))
 
 
 @known_fail_if(not srfit)
-def check_fq_against_srfit():
+def test_fq_against_srfit():
     # unpack the atoms and experiment
     atoms = local_test_atoms
     exp = None
@@ -26,9 +26,9 @@ def check_fq_against_srfit():
     r1, g1 = srfit_calc(stru)
     assert_allclose(s.get_scatter_vector(), srfit_calc.qgrid)
     ans2 = srfit_calc.fq
-    stats_check(ans1, ans2, rtol=1e-1, atol=5e-6)
+    stats_check(ans1, ans2, rtol=1e-4, atol=5e-6)
     del srfit_calc
-    assert_allclose(ans1, ans2, rtol=1e-1, atol=5e-6)
+    assert_allclose(ans1, ans2, rtol=1e-4, atol=5e-6)
 
 if __name__ == '__main__':
     import nose

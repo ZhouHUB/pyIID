@@ -75,9 +75,11 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     p.close()
     # sum the answers
     final = np.sum(fqs, axis=0)
-    na = np.average(scatter_array, axis=0) ** 2 * n
+    norm = np.empty((k_max, qmax_bin))
+    get_normalization_array(norm, scatter_array, 0)
+    na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
-    final = np.nan_to_num(1 / na * final)
+    final = np.nan_to_num(final / na)
     np.seterr(**old_settings)
     del q, n, qmax_bin, scatter_array, k_max, p, task, fqs
     return 2 * final
@@ -142,11 +144,12 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # sum the answers
     grad_p = np.sum(fqs, axis=0)
     # '''
-    na = np.average(scatter_array, axis=0) ** 2 * n
+    # na = np.average(scatter_array, axis=0) ** 2 * n
+    norm = np.empty((k_max, qmax_bin))
+    get_normalization_array(norm, scatter_array, 0)
+    na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
-    for tx in range(n):
-        for tz in range(3):
-            grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
+    grad_p = np.nan_to_num(grad_p/na)
     np.seterr(**old_settings)
     # '''
     del q, n, qmax_bin, scatter_array, k_max, p, task, fqs

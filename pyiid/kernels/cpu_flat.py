@@ -18,8 +18,7 @@ def get_d_array(d, q, offset):
         The atomic positions
     """
     for k in range(len(d)):
-        i = int(math.floor(float((1 + math.sqrt(1 + 8. * (k + offset)))) / 2.))
-        j = int((k + offset) - i * (i - 1) / 2.)
+        i, j = k_to_ij(k)
         for tz in range(3):
             d[k, tz] = q[i, tz] - q[j, tz]
 
@@ -52,8 +51,7 @@ def get_normalization_array(norm, scat, offset):
         The scatter factor array
     """
     for k in xrange(norm.shape[0]):
-        i = int(math.floor(float((1 + math.sqrt(1 + 8. * (k + offset)))) / 2.))
-        j = int((k + offset) - i * (i - 1) / 2.)
+        i, j = k_to_ij(k)
         for qx in xrange(norm.shape[1]):
             norm[k, qx] = scat[i, qx] * scat[j, qx]
 
@@ -74,10 +72,9 @@ def get_fq(fq, r, norm, qbin):
     qbin: float
         The qbin size
     """
-    for k in xrange(fq.shape[0]):
-        for qx in xrange(fq.shape[1]):
-            Q = float32(qbin) * float32(qx)
-            # Q = float32(qbin * qx)
+    for qx in xrange(fq.shape[1]):
+        Q = float32(qbin) * float32(qx)
+        for k in xrange(fq.shape[0]):
             rk = r[k]
             fq[k, qx] = norm[k, qx] * math.sin(Q * rk) / rk
 
@@ -101,17 +98,14 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
     qbin: float
         The size of the Q bins
     """
-    for k in xrange(grad.shape[0]):
-        for qx in xrange(fq.shape[1]):
-            # Q = float32(qbin * qx)
-            Q = float32(qbin) * float32(qx)
+    for qx in xrange(fq.shape[1]):
+        Q = float32(qbin) * float32(qx)
+        for k in xrange(grad.shape[0]):
             rk = r[k]
-            # A = (norm[k, qx] * Q * math.cos(Q * r[k]) - fq[k, qx]) / float32(r[k] ** 2)
-            A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / float32(
-                rk ** 2)
+            A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / \
+                float32(rk * rk)
             for w in range(3):
                 grad[k, w, qx] = A * d[k, w]
-                # grad[k, w, qx] = float32(qbin)
 
 
 @jit(target=processor_target, nopython=True)
@@ -120,17 +114,16 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
     k_max = len(grad)
     for i in xrange(n):
         for j in xrange(n):
-            for qx in xrange(grad.shape[2]):
-                for tz in xrange(3):
-                    if j < i:
-                        k = j + i * (i - 1) / 2 - k_cov
-                        alpha = -1
-                    elif i < j:
-                        k = i + j * (j - 1) / 2 - k_cov
-                        alpha = 1
-                    if 0 <= k < k_max:
+            if j < i:
+                k = j + i * (i - 1) / 2 - k_cov
+                alpha = -1
+            elif i < j:
+                k = i + j * (j - 1) / 2 - k_cov
+                alpha = 1
+            if 0 <= k < k_max:
+                for qx in xrange(grad.shape[2]):
+                    for tz in xrange(3):
                         new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
-                        # new_grad[i, tz, qx] += alpha
 
 
 '''
