@@ -4,7 +4,7 @@ import os
 import numpy as np
 from numba import cuda
 
-from pyiid.experiments.elasticscatter.mpi.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
+from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_master import gpu_avail, mpi_fq, mpi_grad_fq
 from pyiid.experiments.elasticscatter.gpu_wrappers import gpu_fq_atoms_allocation, \
     atoms_per_gpu_grad_fq
 

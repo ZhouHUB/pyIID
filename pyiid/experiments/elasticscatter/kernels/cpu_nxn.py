@@ -5,6 +5,7 @@ import mkl
 
 processor_target = 'cpu'
 
+
 # F(Q) test_kernels -----------------------------------------------------------
 
 @jit(target=processor_target)
@@ -44,40 +45,6 @@ def get_r_array(r, d):
 
 
 @jit(target=processor_target)
-def get_fq_array(fq, r, scatter_array, qbin):
-    """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    qbin: float
-        The qbin size
-    """
-    sum_scale = 1
-    n = len(r)
-    qmax_bin = len(fq)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for kq in range(0, qmax_bin):
-                    debye_waller_scale = 1
-                    # TODO: debye_waller_scale = math.exp(
-                    # -.5 * dw_signal_sqrd * (kq*Qbin)**2)
-                    fq[kq] += sum_scale * \
-                              debye_waller_scale * \
-                              scatter_array[tx, kq] * \
-                              scatter_array[ty, kq] / \
-                              r[tx, ty] * \
-                              math.sin(kq * qbin * r[tx, ty])
-
-
-@jit(target=processor_target)
 def get_normalization_array(norm_array, scatter_array):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -97,6 +64,80 @@ def get_normalization_array(norm_array, scatter_array):
             for ty in range(n):
                 norm_array[tx, ty, kq] = (
                     scatter_array[tx, kq] * scatter_array[ty, kq])
+
+
+@jit(target=processor_target)
+def get_fq_array(fq, r, scatter_array, qbin):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    qbin: float
+        The qbin size
+    """
+    n = len(r)
+    qmax_bin = len(fq)
+    for tx in range(n):
+        for ty in range(n):
+            if tx != ty:
+                for kq in range(0, qmax_bin):
+                    fq[kq] += scatter_array[tx, kq] * \
+                              scatter_array[ty, kq] / \
+                              r[tx, ty] * \
+                              math.sin(kq * qbin * r[tx, ty])
+
+
+@jit(target=processor_target, nopython=True)
+def get_sigma_from_adp(sigma, adps, r, d):
+    for i in xrange(len(sigma)):
+        for j in xrange(len(sigma)):
+            if i != j:
+                tmp = 0.
+                for w in range(3):
+                    tmp += (math.fabs(adps[i, w]) + math.fabs(adps[j, w]))/2 \
+                           * d[i, j, w] / r[i, j]
+                sigma[i, j] = tmp ** 2
+
+
+@jit(target=processor_target, nopython=True)
+def get_dw_factor_from_sigma(dw_factor, sigma, qbin):
+    for qx in xrange(dw_factor.shape[2]):
+        Q = qx * qbin
+        for i in xrange(len(sigma)):
+            for j in xrange(len(sigma)):
+                dw_factor[i, j, qx] = math.exp(-.5 * sigma[i, j] * Q ** 2)
+
+
+@jit(target=processor_target, nopython=True)
+def get_adp_fq(fq, r, norm, dw_factor, qbin):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    qbin: float
+        The qbin size
+    """
+    for qx in xrange(len(fq)):
+        Q = float32(qbin) * float32(qx)
+        for i in xrange(len(r)):
+            for j in xrange(len(r)):
+                if i != j:
+                    fq[qx] += norm[i, j, qx] * dw_factor[i, j, qx] * \
+                                   math.sin(Q * r[i, j]) / r[i, j]
 
 
 # Gradient test_kernels -------------------------------------------------------

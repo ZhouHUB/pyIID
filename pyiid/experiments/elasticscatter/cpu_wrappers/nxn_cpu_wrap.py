@@ -1,6 +1,6 @@
 __author__ = 'christopher'
-from pyiid.kernels.cpu_nxn import *
 import numpy as np
+from pyiid.experiments.elasticscatter.kernels.cpu_nxn import *
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
@@ -119,6 +119,69 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     del d, r, scatter_array, norm_array
     return dfq_dq
 
+
+def wrap_apd_fq(atoms, qbin=.1, sum_type='fq'):
+    """
+    Generate the reduced structure function
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qmax: float
+        The maximum scatter vector value
+    qmin: float
+        The minimum scatter vector value
+    qbin: float
+        The size of the scatter vector increment
+
+    Returns
+    -------
+
+    fq:1darray
+        The reduced structure function
+    """
+    q = atoms.get_positions()
+    adps = atoms.adps.get_position()
+
+    # get scatter array
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter')
+    else:
+        scatter_array = atoms.get_array('PDF scatter')
+    # define scatter_q information and initialize constants
+
+    qmax_bin = scatter_array.shape[1]
+    n = len(q)
+
+    # Get pair coordinate distance array
+    d = np.zeros((n, n, 3))
+    get_d_array(d, q)
+    del q
+
+    # Get pair distance array
+    r = np.zeros((n, n))
+    get_r_array(r, d)
+
+    norm = np.zeros((n, n, qmax_bin))
+    get_normalization_array(norm, scatter_array)
+
+    sigma = np.zeros((n, n))
+    get_sigma_from_adp(sigma, adps, r, d)
+    dw_factor = np.zeros((n, n, qmax_bin))
+    get_dw_factor_from_sigma(dw_factor, sigma, qbin)
+
+    # get non-normalized fq
+    fq = np.zeros(qmax_bin)
+    get_adp_fq(fq, r, norm, dw_factor, qbin)
+
+    # Normalize fq
+    na = np.average(scatter_array, axis=0) ** 2 * n
+    old_settings = np.seterr(all='ignore')
+    fq = np.nan_to_num(1 / na * fq)
+    np.seterr(**old_settings)
+    del r, scatter_array, na, d
+    return fq
 
 def spring_nrg(atoms, k, rt):
     q = atoms.positions

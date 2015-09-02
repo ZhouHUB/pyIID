@@ -18,7 +18,7 @@ setup(
               'pyiid.experiments.saxs',
               'pyiid.experiments.exafs',
               'pyiid.experiments.elasticscatter',
-              'pyiid.experiments.elasticscatter.mpi',
+              'pyiid.experiments.elasticscatter.mpi_wrappers',
               'pyiid.experiments.elasticscatter.cpu_wrappers',
               'pyiid.experiments.elasticscatter.gpu_wrappers',
               ],

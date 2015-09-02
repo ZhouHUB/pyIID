@@ -4,10 +4,10 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 import psutil
 
-from pyiid.kernels.cpu_flat import *
+from pyiid.experiments.elasticscatter.kernels.cpu_flat import *
 from pyiid.experiments.elasticscatter.gpu_wrappers.k_atomic_gpu import \
     gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
-from pyiid.kernels.cpu_experimental import experimental_sum_grad_cpu
+from pyiid.experiments.elasticscatter.kernels.cpu_experimental import experimental_sum_grad_cpu
 
 
 def setup_gpu_calc(atoms, sum_type):

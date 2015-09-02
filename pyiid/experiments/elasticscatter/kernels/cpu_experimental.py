@@ -1,5 +1,6 @@
 from numba import jit, i4
-from pyiid.kernels import k_to_ij
+
+from pyiid.experiments.elasticscatter.kernels import k_to_ij
 
 __author__ = 'christopher'
 

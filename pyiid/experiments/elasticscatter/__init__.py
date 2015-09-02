@@ -4,14 +4,18 @@ and processor information needed to calculate the elastic powder scattering
 from a collection of atoms.
 """
 import math
+
 from numba import cuda
 import numpy as np
+
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
-    wrap_fq as cpu_wrap_fq, wrap_fq_grad
-from pyiid.kernels.master_kernel import grad_pdf as cpu_grad_pdf, \
-    get_pdf_at_qmin, get_scatter_array
+    wrap_fq as cpu_wrap_fq
+from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+    wrap_apd_fq as cpu_wrap_adp_fq
+from pyiid.experiments.elasticscatter.kernels.master_kernel import \
+    grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
 
 __author__ = 'christopher'
 
@@ -64,6 +68,7 @@ class ElasticScatter(object):
         # Just in case something blows up down the line set to the most base
         # processor
         self.fq = cpu_wrap_fq
+        self.adp_fq = cpu_wrap_adp_fq
         self.grad = cpu_wrap_fq_grad
         self.grad_pdf = cpu_grad_pdf
         self.processor = 'CPU'
@@ -101,9 +106,9 @@ class ElasticScatter(object):
                     break
 
         elif processor == self.avail_pro[0] and check_mpi() is True:
-            from pyiid.experiments.elasticscatter.mpi.mpi_gpu_wrap import \
+            from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_wrap import \
                 wrap_fq as multi_node_gpu_wrap_fq
-            from pyiid.experiments.elasticscatter.mpi.mpi_gpu_wrap import \
+            from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_wrap import \
                 wrap_fq_grad as multi_node_gpu_wrap_fq_grad
 
             self.fq = multi_node_gpu_wrap_fq
@@ -130,6 +135,7 @@ class ElasticScatter(object):
         elif processor == self.avail_pro[2]:
             if kernel_type == 'nxn':
                 self.fq = cpu_wrap_fq
+                self.adp_fq = cpu_wrap_adp_fq
                 self.grad = cpu_wrap_fq_grad
                 self.alg = 'nxn'
 
@@ -190,6 +196,12 @@ class ElasticScatter(object):
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
+    def _check_adps(self, atoms):
+        if hasattr(atoms, 'adps'):
+            return True
+        else:
+            return False
+
     def get_fq(self, atoms):
         """
         Calculate the reduced structure factor F(Q)
@@ -204,7 +216,11 @@ class ElasticScatter(object):
             The reduced structure factor
         """
         self.check_scatter(atoms)
-        return self.fq(atoms, self.exp['qbin'])
+        if self._check_adps(atoms):
+            return self.adp_fq(atoms, self.exp['qbin'])
+
+        else:
+            return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
         """
@@ -220,7 +236,10 @@ class ElasticScatter(object):
             The PDF
         """
         self.check_scatter(atoms)
-        fq = self.fq(atoms, self.pdf_qbin, 'PDF')
+        if self._check_adps(atoms):
+            fq = self.adp_fq(atoms, self.pdf_qbin, 'PDF')
+        else:
+            fq = self.fq(atoms, self.pdf_qbin, 'PDF')
         r = self.get_r()
         pdf0 = get_pdf_at_qmin(
             fq,
@@ -409,3 +428,18 @@ def wrap_atoms(atoms, exp_dict=None):
     atoms.set_array('PDF scatter', scatter_array)
 
     atoms.info['exp'] = exp_dict
+
+if __name__ == '__main__':
+    from ase.atoms import Atoms
+    from pyiid.adp import ADP
+    import matplotlib.pyplot as plt
+    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    adps = ADP(atoms, adps=np.ones((len(atoms), 3)) * .1)
+    s = ElasticScatter()
+    s.set_processor('CPU', 'nxn')
+    fq = s.get_pdf(atoms)
+    atoms.adps = adps
+    fq2 = s.get_pdf(atoms)
+    plt.plot(s.get_r(), fq)
+    plt.plot(s.get_r(), fq2)
+    plt.show()

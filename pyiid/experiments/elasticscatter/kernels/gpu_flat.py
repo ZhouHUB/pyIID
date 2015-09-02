@@ -1,7 +1,9 @@
 import math
+
 from numba import *
 from numba import cuda, f4, i4
-from pyiid.kernels import ij_to_k
+
+from pyiid.experiments.elasticscatter.kernels import ij_to_k
 
 __author__ = 'christopher'
 

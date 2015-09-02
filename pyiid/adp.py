@@ -1,19 +1,21 @@
 __author__ = 'christopher'
 import numpy as np
 
+
 class ADP:
-    def __init__(self, atoms, adps=None, adp_momenta=None, adp_equivalency=None, fixed_adps=None):
+    def __init__(self, atoms, adps=None, adp_momenta=None, adp_equivalency=None,
+                 fixed_adps=None):
         if adps is None:
             adps = np.ones(atoms.positions.shape) * .005
         if adp_momenta is None:
             adp_momenta = np.zeros(atoms.positions.shape)
         if adp_equivalency is None:
-            adp_equivalency = np.arange(len(atoms)*3).reshape(len(atoms), 3)
+            adp_equivalency = np.arange(len(atoms) * 3).reshape(len(atoms), 3)
         if fixed_adps is None:
             fixed_adps = np.ones(atoms.positions.shape)
         self.adps = adps
         self.adp_momenta = adp_momenta
-        self.adp_equivalency=adp_equivalency
+        self.adp_equivalency = adp_equivalency
         self.fixed_adps = fixed_adps
         self.calc = None
 
@@ -44,7 +46,8 @@ class ADP:
         self.calc = calc
 
     def del_adp(self, index):
-        for a in [self.adps, self.adp_momenta, self.adp_equivalency, self.fixed_adps]:
+        for a in [self.adps, self.adp_momenta, self.adp_equivalency,
+                  self.fixed_adps]:
             a = np.delete(a, index, 0)
 
     def add_adp(self, adp=None, adp_momentum=None, adp_equivalency=None,
