@@ -1,5 +1,4 @@
 from copy import deepcopy as dc
-from ase.optimize.minimahopping import MinimaHopping
 __author__ = 'christopher'
 
 

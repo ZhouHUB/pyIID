@@ -17,11 +17,11 @@ class MultiCanonicalSimulation:
         self.ensembles = []
 
         # build the ensemble and init
-        for ensemble in ensemble_dict.keys():
+        for ensemble, value in ensemble_dict.items():
             if ensemble in supported_ensebles.keys():
                 mod = importlib.import_module(supported_ensebles[ensemble][0])
                 e = getattr(mod, supported_ensebles[ensemble][1])
-                self.ensembles.append(e(**ensemble_dict[ensemble]))
+                self.ensembles.append(e(**value))
 
         self.total_iterations = iterations
         if ensemble_prob is not None:
@@ -35,4 +35,4 @@ class MultiCanonicalSimulation:
 
     def step(self):
         j = np.random.choice(np.range(len(self.ensembles)), p=self.prob)
-        self.ensembles[j].run()
+        self.ensembles[j].step()
