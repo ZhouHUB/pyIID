@@ -23,7 +23,7 @@ def check_nrg(value):
     :param value:
     :return:
     """
-    rtol = 2e-6
+    rtol = 3e-6
     atol=1e-7
     # setup
     atoms1, atoms2 = value[0]
