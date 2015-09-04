@@ -1,9 +1,9 @@
-__author__ = 'christopher'
 from copy import deepcopy as dc
 import numpy as np
 from ase.atom import Atom
 from ase.units import _hplanck
 from ase.units import *
+__author__ = 'christopher'
 
 
 def add_atom(atoms, chem_potentials, beta):

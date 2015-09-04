@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from pyiid.tests import *
-from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
+from pyiid.experiments.elasticscatter import ElasticScatter
+__author__ = 'christopher'
 
 rtol = 1e-5
 atol = 1e-5

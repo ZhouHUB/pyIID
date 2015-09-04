@@ -1,6 +1,6 @@
-__author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
+__author__ = 'christopher'
 
 test_data = tuple(product(test_atoms, test_exp, proc_alg_pairs))
 
@@ -9,25 +9,31 @@ def test_gen_scatter_smoke_fq():
     for v in test_data:
         yield check_scatter_fq, v
 
+
 def test_gen_scatter_smoke_sq():
     for v in test_data:
         yield check_scatter_sq, v
+
 
 def test_gen_scatter_smoke_iq():
     for v in test_data:
         yield check_scatter_iq, v
 
+
 def test_gen_scatter_smoke_pdf():
     for v in test_data:
         yield check_scatter_pdf, v
+
 
 def test_gen_scatter_smoke_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
 
+
 def test_gen_scatter_smoke_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
+
 
 def check_scatter_fq(value):
     """
@@ -50,6 +56,7 @@ def check_scatter_fq(value):
     del atoms, exp, proc, alg, scat, ans
     return
 
+
 def check_scatter_sq(value):
     """
     Smoke test for SQ
@@ -69,6 +76,7 @@ def check_scatter_sq(value):
     assert np.any(ans)
     del atoms, exp, proc, alg, scat, ans
     return
+
 
 def check_scatter_iq(value):
     """
@@ -90,6 +98,7 @@ def check_scatter_iq(value):
     del atoms, exp, proc, alg, scat, ans
     return
 
+
 def check_scatter_pdf(value):
     """
     Smoke test for PDF
@@ -110,6 +119,7 @@ def check_scatter_pdf(value):
     del atoms, exp, proc, alg, scat, ans
     return
 
+
 def check_scatter_grad_fq(value):
     """
     Smoke test for grad FQ
@@ -129,6 +139,7 @@ def check_scatter_grad_fq(value):
     assert np.any(ans)
     del atoms, exp, proc, alg, scat, ans
     return
+
 
 def check_scatter_grad_pdf(value):
     """

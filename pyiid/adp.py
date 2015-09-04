@@ -1,5 +1,5 @@
-__author__ = 'christopher'
 import numpy as np
+__author__ = 'christopher'
 
 
 class ADP:
@@ -10,7 +10,7 @@ class ADP:
         if adp_momenta is None:
             adp_momenta = np.zeros(atoms.positions.shape)
         if adp_equivalency is None:
-            adp_equivalency = np.arange(len(atoms) * 3).reshape(len(atoms), 3)
+            adp_equivalency = np.arange(len(atoms) * 3).reshape((len(atoms), 3))
         if fixed_adps is None:
             fixed_adps = np.ones(atoms.positions.shape)
         self.adps = adps

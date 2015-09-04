@@ -4,9 +4,8 @@ and processor information needed to calculate the elastic powder scattering
 from a collection of atoms.
 """
 import math
-
-from numba import cuda
 import numpy as np
+from numba import cuda
 
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
@@ -434,9 +433,14 @@ if __name__ == '__main__':
     from pyiid.adp import ADP
     import matplotlib.pyplot as plt
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    adps = ADP(atoms, adps=np.ones((len(atoms), 3)) * .1)
+    a = np.ones(atoms.positions.shape) * .1
+    # a[:, 0] = 0.
+    # a[:, 1] = 0.
+    adps = ADP(atoms,
+               adps=a
+               )
     s = ElasticScatter()
-    s.set_processor('CPU', 'nxn')
+    # s.set_processor('CPU', 'nxn')
     fq = s.get_pdf(atoms)
     atoms.adps = adps
     fq2 = s.get_pdf(atoms)

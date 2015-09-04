@@ -87,6 +87,7 @@ def get_sigma_from_adp(sigma, adps, r, d):
             tmp += (adps[i, w] - adps[j, w]) * d[i, j, w] / r[k]
         sigma[k] = tmp **2
 
+
 @jit(target=processor_target, nopython=True)
 def get_dw_factor_from_sigma(dw_factor, sigma, qbin):
     for qx in xrange(dw_factor.shape[1]):
@@ -117,6 +118,7 @@ def get_adp_fq(fq, r, norm, dw_factor, qbin):
             rk = r[k]
             fq[k, qx] = norm[k, qx] * dw_factor[k, qx] *\
                         math.sin(Q * rk) / rk
+
 
 # Gradient test_kernels -------------------------------------------------------
 @jit(target=processor_target, nopython=True)

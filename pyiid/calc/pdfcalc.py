@@ -1,10 +1,10 @@
-from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
-
-__author__ = 'christopher'
-from ase.calculators.calculator import Calculator
-from pyiid.experiments.elasticscatter import ElasticScatter
-import math
 import numpy as np
+import math
+from ase.calculators.calculator import Calculator
+
+from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
+from pyiid.experiments.elasticscatter import ElasticScatter
+__author__ = 'christopher'
 
 
 class PDFCalc(Calculator):
