@@ -81,16 +81,3 @@ def calculate_asa(atoms, probe, cutoff=None, tag=1, n_sphere_point=960):
         areas.append(area)
     return areas, surface
 
-
-if __name__ == '__main__':
-    from ase.cluster.decahedron import Decahedron
-    from ase.visualize import view
-    from ase.visualize.mlab import plot
-    import ase.io
-    # atoms = Decahedron('Au', 2, 3, 1)
-    atoms = ase.io.read(
-        '/mnt/bulk-data/Dropbox/BNL_Project/xyz_files/Au102MBA44_Auonly.xyz')
-    # atoms.rattle()
-    calculate_asa(atoms, 1.4, 3.32)
-    view(atoms[[atom.index for atom in atoms if atom.tag == 1]])
-    view(atoms[[atom.index for atom in atoms if atom.tag == 0]])
