@@ -1,8 +1,9 @@
 from __future__ import division
-__author__ = 'christopher'
 import numpy as np
 from copy import deepcopy as dc
 import importlib
+from pyiid.sim import Ensemble
+__author__ = 'christopher'
 
 supported_ensebles = {
     'NUTS': ['pyiid.sim.nuts_hmc', 'NUTSMove'],
@@ -10,10 +11,10 @@ supported_ensebles = {
 }
 
 
-class MultiCanonicalSimulation:
-    def __init__(self, atoms, ensemble_dict, iterations, ensemble_prob=None):
-        self.starting_atoms = dc(atoms)
-        self.traj = [dc(atoms)]
+class MultiCanonicalSimulation(Ensemble):
+    def __init__(self, atoms, ensemble_dict,
+                 logfile, trajectory, ensemble_prob=None):
+        Ensemble.__init__(self, atoms, logfile, trajectory)
         self.ensembles = []
 
         # build the ensemble and init
@@ -23,16 +24,11 @@ class MultiCanonicalSimulation:
                 e = getattr(mod, supported_ensebles[ensemble][1])
                 self.ensembles.append(e(**value))
 
-        self.total_iterations = iterations
         if ensemble_prob is not None:
             self.prob = ensemble_prob
         else:
-            self.prob = np.ones(len(self.ensembles))/len(self.ensembles)
-
-    def run(self):
-        for i in xrange(self.total_iterations):
-            self.step()
+            self.prob = None
 
     def step(self):
-        j = np.random.choice(np.range(len(self.ensembles)), p=self.prob)
+        j = np.random.choice(np.arange(len(self.ensembles)), p=self.prob)
         self.ensembles[j].step()

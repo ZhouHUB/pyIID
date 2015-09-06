@@ -7,15 +7,17 @@ import numpy as np
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.fqcalc import FQCalc
+
 __author__ = 'christopher'
 
-
 test_data = tuple(product(test_atom_squares, test_calcs, [1, -1]))
+
 
 def test_gen_dynamics():
     for v in test_data:
         yield check_dynamics, v
         yield check_nuts, v
+
 
 def check_dynamics(value):
     """
@@ -81,6 +83,7 @@ def check_nuts(value):
     del traj
     print min_pe
     assert min_pe < start_pe
+
 
 if __name__ == '__main__':
     import nose

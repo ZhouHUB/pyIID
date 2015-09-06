@@ -3,6 +3,7 @@ import numpy as np
 from ase.atom import Atom
 from ase.units import _hplanck
 from ase.units import *
+from pyiid.sim import Ensemble
 __author__ = 'christopher'
 
 
@@ -71,18 +72,18 @@ def grand_cannonical_move(traj, chem_potentials, beta):
         traj.append(new_atoms)
 
 
-class GCMove:
-    def __init__(self, traj, chemical_potentials, beta=1):
-        self.traj = traj
+class GCEnsemble(Ensemble):
+    def __init__(self, atoms, chemical_potentials, beta=1, restart=None,
+                 logfile=None, trajectory=None, seed=None):
+        Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
         self.beta = beta
         self.chem_pot = chemical_potentials
 
     def step(self):
-        rand = np.random.random()
-        if rand >= .5:
-            new_atoms = del_atom(traj[-1], self.chem_pot, self.beta)
+        if self.random_state.uniform() >= .5:
+            new_atoms = del_atom(self.traj[-1], self.chem_pot, self.beta)
         else:
-            new_atoms = add_atom(traj[-1], self.chem_pot, self.beta)
+            new_atoms = add_atom(self.traj[-1], self.chem_pot, self.beta)
         if new_atoms is not None:
             self.traj.append(new_atoms)
 
@@ -102,17 +103,14 @@ if __name__ == '__main__':
         # sp_type='att'
     )
     atoms.set_calculator(calc)
-    traj = [atoms]
     n = []
     pe = []
-    gc = GCMove(traj, {'Au': 0.0}, 1/kB/3000)
-    for i in range(5000):
-        gc.step()
-        n.append(len(traj[-1]))
-        pe.append(traj[-1].get_potential_energy())
-
+    gc = GCEnsemble(atoms, {'Au': 0.0}, 1 / kB / 3000)
+    traj = gc.run(10000)
+    for atoms in traj:
+        pe.append(atoms.get_potential_energy())
+        n.append(len(atoms))
     min_pe = np.argmin(pe)
-    print min_pe
     # view(traj[min_pe])
     view(traj[-1])
     plt.plot(n)
