@@ -9,8 +9,6 @@ import random
 from pyiid.testing.decorators import *
 
 from pyiid.calc.spring_calc import Spring
-from pyiid.sim.dynamics import classical_dynamics
-from pyiid.sim.nuts_hmc import nuts
 srfit = False
 try:
     from diffpy.Structure.structure import Structure

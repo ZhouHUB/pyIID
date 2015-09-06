@@ -1,5 +1,5 @@
 from ase.cluster import FaceCenteredCubic
-from pyiid.sim.gcmc import GCEnsemble
+from pyiid.sim.gcmc import GrandCanonicalEnsemble
 from pyiid.calc.spring_calc import Spring
 from pyiid.tests import *
 
@@ -11,7 +11,7 @@ def test_negative_mu():
                               (3, 6, 3))
     calc = Spring(rt=2.5, k=200)
     atoms.set_calculator(calc)
-    gce = GCEnsemble(atoms, {'Au': -100})
+    gce = GrandCanonicalEnsemble(atoms, {'Au': -100})
     traj = gce.run(1000)
     assert len(traj[-1]) == 1
 
@@ -21,7 +21,7 @@ def test_positive_mu():
                               (3, 6, 3))
     calc = Spring(rt=2.5, k=200)
     atoms.set_calculator(calc)
-    gce = GCEnsemble(atoms, {'Au': 100})
+    gce = GrandCanonicalEnsemble(atoms, {'Au': 100})
     traj = gce.run(1000)
     assert len(traj[-1]) > 100
 

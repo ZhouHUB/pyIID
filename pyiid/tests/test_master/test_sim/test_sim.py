@@ -1,22 +1,18 @@
-from pyiid.sim.nuts_hmc import nuts
-
 from pyiid.tests import *
 from pyiid.sim.dynamics import classical_dynamics
-import numpy as np
-
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.fqcalc import FQCalc
 
 __author__ = 'christopher'
 
-test_data = tuple(product(test_atom_squares, test_calcs, [1, -1]))
+test_dynamics_data = tuple(product(test_atom_squares, test_calcs, [1, -1],
+                                   (True, False), (True, False)))
 
 
 def test_gen_dynamics():
-    for v in test_data:
+    for v in test_dynamics_data:
         yield check_dynamics, v
-        yield check_nuts, v
 
 
 def check_dynamics(value):
@@ -26,14 +22,17 @@ def check_dynamics(value):
     """
     ideal_atoms, _ = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
+
     if value[1] == 'PDF':
         s = ElasticScatter()
         gobs = s.get_pdf(ideal_atoms)
         calc = PDFCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
+
     elif value[1] == 'FQ':
         s = ElasticScatter()
         gobs = s.get_fq(ideal_atoms)
         calc = FQCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
+
     else:
         calc = value[1]
     ideal_atoms.positions *= 1.02
@@ -41,48 +40,17 @@ def check_dynamics(value):
     ideal_atoms.set_calculator(calc)
     start_pe = ideal_atoms.get_potential_energy()
     e = value[2]
-    traj = classical_dynamics(ideal_atoms, e, 10)
+    traj = classical_dynamics(ideal_atoms, e, 10, value[3], value[4])
 
     pe_list = []
     for atoms in traj:
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.min(pe_list)
     print min_pe, start_pe, len(traj)
-    del traj
     assert min_pe < start_pe
-
-
-def check_nuts(value):
-    """
-    Test NUTS simulation
-    """
-    ideal_atoms, _ = value[0]
-    ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
-    if value[1] == 'PDF':
-        s = ElasticScatter()
-        gobs = s.get_pdf(ideal_atoms)
-        calc = PDFCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
-    elif value[1] == 'FQ':
-        s = ElasticScatter()
-        gobs = s.get_fq(ideal_atoms)
-        calc = FQCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
-    else:
-        calc = value[1]
-    ideal_atoms.positions *= 1.02
-
-    ideal_atoms.set_calculator(calc)
-    start_pe = ideal_atoms.get_potential_energy()
-
-    traj, _, _, _ = nuts(ideal_atoms, .65, 3, 1., escape_level=4)
-
-    pe_list = []
-    for atoms in traj:
-        pe_list.append(atoms.get_potential_energy())
-    min_pe = np.min(pe_list)
-    print len(traj)
-    del traj
-    print min_pe
-    assert min_pe < start_pe
+    if value[3]:
+        assert_allclose(traj[-1].get_center_of_mass(),
+                        traj[0].get_center_of_mass())
 
 
 if __name__ == '__main__':

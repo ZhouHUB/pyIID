@@ -11,7 +11,7 @@ __author__ = 'christopher'
 Emax = 200
 
 
-def find_step_size(input_atoms, rs):
+def find_step_size(input_atoms, temp):
     """
     Find a suitable starting step size for the simulation
 
@@ -28,7 +28,7 @@ def find_step_size(input_atoms, rs):
     """
     atoms = dc(input_atoms)
     step_size = .5
-    atoms.set_momenta(rs.normal(0, 1, (len(atoms), 3)))
+    MaxwellBoltzmannDistribution(atoms, temp=temp, force_temp=True)
 
     atoms_prime = leapfrog(atoms, step_size)
 
@@ -43,6 +43,83 @@ def find_step_size(input_atoms, rs):
         atoms_prime = leapfrog(atoms, step_size)
     print step_size
     return step_size
+
+
+def buildtree(input_atoms, u, v, j, e, e0, rs, stationary=False,
+              zero_rotation=False):
+    """
+    Build the tree of samples for NUTS, recursively
+
+    Parameters
+    -----------
+    input_atoms: ase.Atoms object
+        The atoms for the tree
+    u: float
+        slice parameter, the baseline energy to compare against
+    v: -1 or 1
+        The direction of the tree leaves, negative means that we simulate
+        backwards in time
+    j: int
+        The tree depth
+    e: float
+        The stepsize
+    e0: float
+        Current energy
+    rs: numpy.random.RandomState object
+        The random state object used to generate the random numbers.  Use of a
+        unified random number generator with a known seed should help us to
+        generate reproducible simulations
+    Returns
+    -------
+    Many things
+    """
+    if j == 0:
+        atoms_prime = leapfrog(input_atoms, v * e, stationary=stationary,
+                               zero_rotation=zero_rotation)
+        neg_delta_energy = e0 - atoms_prime.get_total_energy()
+        try:
+            exp1 = np.exp(neg_delta_energy)
+            exp2 = np.exp(Emax + neg_delta_energy)
+        except:
+            exp1 = 0
+            exp2 = 0
+        # print exp1, exp2
+        # n_prime = int(u <= np.exp(-atoms_prime.get_total_energy()))
+        # s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
+        n_prime = int(u <= exp1)
+        s_prime = int(u < exp2)
+        return (atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime,
+                min(1, np.exp(-atoms_prime.get_total_energy() +
+                              input_atoms.get_total_energy())), 1)
+    else:
+        (neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime,
+         na_prime) = buildtree(input_atoms, u, v, j - 1, e, e0, rs,
+                               stationary, zero_rotation)
+        if s_prime == 1:
+            if v == -1:
+                (neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime,
+                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs,
+                                        stationary, zero_rotation)
+            else:
+                (_, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime,
+                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs,
+                                        stationary, zero_rotation)
+
+            if rs.uniform() < float(n_prime_prime / (
+                    max(n_prime + n_prime_prime, 1))):
+                atoms_prime = atoms_prime_prime
+
+            a_prime = a_prime + app
+            na_prime = na_prime + napp
+
+            datoms = pos_atoms.positions - neg_atoms.positions
+            span = datoms.flatten()
+            s_prime = s_prime_prime * (
+                span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
+                          span.dot(pos_atoms.get_velocities().flatten()) >= 0)
+            n_prime = n_prime + n_prime_prime
+        return (neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime,
+                na_prime)
 
 
 def nuts(atoms, accept_target, iterations, p_scale=1, write_traj=None,
@@ -164,89 +241,14 @@ def nuts(atoms, accept_target, iterations, p_scale=1, write_traj=None,
     return traj, samples_total, float(samples_total) / m, seed
 
 
-def buildtree(input_atoms, u, v, j, e, e0, rs, stationary=False,
-              zero_rotation=False):
-    """
-    Build the tree of samples for NUTS, recursively
-
-    Parameters
-    -----------
-    input_atoms: ase.Atoms object
-        The atoms for the tree
-    u: float
-        slice parameter, the baseline energy to compare against
-    v: -1 or 1
-        The direction of the tree leaves, negative means that we simulate
-        backwards in time
-    j: int
-        The tree depth
-    e: float
-        The stepsize
-    e0: float
-        Current energy
-    rs: numpy.random.RandomState object
-        The random state object used to generate the random numbers.  Use of a
-        unified random number generator with a known seed should help us to
-        generate reproducible simulations
-    Returns
-    -------
-    Many things
-    """
-    if j == 0:
-        atoms_prime = leapfrog(input_atoms, v * e, stationary=stationary,
-                               zero_rotation=zero_rotation)
-        neg_delta_energy = e0 - atoms_prime.get_total_energy()
-        try:
-            exp1 = np.exp(neg_delta_energy)
-            exp2 = np.exp(Emax + neg_delta_energy)
-        except:
-            exp1 = 0
-            exp2 = 0
-        # print exp1, exp2
-        # n_prime = int(u <= np.exp(-atoms_prime.get_total_energy()))
-        # s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
-        n_prime = int(u <= exp1)
-        s_prime = int(u < exp2)
-        return (atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime,
-                min(1, np.exp(-atoms_prime.get_total_energy() +
-                              input_atoms.get_total_energy())), 1)
-    else:
-        (neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime,
-         na_prime) = buildtree(input_atoms, u, v, j - 1, e, e0, rs)
-        if s_prime == 1:
-            if v == -1:
-                (neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs)
-            else:
-                (_, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e,
-                                        # atoms0,
-                                        e0, rs)
-
-            if rs.uniform() < float(n_prime_prime / (
-                    max(n_prime + n_prime_prime, 1))):
-                atoms_prime = atoms_prime_prime
-
-            a_prime = a_prime + app
-            na_prime = na_prime + napp
-
-            datoms = pos_atoms.positions - neg_atoms.positions
-            span = datoms.flatten()
-            s_prime = s_prime_prime * (
-                span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
-                          span.dot(pos_atoms.get_velocities().flatten()) >= 0)
-            n_prime = n_prime + n_prime_prime
-        return (neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime,
-                na_prime)
-
-
 class NUTSCanonicalEnsemble(Ensemble):
-    def __init__(self, atoms, restart, logfile, trajectory, temperature=1000,
+    def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
+                 temperature=100,
                  stationary=False, zero_rotation=False, escape_level=13,
                  accept_target=.65, seed=None):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
         self.accept_target = accept_target
-        self.step_size = find_step_size(atoms, self.random_state)
+        self.step_size = find_step_size(atoms, temperature)
         self.mu = np.log(10 * self.step_size)
         # self.ebar = 1
         self.sim_hbar = 0
@@ -264,7 +266,8 @@ class NUTSCanonicalEnsemble(Ensemble):
         print 'time step size', self.step_size / fs, 'fs'
         # sample r0
         MaxwellBoltzmannDistribution(self.traj[-1], self.temp, force_temp=True)
-
+        # self.traj[-1].set_momenta(self.random_state.normal(0, 1, (
+        #     len(self.traj[-1]), 3)))
         # re-sample u, note we work in post exponential units:
         # [0, exp(-H(atoms0)] <= exp(-H(atoms1) >>> [0, 1] <= exp(-deltaH)
         u = self.random_state.uniform(0, 1)
@@ -314,9 +317,10 @@ class NUTSCanonicalEnsemble(Ensemble):
                 print 'jmax emergency escape at {}'.format(j)
                 s = 0
         w = 1. / (self.m + self.t0)
-        sim_hbar = (1 - w) * self.sim_hbar + w * (self.accept_target - a / na)
+        self.sim_hbar = (1 - w) * self.sim_hbar + w * (self.accept_target - a /
+                                                     na)
 
         self.step_size = np.exp(self.mu - (self.m ** .5 / self.gamma) *
-                                sim_hbar)
+                                self.sim_hbar)
 
         self.m += 1

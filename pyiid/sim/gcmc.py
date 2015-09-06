@@ -62,21 +62,11 @@ def del_atom(atoms, chem_potentials, beta):
         return None
 
 
-def grand_cannonical_move(traj, chem_potentials, beta):
-    rand = np.random.random()
-    if rand >= .5:
-        new_atoms = del_atom(traj[-1], chem_potentials, beta)
-    else:
-        new_atoms = add_atom(traj[-1], chem_potentials, beta)
-    if new_atoms is not None:
-        traj.append(new_atoms)
-
-
-class GCEnsemble(Ensemble):
-    def __init__(self, atoms, chemical_potentials, beta=1, restart=None,
-                 logfile=None, trajectory=None, seed=None):
+class GrandCanonicalEnsemble(Ensemble):
+    def __init__(self, atoms, chemical_potentials, temperature=1000,
+                 restart=None, logfile=None, trajectory=None, seed=None):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
-        self.beta = beta
+        self.beta = 1./(temperature * kB)
         self.chem_pot = chemical_potentials
 
     def step(self):
@@ -105,7 +95,7 @@ if __name__ == '__main__':
     atoms.set_calculator(calc)
     n = []
     pe = []
-    gc = GCEnsemble(atoms, {'Au': 0.0}, 1 / kB / 3000)
+    gc = GrandCanonicalEnsemble(atoms, {'Au': 0.0}, 1 / kB / 3000)
     traj = gc.run(10000)
     for atoms in traj:
         pe.append(atoms.get_potential_energy())
