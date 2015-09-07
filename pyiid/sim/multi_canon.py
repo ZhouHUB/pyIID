@@ -5,24 +5,17 @@ import importlib
 from pyiid.sim import Ensemble
 __author__ = 'christopher'
 
-supported_ensebles = {
-    'NUTS': ['pyiid.sim.nuts_hmc', 'NUTSMove'],
-    'GCMC': ['pyiid.sim.gcmc', 'GCMove']
-}
-
 
 class MultiCanonicalSimulation(Ensemble):
-    def __init__(self, atoms, ensemble_dict,
-                 logfile, trajectory, ensemble_prob=None):
-        Ensemble.__init__(self, atoms, logfile, trajectory)
+    def __init__(self, atoms, ensemble_list,
+                 logfile=None, trajectory=None, ensemble_prob=None,
+                 seed=None):
+        Ensemble.__init__(self, atoms, logfile, trajectory, seed)
         self.ensembles = []
 
         # build the ensemble and init
-        for ensemble, value in ensemble_dict.items():
-            if ensemble in supported_ensebles.keys():
-                mod = importlib.import_module(supported_ensebles[ensemble][0])
-                e = getattr(mod, supported_ensebles[ensemble][1])
-                self.ensembles.append(e(**value))
+        for ensemble in ensemble_list:
+            self.ensembles.append(ensemble)
 
         if ensemble_prob is not None:
             self.prob = ensemble_prob
@@ -31,4 +24,8 @@ class MultiCanonicalSimulation(Ensemble):
 
     def step(self):
         j = np.random.choice(np.arange(len(self.ensembles)), p=self.prob)
-        self.ensembles[j].step()
+        new_configs = self.ensembles[j].step()
+        if new_configs:
+            self.traj.extend(new_configs)
+            for e in self.ensembles:
+                e.traj.extend(new_configs)

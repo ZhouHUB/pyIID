@@ -245,8 +245,9 @@ class NUTSCanonicalEnsemble(Ensemble):
     def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
                  temperature=100,
                  stationary=False, zero_rotation=False, escape_level=13,
-                 accept_target=.65, seed=None):
+                 accept_target=.65, seed=None, verbose=False):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
+        self.verbose= verbose
         self.accept_target = accept_target
         self.step_size = find_step_size(atoms, temperature)
         self.mu = np.log(10 * self.step_size)
@@ -263,7 +264,9 @@ class NUTSCanonicalEnsemble(Ensemble):
         self.m = 0
 
     def step(self):
-        print 'time step size', self.step_size / fs, 'fs'
+        new_configurations = []
+        if self.verbose:
+            print 'time step size', self.step_size / fs, 'fs'
         # sample r0
         MaxwellBoltzmannDistribution(self.traj[-1], self.temp, force_temp=True)
         # self.traj[-1].set_momenta(self.random_state.normal(0, 1, (
@@ -297,6 +300,7 @@ class NUTSCanonicalEnsemble(Ensemble):
             if s_prime == 1 and self.random_state.uniform() < min(
                     1, n_prime * 1. / n):
                 self.traj += [atoms_prime]
+                new_configurations.extend([atoms_prime])
                 atoms_prime.get_forces()
                 atoms_prime.get_potential_energy()
                 self.call_observers()
@@ -307,14 +311,16 @@ class NUTSCanonicalEnsemble(Ensemble):
                 span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
                     span.dot(pos_atoms.get_velocities().flatten()) >= 0)
             j += 1
-            print 'depth', j, 'samples', 2 ** j
+            if self.verbose:
+                print 'depth', j, 'samples', 2 ** j
             self.samples_total += 2 ** j
             # Prevent run away sampling, EXPERIMENTAL
             # If we have generated s**self.escape_level samples,
             # then we are moving too slowly and should start a new iter
             # hopefully with a larger step size
             if j >= self.escape_level:
-                print 'jmax emergency escape at {}'.format(j)
+                if self.verbose:
+                    print 'jmax emergency escape at {}'.format(j)
                 s = 0
         w = 1. / (self.m + self.t0)
         self.sim_hbar = (1 - w) * self.sim_hbar + w * (self.accept_target - a /
@@ -324,3 +330,7 @@ class NUTSCanonicalEnsemble(Ensemble):
                                 self.sim_hbar)
 
         self.m += 1
+        if len(new_configurations) > 0:
+            return new_configurations
+        else:
+            return None

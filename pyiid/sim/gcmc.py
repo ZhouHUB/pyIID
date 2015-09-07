@@ -63,7 +63,7 @@ def del_atom(atoms, chem_potentials, beta):
 
 
 class GrandCanonicalEnsemble(Ensemble):
-    def __init__(self, atoms, chemical_potentials, temperature=1000,
+    def __init__(self, atoms, chemical_potentials, temperature=100,
                  restart=None, logfile=None, trajectory=None, seed=None):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
         self.beta = 1./(temperature * kB)
@@ -76,6 +76,9 @@ class GrandCanonicalEnsemble(Ensemble):
             new_atoms = add_atom(self.traj[-1], self.chem_pot, self.beta)
         if new_atoms is not None:
             self.traj.append(new_atoms)
+            return [new_atoms]
+        else:
+            return None
 
 
 if __name__ == '__main__':
