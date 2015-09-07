@@ -30,7 +30,7 @@ def check_leapfrog_no_momentum(value):
     atoms = value[0]
     calc = Spring(rt=1, k=100)
     atoms.set_calculator(calc)
-    atoms2 = leapfrog(atoms, 1)
+    atoms2 = leapfrog(atoms, 1, False)
     assert_allclose(atoms.positions, atoms2.positions)
 
 
@@ -54,8 +54,8 @@ def check_leapfrog_reversibility(value):
     calc = Spring(rt=1, k=100)
     atoms.set_momenta(np.ones((len(atoms), 3)))
     atoms.set_calculator(calc)
-    atoms2 = leapfrog(atoms, 1)
-    atoms3 = leapfrog(atoms2, -1)
+    atoms2 = leapfrog(atoms, 1, False)
+    atoms3 = leapfrog(atoms2, -1, False)
     assert_allclose(atoms.positions, atoms3.positions)
 
 

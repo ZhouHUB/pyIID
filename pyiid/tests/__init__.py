@@ -72,7 +72,6 @@ def setup_atoms(n):
     """
     q = np.random.random((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
-    atoms.center()
     return atoms
 
 
@@ -85,8 +84,6 @@ def setup_double_atoms(n):
 
     q2 = np.random.random((n, 3)) * 10
     atoms2 = Atoms('Au' + str(int(n)), q2)
-    atoms.center()
-    atoms2.center()
     return atoms, atoms2
 
 
@@ -113,8 +110,6 @@ def setup_atomic_square():
     atoms2 = atoms1.copy()
     scale = .75
     atoms2.positions *= scale
-    atoms1.center()
-    atoms2.center()
     return atoms1, atoms2
 
 

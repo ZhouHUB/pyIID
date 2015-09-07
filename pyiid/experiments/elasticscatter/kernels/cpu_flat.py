@@ -1,6 +1,6 @@
+from pyiid.experiments.elasticscatter.kernels import *
 __author__ = 'christopher'
 
-from pyiid.experiments.elasticscatter.kernels import *
 
 processor_target = 'cpu'
 

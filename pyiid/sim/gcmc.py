@@ -68,7 +68,7 @@ class GrandCanonicalEnsemble(Ensemble):
     >>> atoms = Octahedron('Au', 3)
     >>> atoms.rattle(.1)
     >>> atoms.center()
-    >>> calc = Spring( rt=2.5, k=200,)
+    >>> calc = Spring(rt=2.5, k=200)
     >>> atoms.set_calculator(calc)
     >>> gc = GrandCanonicalEnsemble(atoms, {'Au': 0.0}, 3000)
     >>> traj = gc.run(10000)

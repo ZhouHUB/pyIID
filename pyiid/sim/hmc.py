@@ -1,7 +1,7 @@
-__author__ = 'christopher'
-
 import numpy as np
 from copy import deepcopy as dc
+
+__author__ = 'christopher'
 
 
 def leapfrog(atoms, step):

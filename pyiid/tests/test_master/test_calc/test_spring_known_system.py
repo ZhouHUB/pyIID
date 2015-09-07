@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from pyiid.tests import *
 import numpy as np
 from pyiid.calc.spring_calc import Spring
+__author__ = 'christopher'
 
 test_data = tuple(product(test_atom_squares, test_spring_kwargs))
 

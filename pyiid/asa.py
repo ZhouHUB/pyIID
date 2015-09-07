@@ -1,3 +1,9 @@
+import math
+
+from ase.data import *
+import numpy as np
+from asap3.analysis.particle import FullNeighborList
+
 __doc__ = """
 
 Calculate the accessible-surface area of atoms.
@@ -10,12 +16,6 @@ dots is used to calculate the area.
 Reference: A. Shrake & J. A. Rupley. "Environment and Exposure to
 Solvent of Protein Atoms. Lysozyme and Insulin." J Mol Biol. 79
 (1973) 351- 371. """
-
-import math
-
-from ase.data import *
-import numpy as np
-from asap3.analysis.particle import FullNeighborList
 
 
 def generate_sphere_points(n):
