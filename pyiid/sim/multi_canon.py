@@ -3,6 +3,7 @@ import numpy as np
 from copy import deepcopy as dc
 import importlib
 from pyiid.sim import Ensemble
+
 __author__ = 'christopher'
 
 
@@ -27,5 +28,6 @@ class MultiCanonicalSimulation(Ensemble):
         new_configs = self.ensembles[j].step()
         if new_configs:
             self.traj.extend(new_configs)
-            for e in self.ensembles:
-                e.traj.extend(new_configs)
+            for i in range(len(self.ensembles)):
+                if i != j:
+                    self.ensembles[i].traj.extend(new_configs)
