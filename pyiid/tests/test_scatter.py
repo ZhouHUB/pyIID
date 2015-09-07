@@ -3,7 +3,7 @@ from pyiid.experiments.elasticscatter import ElasticScatter
 __author__ = 'christopher'
 
 atol = 4e-5
-rtol = 3e-6
+rtol = 5e-6
 
 test_data = tuple(product(test_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))
