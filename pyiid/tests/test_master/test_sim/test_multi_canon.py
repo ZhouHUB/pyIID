@@ -5,8 +5,6 @@ from pyiid.calc.spring_calc import Spring
 from pyiid.calc.multi_calc import MultiCalc
 from pyiid.sim.gcmc import GrandCanonicalEnsemble
 from pyiid.sim.nuts_hmc import NUTSCanonicalEnsemble
-import matplotlib.pyplot as plt
-from ase.visualize import view
 
 __author__ = 'christopher'
 
@@ -26,14 +24,6 @@ def test_multi_canon():
     nuts = NUTSCanonicalEnsemble(atoms, escape_level=4)
     sim = MultiCanonicalSimulation(atoms, [gce, nuts])
     traj = sim.run(10)
-    pe = [atoms.get_potential_energy() for atoms in traj]
-    n = [len(atoms) for atoms in traj]
-    traj[-1].get_forces()
-    view(traj[-1])
-    plt.plot(pe)
-    plt.show()
-    plt.plot(n)
-    plt.show()
     assert traj[0].get_potential_energy() > traj[-1].get_potential_energy()
     assert len(traj[0]) != len(traj[-1])
 
