@@ -13,7 +13,7 @@ def test_negative_mu():
     atoms.set_calculator(calc)
     gce = GrandCanonicalEnsemble(atoms, {'Au': -100})
     traj = gce.run(1000)
-    assert len(traj[-1]) == 1
+    assert len(traj[-1]) < len(traj[0])
 
 
 def test_positive_mu():
@@ -23,7 +23,7 @@ def test_positive_mu():
     atoms.set_calculator(calc)
     gce = GrandCanonicalEnsemble(atoms, {'Au': 100})
     traj = gce.run(1000)
-    assert len(traj[-1]) > 100
+    assert len(traj[-1]) > len(traj[0])
 
 if __name__ == '__main__':
     import nose
