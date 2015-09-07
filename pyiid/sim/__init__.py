@@ -6,7 +6,7 @@ from ase.md.velocitydistribution import Stationary, ZeroRotation
 __author__ = 'christopher'
 
 
-def leapfrog(atoms, step):
+def leapfrog(atoms, step, center=True):
     """
     Propagate the dynamics of the system via the leapfrog algorithm one step
 
@@ -30,7 +30,8 @@ def leapfrog(atoms, step):
     latoms.positions += step * latoms.get_velocities()
 
     latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-    latoms.center()
+    if center:
+        latoms.center()
     return latoms
 
 

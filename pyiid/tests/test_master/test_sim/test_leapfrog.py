@@ -8,13 +8,16 @@ from numpy.testing import assert_allclose
 
 test_data = test_atom_squares
 
+
 def test_gen_check_leapfrog_no_momentum():
     for v in test_data:
         yield check_leapfrog_no_momentum, v
 
+
 def test_gen_check_leapfrog_momentum():
     for v in test_data:
         yield check_leapfrog_momentum, v
+
 
 def test_gen_check_leapfrog_reversibility():
     for v in test_data:
@@ -40,7 +43,7 @@ def check_leapfrog_momentum(value):
     calc = Spring(rt=1, k=100)
     atoms.set_momenta(np.ones((len(atoms), 3)))
     atoms.set_calculator(calc)
-    atoms2 = leapfrog(atoms, 1)
+    atoms2 = leapfrog(atoms, 1, False)
     assert_allclose(atoms.positions, atoms2.positions - atoms.get_velocities())
 
 
