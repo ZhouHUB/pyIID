@@ -63,6 +63,18 @@ def del_atom(atoms, chem_potentials, beta):
 
 
 class GrandCanonicalEnsemble(Ensemble):
+    """
+    Grand Canonical Monte Carlo simulation
+    >>> from ase.cluster.octahedron import Octahedron
+    >>> from pyiid.calc.spring_calc import Spring
+    >>> atoms = Octahedron('Au', 3)
+    >>> atoms.rattle(.1)
+    >>> atoms.center()
+    >>> calc = Spring( rt=2.5, k=200,)
+    >>> atoms.set_calculator(calc)
+    >>> gc = GrandCanonicalEnsemble(atoms, {'Au': 0.0}, 3000)
+    >>> traj = gc.run(10000)
+    """
     def __init__(self, atoms, chemical_potentials, temperature=100,
                  restart=None, logfile=None, trajectory=None, seed=None):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
@@ -79,34 +91,3 @@ class GrandCanonicalEnsemble(Ensemble):
             return [new_atoms]
         else:
             return None
-
-
-if __name__ == '__main__':
-    from ase.cluster.octahedron import Octahedron
-    from pyiid.calc.spring_calc import Spring
-    import matplotlib.pyplot as plt
-    from ase.visualize import view
-
-    atoms = Octahedron('Au', 3)
-    atoms.rattle(.1)
-    atoms.center()
-    calc = Spring(
-        rt=2.5,
-        k=200,
-        # sp_type='att'
-    )
-    atoms.set_calculator(calc)
-    n = []
-    pe = []
-    gc = GrandCanonicalEnsemble(atoms, {'Au': 0.0}, 1 / kB / 3000)
-    traj = gc.run(10000)
-    for atoms in traj:
-        pe.append(atoms.get_potential_energy())
-        n.append(len(atoms))
-    min_pe = np.argmin(pe)
-    # view(traj[min_pe])
-    view(traj[-1])
-    plt.plot(n)
-    # plt.plot(np.exp(pe))
-    plt.show()
-

@@ -47,6 +47,7 @@ def check_dynamics(value):
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.min(pe_list)
     print min_pe, start_pe, len(traj)
+    print pe_list
     assert min_pe < start_pe
     if value[3]:
         assert_allclose(traj[-1].get_center_of_mass(),
