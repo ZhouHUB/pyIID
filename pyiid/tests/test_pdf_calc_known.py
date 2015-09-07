@@ -1,6 +1,7 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
+
 __author__ = 'christopher'
 
 test_data = tuple(
@@ -64,7 +65,8 @@ def check_forces(value):
         dist = atoms2[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
-    del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, forces, com, dist
+    del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, forces, com, \
+        dist
 
 
 if __name__ == '__main__':

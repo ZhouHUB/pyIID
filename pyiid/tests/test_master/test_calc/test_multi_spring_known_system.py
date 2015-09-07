@@ -2,17 +2,21 @@ from pyiid.tests import *
 import numpy as np
 from pyiid.calc.spring_calc import Spring
 from pyiid.calc.multi_calc import MultiCalc
+
 __author__ = 'christopher'
 
 test_data = tuple(product(test_atom_squares, test_spring_kwargs))
+
 
 def test_gen_spring():
     for v in test_data:
         yield check_spring, v
 
+
 def test_gen_grad_spring():
     for v in test_data:
         yield check_grad_spring, v
+
 
 def check_spring(value):
     """
@@ -38,6 +42,8 @@ def check_grad_spring(value):
         # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
 
+
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=['-s', '--with-doctest'], exit=False)

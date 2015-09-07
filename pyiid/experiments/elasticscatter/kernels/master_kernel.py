@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import math
 from numba import *
 import mkl
@@ -6,8 +5,10 @@ import numpy as np
 import xraylib
 import matplotlib.pyplot as plt
 from numpy.testing import assert_allclose
+__author__ = 'christopher'
 
 targ = 'cpu'
+
 
 # F(Q) test_kernels -----------------------------------------------------------
 @jit(target=targ)
@@ -268,6 +269,7 @@ def get_chi_sq(gobs, gcalc):
                   # /gobs
                   ).real, scale
 
+
 # Gradient test_kernels -------------------------------------------------------
 from multiprocessing import Pool, cpu_count
 
@@ -318,7 +320,8 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     -----
     '''
     # Wolfram alpha
-    grad_rw[tx, tz] = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz, :])/(np.sum(gobs[:]**2) * rw)
+    grad_rw[tx, tz] = np.sum((gcalc[:] - gobs[:]) * grad_pdf[tx, tz,
+    :])/(np.sum(gobs[:]**2) * rw)
     grad_rw[tx, tz] = grad_rw[tx, tz].real
     '''
     '''

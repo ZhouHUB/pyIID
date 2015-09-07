@@ -1,6 +1,7 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.fqcalc import FQCalc
+
 __author__ = 'christopher'
 
 test_data = tuple(product(test_double_atoms, test_exp, test_potentials,
@@ -24,7 +25,7 @@ def check_nrg(value):
     :return:
     """
     rtol = 4e-6
-    atol=1e-7
+    atol = 1e-7
     # setup
     atoms1, atoms2 = value[0]
     scat = ElasticScatter()
@@ -78,6 +79,7 @@ def check_forces(value):
                     rtol=rtol,
                     atol=atol
                     )
+
 
 if __name__ == '__main__':
     import nose

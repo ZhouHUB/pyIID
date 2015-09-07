@@ -118,6 +118,7 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
         grad[k, w, qx] = A * d[k, w]
         # grad[k, w, qx] = float32(qbin)
 
+
 @cuda.jit(argtypes=[f4[:, :, :]])
 def zero3d(A):
     i, qx = cuda.grid(2)
@@ -135,6 +136,7 @@ def d2_to_d1_sum(d1, d2):
         return
     tmp = d2[:, qx].sum()
     d1[qx] = tmp
+
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
 def fast_fast_flat_sum(new_grad, grad, k_cov):

@@ -7,11 +7,11 @@ from pyiid.sim import leapfrog
 delta_max = 500
 
 
-def nuts(atoms, e, M, wtraj=None):
+def nuts(atoms, e, iterations, wtraj=None):
     traj = [atoms]
     C_list = []
     try:
-        for m in range(M):
+        for m in range(iterations):
             # XXX ERRORR HERE
             # initialize momenta
             rand_momenta = np.random.normal(0, 1, (len(atoms), 3))

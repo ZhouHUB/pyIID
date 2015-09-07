@@ -1,6 +1,6 @@
-__author__ = 'christopher'
 import numpy as np
 from pyiid.experiments.elasticscatter.kernels.cpu_nxn import *
+__author__ = 'christopher'
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
@@ -182,6 +182,7 @@ def wrap_apd_fq(atoms, qbin=.1, sum_type='fq'):
     np.seterr(**old_settings)
     del r, scatter_array, na, d
     return fq
+
 
 def spring_nrg(atoms, k, rt):
     q = atoms.positions

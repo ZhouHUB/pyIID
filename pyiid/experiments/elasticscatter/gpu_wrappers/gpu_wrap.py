@@ -199,13 +199,15 @@ def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
         plan = cufft.FFTPlan(input_shape, np.complex64, np.complex64,
                              batch_operations)
         for i in xrange(3):
-            batch_input = np.ravel(gpadc[n_cov:n_cov + atoms_per_thread, i, :]).astype(
+            batch_input = np.ravel(
+                gpadc[n_cov:n_cov + atoms_per_thread, i, :]).astype(
                 np.complex64)
             batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
 
             _ = plan.inverse(batch_input, out=batch_output)
             del batch_input
-            data_out = np.reshape(batch_output, (atoms_per_thread, input_shape[0]))
+            data_out = np.reshape(batch_output,
+                                  (atoms_per_thread, input_shape[0]))
             data_out /= input_shape[0]
 
             gpadcfft[n_cov:n_cov + atoms_per_thread, i, :] = data_out

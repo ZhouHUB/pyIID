@@ -15,6 +15,7 @@ def test_consistancy():
         for a, b in permutations(outs[j], 2):
             assert_allclose(a, b)
 
+
 @known_fail_if(not srfit)
 def test_consistancy2():
     outs = [[] for i in range(len(test_atoms))]
@@ -33,8 +34,10 @@ def test_consistancy2():
         for a, b in permutations(outs[j], 2):
             assert_allclose(a, b)
 
+
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',

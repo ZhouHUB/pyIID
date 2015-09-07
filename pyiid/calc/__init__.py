@@ -1,6 +1,7 @@
 import numpy as np
 
-from pyiid.experiments.elasticscatter.kernels.master_kernel import get_rw, get_chi_sq, get_grad_rw, \
+from pyiid.experiments.elasticscatter.kernels.master_kernel import get_rw, \
+    get_chi_sq, get_grad_rw, \
     get_grad_chi_sq
 
 __author__ = 'christopher'

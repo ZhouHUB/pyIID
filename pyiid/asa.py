@@ -80,4 +80,3 @@ def calculate_asa(atoms, probe, cutoff=None, tag=1, n_sphere_point=960):
             atoms[i].tag = tag
         areas.append(area)
     return areas, surface
-

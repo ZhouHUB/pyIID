@@ -94,12 +94,12 @@ def atomic_fq(q, scatter_array, qbin, k_cov, k_per_thread):
     qmax_bin = scatter_array.shape[1]
     # load kernels
     from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_d_array,
-                                        get_r_array,
-                                        get_normalization_array,
-                                        get_fq_replace,
-                                        d2_zero,
-                                        d2_to_d1_cleanup_kernel,
-                                        experimental_sum_fq)
+                                                                   get_r_array,
+                                                                   get_normalization_array,
+                                                                   get_fq_replace,
+                                                                   d2_zero,
+                                                                   d2_to_d1_cleanup_kernel,
+                                                                   experimental_sum_fq)
     # generate grids for the GPU
     elements_per_dim_1 = [k_per_thread]
     tpb_k = [32]
@@ -194,11 +194,12 @@ def atomic_grad_fq(q, scatter_array, qbin, k_cov, k_per_thread):
 
     # load kernels
     from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_d_array,
-                                        get_r_array,
-                                        get_normalization_array,
-                                        get_fq,
-                                        get_grad_fq, zero3d,
-                                        fast_fast_flat_sum)
+                                                                   get_r_array,
+                                                                   get_normalization_array,
+                                                                   get_fq,
+                                                                   get_grad_fq,
+                                                                   zero3d,
+                                                                   fast_fast_flat_sum)
 
     n = len(q)
     # generate GPU grids

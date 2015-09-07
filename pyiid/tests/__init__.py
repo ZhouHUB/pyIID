@@ -9,11 +9,13 @@ import random
 from pyiid.testing.decorators import *
 
 from pyiid.calc.spring_calc import Spring
+
 srfit = False
 try:
     from diffpy.Structure.structure import Structure
     from diffpy.Structure.atom import Atom as dAtom
     from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+
     srfit = True
 except:
     pass
@@ -126,7 +128,7 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
 
     if isinstance(ans1, type(np.asarray([1]))):
         print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
-        np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
+            np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
         fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
         print '\n allclose failures'
         print zip(ans1[fails].tolist(), ans2[fails].tolist())

@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 import math
 from numba import *
 import mkl
+__author__ = 'christopher'
 
 processor_target = 'cpu'
 
@@ -101,7 +101,7 @@ def get_sigma_from_adp(sigma, adps, r, d):
             if i != j:
                 tmp = 0.
                 for w in range(3):
-                    tmp += (math.fabs(adps[i, w]) + math.fabs(adps[j, w]))/2 \
+                    tmp += (math.fabs(adps[i, w]) + math.fabs(adps[j, w])) / 2 \
                            * d[i, j, w] / r[i, j]
                 sigma[i, j] = tmp ** 2
 
@@ -137,7 +137,7 @@ def get_adp_fq(fq, r, norm, dw_factor, qbin):
             for j in xrange(len(r)):
                 if i != j:
                     fq[qx] += norm[i, j, qx] * dw_factor[i, j, qx] * \
-                                   math.sin(Q * r[i, j]) / r[i, j]
+                              math.sin(Q * r[i, j]) / r[i, j]
 
 
 # Gradient test_kernels -------------------------------------------------------

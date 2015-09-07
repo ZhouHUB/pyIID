@@ -127,7 +127,7 @@ class NUTSCanonicalEnsemble(Ensemble):
                  stationary=False, zero_rotation=False, escape_level=13,
                  accept_target=.65, seed=None, verbose=False):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
-        self.verbose= verbose
+        self.verbose = verbose
         self.accept_target = accept_target
         self.step_size = find_step_size(atoms, temperature)
         self.mu = np.log(10 * self.step_size)
@@ -204,7 +204,7 @@ class NUTSCanonicalEnsemble(Ensemble):
                 s = 0
         w = 1. / (self.m + self.t0)
         self.sim_hbar = (1 - w) * self.sim_hbar + w * (self.accept_target - a /
-                                                     na)
+                                                       na)
 
         self.step_size = np.exp(self.mu - (self.m ** .5 / self.gamma) *
                                 self.sim_hbar)

@@ -105,9 +105,11 @@ class ElasticScatter(object):
                     break
 
         elif processor == self.avail_pro[0] and check_mpi() is True:
-            from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_wrap import \
+            from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_wrap \
+                import \
                 wrap_fq as multi_node_gpu_wrap_fq
-            from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_wrap import \
+            from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_wrap \
+                import \
                 wrap_fq_grad as multi_node_gpu_wrap_fq_grad
 
             self.fq = multi_node_gpu_wrap_fq
@@ -139,7 +141,7 @@ class ElasticScatter(object):
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
-                from pyiid.experiments.elasticscatter.cpu_wrappers\
+                from pyiid.experiments.elasticscatter.cpu_wrappers \
                     .flat_multi_cpu_wrap import \
                     wrap_fq, wrap_fq_grad
 
@@ -195,7 +197,8 @@ class ElasticScatter(object):
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
-    def _check_adps(self, atoms):
+    @staticmethod
+    def _check_adps(atoms):
         if hasattr(atoms, 'adps'):
             return True
         else:
@@ -428,10 +431,12 @@ def wrap_atoms(atoms, exp_dict=None):
 
     atoms.info['exp'] = exp_dict
 
+
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from pyiid.adp import ADP
     import matplotlib.pyplot as plt
+
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
     a = np.ones(atoms.positions.shape) * .1
     # a[:, 0] = 0.

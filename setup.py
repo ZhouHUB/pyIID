@@ -27,5 +27,20 @@ setup(
     license='',
     author='christopher',
     author_email='',
-    description='', requires=['numpy', 'numba']
+    description='', requires=['numpy', 'numpy', 'numpy', 'numpy', 'numpy',
+                              'numpy', 'numpy', 'numpy', 'numpy', 'numpy',
+                              'numpy', 'numpy', 'numpy', 'nose', 'six', 'nose',
+                              'nose', 'numpy', 'nose', 'scipy', 'nose', 'nose',
+                              'nose', 'numpy', 'numpy', 'nose', 'numpy', 'nose',
+                              'numpy', 'nose', 'numpy', 'nose', 'nose', 'numpy',
+                              'numpy', 'nose', 'nose', 'nose', 'nose', 'nose',
+                              'nose', 'matplotlib', 'nose', 'nose', 'numpy',
+                              'numpy', 'numpy', 'numpy', 'numba', 'matplotlib',
+                              'numba', 'numpy', 'numpy', 'matplotlib', 'psutil',
+                              'numpy', 'numba', 'numpy', 'mpi4py', 'mpi4py',
+                              'mpi4py', 'numba', 'mpi4py', 'numba', 'numpy',
+                              'numba', 'mpi4py', 'mpi4py', 'numpy',
+                              'matplotlib', 'numpy', 'numba', 'numpy', 'numba',
+                              'numba', 'numba', 'numba', 'numba', 'numba',
+                              'numba',]
 )

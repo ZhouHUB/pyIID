@@ -2,12 +2,15 @@ import math
 from numba import *
 
 __author__ = 'christopher'
-#TODO: develop tests for GPU and CPU kernels
+
+
+# TODO: develop tests for GPU and CPU kernels
 
 
 @jit(target='cpu', nopython=True)
 def ij_to_k(i, j):
     return int(j + i * (i - 1) / 2)
+
 
 @jit(target='cpu', nopython=True)
 def k_to_ij(k):

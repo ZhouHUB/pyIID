@@ -1,6 +1,6 @@
-__author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
+__author__ = 'christopher'
 
 
 class Spring(Calculator):
@@ -19,14 +19,18 @@ class Spring(Calculator):
         from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
             import spring_force as force
         if sp_type == 'com':
-            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
+                import \
                 com_spring_nrg as nrg
-            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
+                import \
                 com_spring_force as force
         if sp_type == 'att':
-            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
+                import \
                 att_spring_nrg as nrg
-            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+            from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap \
+                import \
                 att_spring_force as force
         self.nrg_func = nrg
         self.f_func = force
@@ -74,9 +78,6 @@ class Spring(Calculator):
         :return:
         """
         energy = self.nrg_func(atoms, self.k, self.rt)
-
-        self.energy_free = energy
-        self.energy_zero = energy
         self.results['energy'] = energy
 
     def calculate_forces(self, atoms):

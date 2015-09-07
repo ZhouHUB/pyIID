@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
@@ -7,7 +6,9 @@ import psutil
 from pyiid.experiments.elasticscatter.kernels.cpu_flat import *
 from pyiid.experiments.elasticscatter.gpu_wrappers.k_atomic_gpu import \
     gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
-from pyiid.experiments.elasticscatter.kernels.cpu_experimental import experimental_sum_grad_cpu
+from pyiid.experiments.elasticscatter.kernels.cpu_experimental import \
+    experimental_sum_grad_cpu
+__author__ = 'christopher'
 
 
 def setup_gpu_calc(atoms, sum_type):
@@ -81,7 +82,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     old_settings = np.seterr(all='ignore')
     final = np.nan_to_num(final / na)
     np.seterr(**old_settings)
-    del q, n, qmax_bin, scatter_array, k_max, p, task, fqs
+    del q, n, qmax_bin, scatter_array, k_max, p, tasks, fqs
     return 2 * final
 
 
@@ -149,17 +150,18 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     get_normalization_array(norm, scatter_array, 0)
     na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
-    grad_p = np.nan_to_num(grad_p/na)
+    grad_p = np.nan_to_num(grad_p / na)
     np.seterr(**old_settings)
     # '''
-    del q, n, qmax_bin, scatter_array, k_max, p, task, fqs
+    del q, n, qmax_bin, scatter_array, k_max, p, tasks, fqs
     return grad_p
 
 
 if __name__ == '__main__':
     from ase.atoms import Atoms
     from pyiid.experiments.elasticscatter import wrap_atoms
-    # from pyiid.experiments.cpu_wrappers.nxn_cpu_wrap import wrap_fq_grad as mfqg
+    # from pyiid.experiments.cpu_wrappers.nxn_cpu_wrap import wrap_fq_grad as
+    #  mfqg
     import matplotlib.pyplot as plt
 
     plt.ion()

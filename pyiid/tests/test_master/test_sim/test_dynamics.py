@@ -3,7 +3,6 @@ from pyiid.sim.dynamics import classical_dynamics
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.fqcalc import FQCalc
-from ase.visualize import view
 
 __author__ = 'christopher'
 

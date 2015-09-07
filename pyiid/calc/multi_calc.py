@@ -1,7 +1,8 @@
-__author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 from copy import deepcopy as dc
+
+__author__ = 'christopher'
 
 
 class MultiCalc(Calculator):
@@ -10,7 +11,7 @@ class MultiCalc(Calculator):
     Each of the energies and forces from the sub-calculators are summed
     together to produce the composite potential energy surface
     """
-    #TODO: make this so the calculators run in parallel if possible
+    # TODO: make this so the calculators run in parallel if possible
     implemented_properties = ['energy', 'forces']
 
     def __init__(self, restart=None, ignore_bad_restart_file=False, label=None,
@@ -67,8 +68,6 @@ class MultiCalc(Calculator):
             energy_list.append(atoms.get_potential_energy())
 
         energy = sum(energy_list)
-        self.energy_free = energy
-        self.energy_zero = energy
         self.results['energy'] = energy
 
     def calculate_forces(self, atoms):

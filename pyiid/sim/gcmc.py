@@ -1,9 +1,9 @@
 from copy import deepcopy as dc
 import numpy as np
 from ase.atom import Atom
-from ase.units import _hplanck
 from ase.units import *
 from pyiid.sim import Ensemble
+
 __author__ = 'christopher'
 
 
@@ -25,7 +25,7 @@ def add_atom(atoms, chem_potentials, beta):
     mu = chem_potentials[new_symbol]
     # calculate acceptance
     if np.random.random((1,)) < np.exp(min([0, np.log(atoms.get_volume() / (
-        len(atoms) + 1)) - beta * delta_energy +
+                len(atoms) + 1)) - beta * delta_energy +
                     beta * mu
                                             ])):
         return atoms_prime
@@ -49,8 +49,6 @@ def del_atom(atoms, chem_potentials, beta):
     delta_energy = atoms_prime.get_total_energy() - atoms.get_total_energy()
     # get chemical potential
     mu = chem_potentials[del_symbol]
-    thermal_wave = _hplanck * J * s * np.sqrt(beta) / \
-                   np.sqrt(2 * np.pi * np.average(atoms.get_masses()))
     # calculate acceptance
     if np.random.random() < np.exp(min([0,
                                         np.log(len(atoms) / atoms.get_volume())
@@ -75,10 +73,11 @@ class GrandCanonicalEnsemble(Ensemble):
     >>> gc = GrandCanonicalEnsemble(atoms, {'Au': 0.0}, 3000)
     >>> traj = gc.run(10000)
     """
+
     def __init__(self, atoms, chemical_potentials, temperature=100,
                  restart=None, logfile=None, trajectory=None, seed=None):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
-        self.beta = 1./(temperature * kB)
+        self.beta = 1. / (temperature * kB)
         self.chem_pot = chemical_potentials
 
     def step(self):

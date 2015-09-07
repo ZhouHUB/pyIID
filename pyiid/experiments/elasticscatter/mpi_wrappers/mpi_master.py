@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import sys
 import inspect
 from threading import Thread
@@ -7,8 +6,11 @@ from numba import cuda
 
 import pyiid.experiments.mpi.mpi_gpu_avail as mpi_gpu_avail
 import pyiid.experiments.mpi.mpi_fq_worker as mpi_fq_worker
-import pyiid.experiments.elasticscatter.mpi_wrappers.mpi_grad_worker as mpi_grad_worker
+import pyiid.experiments.elasticscatter.mpi_wrappers.mpi_grad_worker as \
+    mpi_grad_worker
 from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import subs_fq
+
+__author__ = 'christopher'
 
 
 def gpu_avail(n_nodes):

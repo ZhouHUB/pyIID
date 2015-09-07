@@ -90,9 +90,6 @@ class PDFCalc(Calculator):
         """
         energy, scale = self.potential(self.scatter.get_pdf(atoms), self.gobs)
         self.scale = scale
-        self.energy_free = energy * self.rw_to_eV
-        self.energy_zero = energy * self.rw_to_eV
-
         self.results['energy'] = energy * self.rw_to_eV
 
     def calculate_forces(self, atoms):

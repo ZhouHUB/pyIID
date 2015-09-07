@@ -5,13 +5,16 @@ from pyiid.calc.spring_calc import Spring
 
 test_data = tuple(product(test_atom_squares, test_spring_kwargs))
 
+
 def test_gen_spring():
     for v in test_data:
         yield check_spring, v
 
+
 def test_gen_grad_spring():
     for v in test_data:
         yield check_grad_spring, v
+
 
 def check_spring(value):
     """

@@ -4,6 +4,7 @@ from pyiid.experiments.elasticscatter.kernels import *
 
 processor_target = 'cpu'
 
+
 # F(Q) test_kernels -----------------------------------------------------------
 @jit(target=processor_target, nopython=True)
 def get_d_array(d, q, offset):
@@ -85,7 +86,7 @@ def get_sigma_from_adp(sigma, adps, r, d):
         tmp = 0.
         for w in range(3):
             tmp += (adps[i, w] - adps[j, w]) * d[i, j, w] / r[k]
-        sigma[k] = tmp **2
+        sigma[k] = tmp ** 2
 
 
 @jit(target=processor_target, nopython=True)
@@ -93,7 +94,7 @@ def get_dw_factor_from_sigma(dw_factor, sigma, qbin):
     for qx in xrange(dw_factor.shape[1]):
         Q = qx * qbin
         for k in xrange(len(sigma)):
-            dw_factor[k, qx] = math.exp(-.5 * sigma[k] * Q**2)
+            dw_factor[k, qx] = math.exp(-.5 * sigma[k] * Q ** 2)
 
 
 @jit(target=processor_target, nopython=True)
@@ -116,7 +117,7 @@ def get_adp_fq(fq, r, norm, dw_factor, qbin):
         Q = float32(qbin) * float32(qx)
         for k in xrange(fq.shape[0]):
             rk = r[k]
-            fq[k, qx] = norm[k, qx] * dw_factor[k, qx] *\
+            fq[k, qx] = norm[k, qx] * dw_factor[k, qx] * \
                         math.sin(Q * rk) / rk
 
 
@@ -165,4 +166,3 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
                 for qx in xrange(grad.shape[2]):
                     for tz in xrange(3):
                         new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
-

@@ -1,6 +1,6 @@
-__author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
+__author__ = 'christopher'
 
 local_test_atoms = setup_atomic_square()[0] * 3
 test_data = tuple(product([local_test_atoms], [None]))
@@ -30,8 +30,10 @@ def test_fq_against_srfit():
     del srfit_calc
     assert_allclose(ans1, ans2, rtol=1e-4, atol=5e-6)
 
+
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',

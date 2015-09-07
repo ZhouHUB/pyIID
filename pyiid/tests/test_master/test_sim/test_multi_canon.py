@@ -11,7 +11,7 @@ __author__ = 'christopher'
 
 def test_multi_canon():
     atoms = Atoms(FaceCenteredCubic('Au', [[1, 0, 0], [1, 1, 0], [1, 1, 1]],
-                              (3, 6, 3)))
+                                    (3, 6, 3)))
     atoms.center(3)
     calc1 = Spring(rt=3., k=2000)
     calc2 = Spring(rt=3.2, k=2, sp_type='att')
@@ -26,6 +26,7 @@ def test_multi_canon():
     traj = sim.run(10)
     assert traj[0].get_potential_energy() > traj[-1].get_potential_energy()
     assert len(traj[0]) != len(traj[-1])
+
 
 if __name__ == '__main__':
     import nose

@@ -1,7 +1,8 @@
-__author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
 from pyiid.experiments.elasticscatter import ElasticScatter
+
+__author__ = 'christopher'
 
 
 class FQCalc(Calculator):
@@ -73,9 +74,6 @@ class FQCalc(Calculator):
         :return:
         """
         energy, scale = self.potential(self.scatter.get_fq(atoms), self.gobs)
-        self.energy_free = energy * self.rw_to_eV
-        self.energy_zero = energy * self.rw_to_eV
-
         self.results['energy'] = energy * self.rw_to_eV
 
     def calculate_forces(self, atoms):
