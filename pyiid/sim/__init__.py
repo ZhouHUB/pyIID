@@ -6,13 +6,12 @@ from ase.md.velocitydistribution import Stationary, ZeroRotation
 __author__ = 'christopher'
 
 
-def leapfrog(atoms, step, stationary=False, zero_rotation=False):
+def leapfrog(atoms, step):
     """
     Propagate the dynamics of the system via the leapfrog algorithm one step
 
     Parameters
     -----------
-    :param stationary:
     atoms: ase.Atoms ase.Atoms
         The atomic configuration for the system
     step: float
@@ -27,19 +26,11 @@ def leapfrog(atoms, step, stationary=False, zero_rotation=False):
     latoms = dc(atoms)
 
     latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-    if stationary:
-        Stationary(latoms)
-    if zero_rotation:
-        ZeroRotation(latoms)
 
     latoms.positions += step * latoms.get_velocities()
 
     latoms.set_momenta(latoms.get_momenta() + 0.5 * step * latoms.get_forces())
-    if stationary:
-        Stationary(latoms)
-    if zero_rotation:
-        ZeroRotation(latoms)
-
+    latoms.center()
     return latoms
 
 

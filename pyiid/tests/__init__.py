@@ -155,7 +155,7 @@ test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
 test_calcs = [
     Spring(**t_kwargs) for t_kwargs in test_spring_kwargs
     ]
-test_calcs.extend(['PDF', 'FQ'])
+test_calcs.extend(['FQ', 'PDF'])
 
 # Travis CI has certain restrictions on memory and GPU availability so we
 # change the size of the tests to run

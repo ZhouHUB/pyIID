@@ -74,8 +74,7 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, stationary=False,
     Many things
     """
     if j == 0:
-        atoms_prime = leapfrog(input_atoms, v * e, stationary=stationary,
-                               zero_rotation=zero_rotation)
+        atoms_prime = leapfrog(input_atoms, v * e)
         neg_delta_energy = e0 - atoms_prime.get_total_energy()
         try:
             exp1 = np.exp(neg_delta_energy)

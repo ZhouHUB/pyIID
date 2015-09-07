@@ -2,8 +2,7 @@ from pyiid.sim import leapfrog
 __author__ = 'christopher'
 
 
-def classical_dynamics(atoms, stepsize, n_steps, stationary=False,
-                       zero_rotation=False):
+def classical_dynamics(atoms, stepsize, n_steps):
     """
     Create a new atomic configuration by simulating the hamiltonian dynamics
     of the system
@@ -29,5 +28,5 @@ def classical_dynamics(atoms, stepsize, n_steps, stationary=False,
     atoms.get_forces()
     traj = [atoms]
     for n in range(n_steps):
-        traj.append(leapfrog(traj[-1], stepsize, stationary, zero_rotation))
+        traj.append(leapfrog(traj[-1], stepsize))
     return traj

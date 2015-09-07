@@ -7,8 +7,7 @@ from ase.visualize import view
 
 __author__ = 'christopher'
 
-test_dynamics_data = tuple(product(test_atom_squares, test_calcs, [1, -1],
-                                   (True, False), (True, False)))
+test_dynamics_data = tuple(product(test_atom_squares, test_calcs, [1, -1]))
 
 
 def test_gen_dynamics():
@@ -27,12 +26,12 @@ def check_dynamics(value):
     if value[1] == 'PDF':
         s = ElasticScatter()
         gobs = s.get_pdf(ideal_atoms)
-        calc = PDFCalc(obs_data=gobs, scatter=s, conv=3, potential='rw')
+        calc = PDFCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
 
     elif value[1] == 'FQ':
         s = ElasticScatter()
         gobs = s.get_fq(ideal_atoms)
-        calc = FQCalc(obs_data=gobs, scatter=s, conv=3, potential='rw')
+        calc = FQCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
 
     else:
         calc = value[1]
@@ -41,7 +40,7 @@ def check_dynamics(value):
     ideal_atoms.set_calculator(calc)
     start_pe = ideal_atoms.get_potential_energy()
     e = value[2]
-    traj = classical_dynamics(ideal_atoms, e, 5, value[3], value[4])
+    traj = classical_dynamics(ideal_atoms, e, 5)
 
     pe_list = []
     for atoms in traj:
@@ -50,10 +49,6 @@ def check_dynamics(value):
     print min_pe, start_pe, len(traj)
     print pe_list
     assert min_pe < start_pe
-    if value[3]:
-        assert_allclose(traj[-1].get_center_of_mass(),
-                        traj[0].get_center_of_mass())
-
 
 if __name__ == '__main__':
     import nose
