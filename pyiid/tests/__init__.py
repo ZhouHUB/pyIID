@@ -152,7 +152,10 @@ test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
                       {'k': 100, 'rt': 1., 'sp_type': 'com'},
                       {'k': 100, 'rt': 1., 'sp_type': 'att'}]
 
-test_calcs = [Spring(**t_kwargs) for t_kwargs in test_spring_kwargs]
+test_calcs = [
+    Spring(**t_kwargs) for t_kwargs in test_spring_kwargs
+    ]
+test_calcs.extend(['PDF', 'FQ'])
 
 # Travis CI has certain restrictions on memory and GPU availability so we
 # change the size of the tests to run
@@ -168,7 +171,6 @@ if os.getenv('TRAVIS') or True:
     # Travis doesn't have GPUs so only CPU testing
     proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
     comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
-    test_calcs.extend(['PDF', 'FQ'])
 
 else:
     ns = np.logspace(1, 3, 3)
@@ -187,4 +189,3 @@ else:
     comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))
                                 # (('CPU', 'nxn'), ('CPU', 'flat')),
                                 ]
-    test_calcs.extend(['PDF', 'FQ'])

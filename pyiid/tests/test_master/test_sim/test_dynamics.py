@@ -3,6 +3,7 @@ from pyiid.sim.dynamics import classical_dynamics
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.pdfcalc import PDFCalc
 from pyiid.calc.fqcalc import FQCalc
+from ase.visualize import view
 
 __author__ = 'christopher'
 
@@ -26,12 +27,12 @@ def check_dynamics(value):
     if value[1] == 'PDF':
         s = ElasticScatter()
         gobs = s.get_pdf(ideal_atoms)
-        calc = PDFCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
+        calc = PDFCalc(obs_data=gobs, scatter=s, conv=3, potential='rw')
 
     elif value[1] == 'FQ':
         s = ElasticScatter()
         gobs = s.get_fq(ideal_atoms)
-        calc = FQCalc(obs_data=gobs, scatter=s, conv=30, potential='rw')
+        calc = FQCalc(obs_data=gobs, scatter=s, conv=3, potential='rw')
 
     else:
         calc = value[1]
@@ -40,7 +41,7 @@ def check_dynamics(value):
     ideal_atoms.set_calculator(calc)
     start_pe = ideal_atoms.get_potential_energy()
     e = value[2]
-    traj = classical_dynamics(ideal_atoms, e, 10, value[3], value[4])
+    traj = classical_dynamics(ideal_atoms, e, 5, value[3], value[4])
 
     pe_list = []
     for atoms in traj:
