@@ -195,7 +195,7 @@ else:
 
 test_atoms_adp = []
 for atoms in test_atoms:
-    adps = ADP(atoms, np.random.normal(0, .001, atoms.positions.shape))
+    adps = ADP(atoms, np.random.normal(0, .1, atoms.positions.shape))
     atoms.adps = adps
     test_atoms_adp.append(atoms)
 test_atoms.extend(test_atoms_adp)

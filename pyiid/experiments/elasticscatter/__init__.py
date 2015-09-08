@@ -13,6 +13,8 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq as cpu_wrap_fq
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_apd_fq as cpu_wrap_adp_fq
+from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+    wrap_apd_fq_grad as cpu_wrap_adp_fq_grad
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
 
@@ -69,6 +71,7 @@ class ElasticScatter(object):
         self.fq = cpu_wrap_fq
         self.adp_fq = cpu_wrap_adp_fq
         self.grad = cpu_wrap_fq_grad
+        self.grad_adp_fq = cpu_wrap_adp_fq_grad
         self.grad_pdf = cpu_grad_pdf
         self.processor = 'CPU'
         self.alg = 'nxn'
@@ -333,7 +336,10 @@ class ElasticScatter(object):
             The gradient of the reduced structure factor
         """
         self.check_scatter(atoms)
-        return self.grad(atoms, self.exp['qbin'])
+        if self._check_adps(atoms):
+            return self.grad_adp_fq(atoms, self.exp['qbin'])
+        else:
+            return self.grad(atoms, self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
         """
