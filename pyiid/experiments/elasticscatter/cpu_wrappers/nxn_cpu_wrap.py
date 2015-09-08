@@ -39,22 +39,29 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
     get_d_array(d, q)
-    del q
 
     # Get pair distance array
     r = np.zeros((n, n))
     get_r_array(r, d)
-    del d
+
+    # Get normalization array
+    norm = np.zeros((n, n, qmax_bin))
+    get_normalization_array(norm, scatter_array)
+
+    # Get omega array
+    omega = np.zeros((n, n, qmax_bin))
+    get_omega_array(omega, r, qbin)
+
     # get non-normalized fq
     fq = np.zeros(qmax_bin)
-    get_fq_array(fq, r, scatter_array, qbin)
+    get_fq(fq, omega, norm)
 
     # Normalize fq
-    na = np.average(scatter_array, axis=0) ** 2 * n
+    na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
-    fq = np.nan_to_num(1 / na * fq)
+    fq = np.nan_to_num(fq / na)
     np.seterr(**old_settings)
-    del r, scatter_array, na
+    del q, d, r, norm, omega, na
     return fq
 
 
@@ -94,30 +101,34 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
     get_d_array(d, q)
-    del q
 
     # Get pair distance array
     r = np.zeros((n, n))
     get_r_array(r, d)
 
-    # get non-normalized FQ
+    # Get normalization array
+    norm = np.zeros((n, n, qmax_bin))
+    get_normalization_array(norm, scatter_array)
+
+    # Get omega
+    omega = np.zeros((n, n, qmax_bin))
+    get_omega_array(omega, r, qbin)
+
+    # Get grad omega
+    grad_omega = np.zeros((n, n, 3, qmax_bin))
+    get_grad_omega(grad_omega, omega, r, d, qbin)
+
+    # Get grad FQ
+    grad_fq = np.zeros((n, 3, qmax_bin))
+    get_grad_fq(grad_fq, grad_omega, norm)
 
     # Normalize FQ
-    norm_array = np.zeros((n, n, qmax_bin))
-    get_normalization_array(norm_array, scatter_array)
-    norm_array = norm_array.sum(axis=(0, 1))
-    norm_array *= 1. / (scatter_array.shape[0] ** 2)
-
-    dfq_dq = np.zeros((n, 3, qmax_bin))
-    fq_grad_position(dfq_dq, d, r, scatter_array, qbin)
+    na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
-    for tx in range(n):
-        for tz in range(3):
-            dfq_dq[tx, tz] = np.nan_to_num(
-                1 / (n * norm_array) * dfq_dq[tx, tz])
+    grad_fq = np.nan_to_num(grad_fq / na)
     np.seterr(**old_settings)
-    del d, r, scatter_array, norm_array
-    return dfq_dq
+    del d, r, scatter_array, norm, omega, grad_omega
+    return grad_fq
 
 
 def wrap_apd_fq(atoms, qbin=.1, sum_type='fq'):
