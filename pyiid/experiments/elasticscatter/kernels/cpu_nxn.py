@@ -1,7 +1,8 @@
-__author__ = 'christopher'
 import math
 from numba import *
 import mkl
+
+__author__ = 'christopher'
 
 processor_target = 'cpu'
 
@@ -20,10 +21,10 @@ def get_d_array(d, q):
         The atomic positions
     """
     n = len(q)
-    for tx in range(n):
-        for ty in range(n):
-            for tz in range(3):
-                d[tx, ty, tz] = q[ty, tz] - q[tx, tz]
+    for i in xrange(n):
+        for j in xrange(n):
+            for w in xrange(3):
+                d[i, j, w] = q[j, w] - q[i, w]
 
 
 @jit(target=processor_target)
@@ -38,10 +39,10 @@ def get_r_array(r, d):
         The coordinate pair distances
     """
     n = len(r)
-    for tx in range(n):
-        for ty in range(n):
-            r[tx, ty] = math.sqrt(
-                d[tx, ty, 0] ** 2 + d[tx, ty, 1] ** 2 + d[tx, ty, 2] ** 2)
+    for i in xrange(n):
+        for j in xrange(n):
+            r[i, j] = math.sqrt(
+                d[i, j, 0] ** 2 + d[i, j, 1] ** 2 + d[i, j, 2] ** 2)
 
 
 @jit(target=processor_target)
@@ -57,13 +58,11 @@ def get_normalization_array(norm_array, scatter_array):
         The scatter factor array
     """
     n = len(norm_array)
-    qmax_bin = norm_array.shape[2]
-
-    for kq in range(0, qmax_bin):
-        for tx in range(n):
-            for ty in range(n):
-                norm_array[tx, ty, kq] = (
-                    scatter_array[tx, kq] * scatter_array[ty, kq])
+    for kq in xrange(norm_array.shape[2]):
+        for i in xrange(n):
+            for j in xrange(n):
+                norm_array[i, j, kq] = scatter_array[i, kq] * \
+                                       scatter_array[j, kq]
 
 
 @jit(target=processor_target, nopython=True)
@@ -72,14 +71,14 @@ def get_sigma_from_adp(sigma, adps, r, d):
         for j in xrange(len(sigma)):
             if i != j:
                 tmp = 0.
-                for w in range(3):
+                for w in xrange(3):
                     tmp += (math.fabs(adps[i, w]) + math.fabs(adps[j, w])) / 2 \
                            * d[i, j, w] / r[i, j]
                 sigma[i, j] = tmp ** 2
 
 
 @jit(target=processor_target)
-def get_omega_array(omega, r, qbin):
+def get_omega(omega, r, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
 
@@ -95,13 +94,11 @@ def get_omega_array(omega, r, qbin):
         The qbin size
     """
     n = len(r)
-    qmax_bin = len(omega)
-    for tx in range(n):
-        for ty in range(n):
-            if tx != ty:
-                for kq in range(0, qmax_bin):
-                    omega[tx, ty, kq] = r[tx, ty] * \
-                                        math.sin(kq * qbin * r[tx, ty])
+    for i in xrange(n):
+        for j in xrange(n):
+            if i != j:
+                for kq in xrange(omega.shape[2]):
+                    omega[i, j, kq] = math.sin(kq * qbin * r[i, j]) / r[i, j]
 
 
 @jit(target=processor_target, nopython=True)
@@ -136,11 +133,12 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
         Q = qx * qbin
         for i in xrange(len(grad_omega)):
             for j in xrange(len(grad_omega)):
-                rij = r[i, j]
-                A = Q * math.cos(Q * rij) - omega[i, j, qx]
-                A /= rij ** 2
-                for w in xrange(3):
-                    grad_omega[i, j, w, qx] = A * d[i, j, w]
+                if i != j:
+                    rij = r[i, j]
+                    A = Q * math.cos(Q * rij) - omega[i, j, qx]
+                    A /= rij ** 2
+                    for w in xrange(3):
+                        grad_omega[i, j, w, qx] = A * d[i, j, w]
 
 
 @jit(target=processor_target, nopython=True)
@@ -182,12 +180,11 @@ def get_grad_fq(grad, grad_omega, norm):
         The size of the Q bins
     """
     n = len(grad)
-    qmax_bin = grad.shape[3]
-    for i in range(n):
-        for w in range(3):
-            for j in range(n):
+    for i in xrange(n):
+        for w in xrange(3):
+            for j in xrange(n):
                 if i != j:
-                    for kq in range(qmax_bin):
+                    for kq in xrange(grad.shape[2]):
                         grad[i, w, kq] += norm[i, j, kq] * grad_omega[i, j, w,
                                                                       kq]
 
@@ -212,11 +209,11 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
     n = len(grad)
     qmax_bin = grad.shape[3]
-    for i in range(n):
-        for w in range(3):
-            for j in range(n):
+    for i in xrange(n):
+        for w in xrange(3):
+            for j in xrange(n):
                 if i != j:
-                    for kq in range(qmax_bin):
+                    for kq in xrange(qmax_bin):
                         grad[i, w, kq] += norm[i, j, kq] * \
                                           (tau[i, j, kq] *
                                            grad_omega[i, j, w, kq] +

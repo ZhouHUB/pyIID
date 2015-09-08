@@ -50,14 +50,14 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
     # Get omega array
     omega = np.zeros((n, n, qmax_bin))
-    get_omega_array(omega, r, qbin)
+    get_omega(omega, r, qbin)
 
     # get non-normalized fq
     fq = np.zeros(qmax_bin)
     get_fq(fq, omega, norm)
 
     # Normalize fq
-    na = np.mean(norm, axis=0) * n
+    na = np.mean(norm, axis=(0, 1)) * n
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(fq / na)
     np.seterr(**old_settings)
@@ -112,7 +112,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
 
     # Get omega
     omega = np.zeros((n, n, qmax_bin))
-    get_omega_array(omega, r, qbin)
+    get_omega(omega, r, qbin)
 
     # Get grad omega
     grad_omega = np.zeros((n, n, 3, qmax_bin))
@@ -123,7 +123,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     get_grad_fq(grad_fq, grad_omega, norm)
 
     # Normalize FQ
-    na = np.mean(norm, axis=0) * n
+    na = np.mean(norm, axis=(0, 1)) * n
     old_settings = np.seterr(all='ignore')
     grad_fq = np.nan_to_num(grad_fq / na)
     np.seterr(**old_settings)
