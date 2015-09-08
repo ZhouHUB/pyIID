@@ -1,6 +1,5 @@
 import numpy as np
 from ase.atoms import Atoms
-from pyiid.experiments.elasticscatter import wrap_atoms
 from numpy.testing import assert_allclose
 from itertools import *
 import os
@@ -8,7 +7,9 @@ from copy import deepcopy as dc
 import random
 from pyiid.testing.decorators import *
 
+from pyiid.experiments.elasticscatter import wrap_atoms
 from pyiid.calc.spring_calc import Spring
+from pyiid.adp import ADP
 
 srfit = False
 try:
@@ -191,3 +192,10 @@ else:
     comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))
                                 # (('CPU', 'nxn'), ('CPU', 'flat')),
                                 ]
+
+test_atoms_adp = []
+for atoms in test_atoms:
+    adps = ADP(atoms, np.random.normal(0, .001, atoms.positions.shape))
+    atoms.adps = adps
+    test_atoms_adp.append(atoms)
+test_atoms.extend(test_atoms_adp)
