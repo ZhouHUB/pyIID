@@ -163,7 +163,18 @@ test_calcs.extend(['FQ', 'PDF'])
 # Travis CI has certain restrictions on memory and GPU availability so we
 # change the size of the tests to run
 travis = False
-if os.getenv('TRAVIS') or True:
+if os.getenv('TRAVIS') and os.getenv('NUMBA_DISABLE_JIT'):
+    travis = True
+    ns = [10]
+    test_exp.extend([generate_experiment() for i in range(1)])
+    test_atoms = [setup_atoms(int(n)) for n in ns]
+    test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
+
+    # Travis doesn't have GPUs so only CPU testing
+    proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
+    comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
+
+elif os.getenv('TRAVIS') or True:
     travis = True
     # use a smaller test size otherwise travis stalls
     ns = [10, 100]
@@ -176,7 +187,7 @@ if os.getenv('TRAVIS') or True:
     comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 else:
-    ns = np.logspace(1, 3, 3)
+    ns = [10, 100, 1000]
     test_exp.extend([generate_experiment() for i in range(3)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
