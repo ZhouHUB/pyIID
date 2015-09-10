@@ -76,9 +76,9 @@ pyiid/grad_test.txt
 *.coverage
 
 #old_files
-old_files/
-benchmarks/
-extra/
+old_files/*
+benchmarks/*
+extra/*
 
 cover
-scripts
+scripts/*
