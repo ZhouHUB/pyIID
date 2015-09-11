@@ -20,7 +20,8 @@ multiprocess._instantiate_plugins = plugins
 
 
 def run():
-
+    print os.getenv('NUMBA_DISABLE_JIT') == 1
+    print os.getenv('NUMBA_DISABLE_JIT')
     nose.main(addplugins=[x() for x in plugins], env=env)
 
 
