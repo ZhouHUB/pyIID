@@ -164,7 +164,7 @@ test_calcs.extend(['FQ', 'PDF'])
 # change the size of the tests to run
 travis = False
 if os.getenv('TRAVIS'):
-    if os.getenv('NUMBA_DISABLE_JIT') == 1:
+    if bool(os.getenv('NUMBA_DISABLE_JIT')):
         travis = True
         ns = [10]
         test_exp.extend([generate_experiment() for i in range(1)])
