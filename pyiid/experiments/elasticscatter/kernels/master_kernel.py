@@ -105,7 +105,6 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
     # return gpad
 
 
-# @jit(target='cpu')
 def fft_fq_to_gr(f, qbin, qmin):
     """
     Fourier Transform from F(Q) to G(r)
@@ -129,7 +128,6 @@ def fft_fq_to_gr(f, qbin, qmin):
     return g
 
 
-# @jit(target='cpu')
 def fft_gr_to_fq(g, rstep, rmin):
     """
     Fourier Transform from G(r) to F(Q)

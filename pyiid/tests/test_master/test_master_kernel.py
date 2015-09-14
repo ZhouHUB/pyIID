@@ -7,7 +7,7 @@ from pyiid.experiments.elasticscatter.kernels.master_kernel import \
 
 
 def test_get_scatter_array():
-    scatter_array = np.loadtxt('pyiid/tests/test_master/c60_scat.txt',
+    scatter_array = np.loadtxt('pyiid/nuts_benchmarks/test_master/c60_scat.txt',
                                dtype=np.float32)
     ksa = np.zeros(scatter_array.shape)
     numbers = np.ones(len(ksa), dtype=np.int) * 6

@@ -141,6 +141,7 @@ class ElasticScatter(object):
                 self.fq = cpu_wrap_fq
                 self.adp_fq = cpu_wrap_adp_fq
                 self.grad = cpu_wrap_fq_grad
+                self.grad_adp_fq = cpu_wrap_adp_fq_grad
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
@@ -150,6 +151,8 @@ class ElasticScatter(object):
 
                 self.fq = wrap_fq
                 self.grad = wrap_fq_grad
+                self.adp_fq = None
+                self.grad_adp_fq = None
                 self.alg = 'flat'
 
             self.grad_pdf = cpu_grad_pdf
@@ -181,7 +184,6 @@ class ElasticScatter(object):
         exp_dict: dict or None
             Dictionary of parameters to be updated, if None use defaults
         """
-        # TODO: support partial updates, eg change only the Qmax leave the rest
         # Should be read in from the gr file, but if not here are some defaults
         if exp_dict is None or bool(exp_dict) is False:
             exp_dict = {}

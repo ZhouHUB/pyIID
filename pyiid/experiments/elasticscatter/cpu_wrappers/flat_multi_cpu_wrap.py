@@ -8,10 +8,12 @@ from pyiid.experiments.elasticscatter.gpu_wrappers.k_atomic_gpu import \
     gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
 from pyiid.experiments.elasticscatter.kernels.cpu_experimental import \
     experimental_sum_grad_cpu
+import math
+from pyiid.experiments.elasticscatter.atomics.cpu_atomics import *
 __author__ = 'christopher'
 
 
-def setup_gpu_calc(atoms, sum_type):
+def setup_cpu_calc(atoms, sum_type):
     # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
@@ -21,39 +23,16 @@ def setup_gpu_calc(atoms, sum_type):
     else:
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     qmax_bin = scatter_array.shape[1]
-
-    return q, n, qmax_bin, scatter_array, None, None
-
-
-def atomic_fq(task):
-    q, scatter_array, qbin, k_max, k_cov = task
-    qmax_bin = scatter_array.shape[1]
-
-    d = np.zeros((k_max, 3), np.float32)
-    get_d_array(d, q, k_cov)
-    del q
-
-    r = np.zeros(k_max, np.float32)
-    get_r_array(r, d)
-    del d
-
-    norm = np.zeros((k_max, qmax_bin), np.float32)
-    get_normalization_array(norm, scatter_array, k_cov)
-    del scatter_array
-
-    fq = np.zeros((k_max, qmax_bin), np.float32)
-    get_fq(fq, r, norm, qbin)
-    del norm, r
-
-    rtn = fq.sum(axis=0)
-    del fq
-    # print mem/1e9
-    return rtn
+    if hasattr(atoms, 'adp'):
+        return q, atoms.adp, n, qmax_bin, scatter_array
+    else:
+        return q, None, n, qmax_bin, scatter_array
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
+    '''
     # setup variables of interest
-    q, n, qmax_bin, scatter_array, _, _ = setup_gpu_calc(atoms, sum_type)
+    q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
     # break up problem
     pool_size = cpu_count()
@@ -63,87 +42,59 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     p = Pool(pool_size, maxtasksperchild=1)
     tasks = []
     k_cov = 0
+    if adps is not None:
+        allocation = cpu_k_space_fq_allocation
+    else:
+        allocation = cpu_k_space_fq_adp_allocation
     while k_cov < k_max:
-        m = gpu_fq_atoms_allocation(n, qmax_bin, 64e9 / 8.)
+        m = allocation(n, qmax_bin, float(
+            psutil.virtual_memory().available) / pool_size)
         if m > k_max - k_cov:
             m = k_max - k_cov
-        task = (q, scatter_array, qbin, m, k_cov)
+        task = (q, adps, scatter_array, qbin, m, k_cov)
         tasks.append(task)
         k_cov += m
     # multiprocessing map problem
-    fqs = p.map(atomic_fq, tasks)
+    ans = p.map(atomic_fq, tasks)
     # p.join()
     p.close()
+    '''
+    q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
+    k_max = int((n ** 2 - n) / 2.)
+    if adps is not None:
+        allocation = cpu_k_space_fq_allocation
+    else:
+        allocation = cpu_k_space_fq_adp_allocation
+
+    master_task = [q, adps, scatter_array, qbin]
+
+    ans = cpu_multiprocessing(atomic_fq, allocation, master_task, (n, qmax_bin))
+
     # sum the answers
-    final = np.sum(fqs, axis=0)
+    final = np.sum(ans, axis=0)
     norm = np.empty((k_max, qmax_bin))
     get_normalization_array(norm, scatter_array, 0)
     na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
     final = np.nan_to_num(final / na)
     np.seterr(**old_settings)
-    del q, n, qmax_bin, scatter_array, k_max, p, tasks, fqs
+    del q, n, qmax_bin, scatter_array, k_max, ans
     return 2 * final
-
-
-def atomic_grad_fq(task):
-    q, scatter_array, qbin, k_max, k_cov = task
-    n = len(q)
-
-    qmax_bin = scatter_array.shape[1]
-
-    d = np.empty((k_max, 3), np.float32)
-    get_d_array(d, q, k_cov)
-    del q
-
-    r = np.empty(k_max, np.float32)
-    get_r_array(r, d)
-
-    norm = np.empty((k_max, qmax_bin), np.float32)
-    get_normalization_array(norm, scatter_array, k_cov)
-    del scatter_array
-
-    fq = np.empty((k_max, qmax_bin), np.float32)
-    get_fq(fq, r, norm, qbin)
-
-    grad = np.empty((k_max, 3, qmax_bin), np.float32)
-    get_grad_fq(grad, fq, r, d, norm, qbin)
-    del fq, r, d, norm
-
-    # rtn = np.empty((n, 3, qmax_bin), np.float32)
-    rtn = np.zeros((n, 3, qmax_bin), np.float32)
-    # fast_fast_flat_sum(rtn, grad, k_cov)
-    experimental_sum_grad_cpu(rtn, grad, k_cov)
-    del grad
-    return rtn
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # setup variables of interest
-    q, n, qmax_bin, scatter_array, _, _ = setup_gpu_calc(atoms, sum_type)
+    q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
-    # break up problem
-    pool_size = cpu_count()
-    # pool_size = 4
-    if pool_size <= 0:
-        pool_size = 1
-    p = Pool(pool_size, maxtasksperchild=1)
-    tasks = []
-    k_cov = 0
-    while k_cov < k_max:
-        m = atoms_per_gpu_grad_fq(n, qmax_bin, float(
-            psutil.virtual_memory().available) / pool_size)
-        if m > k_max - k_cov:
-            m = k_max - k_cov
-        task = (q, scatter_array, qbin, m, k_cov)
-        tasks.append(task)
-        k_cov += m
-    # multiprocessing map problem
-    fqs = p.map(atomic_grad_fq, tasks)
-    # p.join()
-    p.close()
+    if adps is not None:
+        allocation = k_space_grad_fq_allocation
+    else:
+        allocation = k_space_grad_adp_fq_allocation
+    master_task = [q, adps, scatter_array, qbin]
+    ans = cpu_multiprocessing(atomic_grad_fq, allocation, master_task, (n,
+                                                                    qmax_bin))
     # sum the answers
-    grad_p = np.sum(fqs, axis=0)
+    grad_p = np.sum(ans, axis=0)
     # '''
     # na = np.average(scatter_array, axis=0) ** 2 * n
     norm = np.empty((k_max, qmax_bin))
@@ -153,8 +104,35 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     grad_p = np.nan_to_num(grad_p / na)
     np.seterr(**old_settings)
     # '''
-    del q, n, qmax_bin, scatter_array, k_max, p, tasks, fqs
+    del q, n, qmax_bin, scatter_array, k_max, ans
     return grad_p
+
+
+def cpu_multiprocessing(atomic_function, allocation,
+                        master_task, constants):
+    n, qmax_bin = constants
+    k_max = int((n ** 2 - n) / 2.)
+
+    # break up problem
+    pool_size = cpu_count()
+    if pool_size <= 0:
+        pool_size = 1
+    p = Pool(pool_size, maxtasksperchild=1)
+    tasks = []
+    k_cov = 0
+    while k_cov < k_max:
+        m = allocation(n, qmax_bin, float(
+            psutil.virtual_memory().available) / pool_size)
+        if m > k_max - k_cov:
+            m = k_max - k_cov
+        sub_task = tuple(master_task + [k_max, k_cov])
+        tasks.append(sub_task)
+        k_cov += m
+    # multiprocessing map problem
+    ans = p.map(atomic_function, tasks)
+    # p.join()
+    p.close()
+    return ans
 
 
 if __name__ == '__main__':

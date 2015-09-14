@@ -1,6 +1,6 @@
 from pyiid.experiments.elasticscatter.kernels import *
+import math
 __author__ = 'christopher'
-
 
 processor_target = 'cpu'
 
@@ -18,7 +18,7 @@ def get_d_array(d, q, offset):
         The atomic positions
     """
     for k in range(len(d)):
-        i, j = k_to_ij(k)
+        i, j = k_to_ij(k + offset)
         for tz in range(3):
             d[k, tz] = q[i, tz] - q[j, tz]
 
@@ -51,13 +51,22 @@ def get_normalization_array(norm, scat, offset):
         The scatter factor array
     """
     for k in xrange(norm.shape[0]):
-        i, j = k_to_ij(k)
+        i, j = k_to_ij(k + offset)
         for qx in xrange(norm.shape[1]):
             norm[k, qx] = scat[i, qx] * scat[j, qx]
 
 
 @jit(target=processor_target, nopython=True)
-def get_fq(fq, r, norm, qbin):
+def get_sigma_from_adp(sigma, adps, r, d, offset):
+    for k in xrange(len(sigma)):
+        i, j = k_to_ij(k + offset)
+        tmp = 0.
+        for w in xrange(3):
+            tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
+        sigma[k] = tmp
+
+@jit(target=processor_target, nopython=True)
+def get_omega(omega, r, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
 
@@ -72,16 +81,68 @@ def get_fq(fq, r, norm, qbin):
     qbin: float
         The qbin size
     """
-    for qx in xrange(fq.shape[1]):
+    kmax, qmax_bin = omega.shape
+    for qx in xrange(qmax_bin):
         Q = float32(qbin) * float32(qx)
-        for k in xrange(fq.shape[0]):
+        for k in xrange(kmax):
             rk = r[k]
-            fq[k, qx] = norm[k, qx] * math.sin(Q * rk) / rk
+            omega[k, qx] = math.sin(Q * rk) / rk
+
+
+@jit(target=processor_target, nopython=True)
+def get_tau(dw_factor, sigma, qbin):
+    kmax, qmax_bin = dw_factor.shape
+    for qx in xrange(qmax_bin):
+        Q = qx * qbin
+        for k in xrange(kmax):
+            dw_factor[k, qx] = math.exp(-.5 * sigma[k]**2 * Q ** 2)
+
+
+@jit(target=processor_target, nopython=True)
+def get_fq(fq, omega, norm):
+    kmax, qmax_bin = omega.shape
+    for qx in xrange(qmax_bin):
+        for k in xrange(kmax):
+            fq[k, qx] = norm[k, qx] * omega[k, qx]
+
+
+@jit(target=processor_target, nopython=True)
+def get_adp_fq(fq, omega, tau, norm):
+    kmax, qmax_bin = omega.shape
+    for qx in xrange(qmax_bin):
+        for k in xrange(kmax):
+            fq[qx] += norm[k, qx] * omega[k, qx] * tau[k, qx]
 
 
 # Gradient test_kernels -------------------------------------------------------
 @jit(target=processor_target, nopython=True)
-def get_grad_fq(grad, fq, r, d, norm, qbin):
+def get_grad_omega(grad_omega, omega, r, d, qbin):
+    kmax, _, qmax_bin = grad_omega.shape
+    for qx in xrange(qmax_bin):
+        Q = qx * qbin
+        for k in xrange(kmax):
+            rk = r[k]
+            a = Q * math.cos(Q * rk) - omega[k, qx]
+            a /= rk ** 2
+            for w in xrange(3):
+                grad_omega[k, w, qx] = a * d[k, w]
+
+
+@jit(target=processor_target, nopython=True)
+def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
+    kmax, _, qmax_bin = grad_tau.shape
+    for qx in xrange(qmax_bin):
+        Q = qx * qbin
+        for k in xrange(kmax):
+            i, j = k_to_ij(k + offset)
+            tmp = sigma[k] * Q ** 2 * tau[k, qx] / r[k] ** 3
+            for w in xrange(3):
+                grad_tau[k, w, qx] = tmp * (d[k, w] * sigma[k] -
+                                            (adps[i, w] - adps[j, w]) * r[k]**2)
+
+
+@jit(target=processor_target, nopython=True)
+def get_grad_fq(grad, grad_omega, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
 
@@ -98,14 +159,38 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
     qbin: float
         The size of the Q bins
     """
-    for qx in xrange(fq.shape[1]):
-        Q = float32(qbin) * float32(qx)
-        for k in xrange(grad.shape[0]):
-            rk = r[k]
-            A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / \
-                float32(rk * rk)
-            for w in range(3):
-                grad[k, w, qx] = A * d[k, w]
+    kmax, _, qmax_bin = grad.shape
+    for k in xrange(kmax):
+        for w in xrange(3):
+            for qx in xrange(qmax_bin):
+                grad[k, w, qx] = norm[k, qx] * grad_omega[k, w, qx]
+
+
+@jit(target=processor_target, nopython=True)
+def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+
+    Parameters
+    ------------
+    grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    d: NxNx3 array
+        The distance array for the configuration
+    r: NxN array
+        The inter-atomic distances
+    scatter_array: NxQ array
+        The scatter factor array
+    qbin: float
+        The size of the Q bins
+    """
+    kmax, qmax_bin = grad.shape
+    for k in xrange(kmax):
+        for w in xrange(3):
+            for qx in xrange(qmax_bin):
+                grad[k, w, qx] = norm[k, qx] * \
+                                 (tau[k, qx] * grad_omega[k, w, qx] +
+                                  omega[k, qx] * grad_tau[k, w, qx])
 
 
 @jit(target=processor_target, nopython=True)
@@ -124,45 +209,3 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
                 for qx in xrange(grad.shape[2]):
                     for tz in xrange(3):
                         new_grad[i, tz, qx] += grad[k, tz, qx] * alpha
-
-# ADP kernels -----------------------------------------------------------------
-@jit(target=processor_target, nopython=True)
-def get_sigma_from_adp(sigma, adps, r, d):
-    for k in xrange(len(sigma)):
-        i, j = k_to_ij(k)
-        tmp = 0.
-        for w in range(3):
-            tmp += (adps[i, w] - adps[j, w]) * d[i, j, w] / r[k]
-        sigma[k] = tmp ** 2
-
-
-@jit(target=processor_target, nopython=True)
-def get_dw_factor_from_sigma(dw_factor, sigma, qbin):
-    for qx in xrange(dw_factor.shape[1]):
-        Q = qx * qbin
-        for k in xrange(len(sigma)):
-            dw_factor[k, qx] = math.exp(-.5 * sigma[k] * Q ** 2)
-
-
-@jit(target=processor_target, nopython=True)
-def get_adp_fq(fq, r, norm, dw_factor, qbin):
-    """
-    Generate F(Q), not normalized, via the Debye sum
-
-    Parameters:
-    ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
-        The pair distance array
-    scatter_array: NxM array
-        The scatter factor array
-    qbin: float
-        The qbin size
-    """
-    for qx in xrange(fq.shape[1]):
-        Q = float32(qbin) * float32(qx)
-        for k in xrange(fq.shape[0]):
-            rk = r[k]
-            fq[k, qx] = norm[k, qx] * dw_factor[k, qx] * \
-                        math.sin(Q * rk) / rk

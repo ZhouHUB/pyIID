@@ -4,7 +4,7 @@ from numba import *
 __author__ = 'christopher'
 
 
-# TODO: develop tests for GPU and CPU kernels
+# TODO: develop nuts_benchmarks for GPU and CPU kernels
 
 
 @jit(target='cpu', nopython=True)

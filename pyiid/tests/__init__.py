@@ -161,9 +161,9 @@ test_calcs = [
 test_calcs.extend(['FQ', 'PDF'])
 
 # Travis CI has certain restrictions on memory and GPU availability so we
-# change the size of the tests to run
+# change the size of the nuts_benchmarks to run
 travis = False
-if os.getenv('TRAVIS'):
+if os.getenv('TRAVIS') or True:
     if bool(os.getenv('NUMBA_DISABLE_JIT')):
         travis = True
         ns = [10]
@@ -197,7 +197,7 @@ else:
 
     # Note there is only one CPU nxn comparison test, the CPU nxn code is
     # rather slow, thus we test it against the flattened Multi core CPU code,
-    # which is much faster.  Then we run all tests agains the CPU flat kernels.
+    # which is much faster.  Then we run all nuts_benchmarks agains the CPU flat kernels.
     # Thus it is imperative that the flat CPU runs with no errors.
 
     comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))

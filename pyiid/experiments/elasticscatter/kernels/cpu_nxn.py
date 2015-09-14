@@ -9,7 +9,7 @@ processor_target = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
 
-@jit(target=processor_target)
+@jit(target=processor_target, nopython=True)
 def get_d_array(d, q):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
@@ -27,7 +27,7 @@ def get_d_array(d, q):
                 d[i, j, w] = q[j, w] - q[i, w]
 
 
-@jit(target=processor_target)
+@jit(target=processor_target, nopython=True)
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -45,7 +45,7 @@ def get_r_array(r, d):
                 d[i, j, 0] ** 2 + d[i, j, 1] ** 2 + d[i, j, 2] ** 2)
 
 
-@jit(target=processor_target)
+@jit(target=processor_target, nopython=True)
 def get_normalization_array(norm_array, scatter_array):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -72,12 +72,11 @@ def get_sigma_from_adp(sigma, adps, r, d):
             if i != j:
                 tmp = 0.
                 for w in xrange(3):
-                    tmp += (math.fabs(adps[i, w]) + math.fabs(adps[j, w])) / 2 \
-                           * d[i, j, w] / r[i, j]
+                    tmp += (adps[i, w] - adps[j, w]) * d[i, j, w] / r[i, j]
                 sigma[i, j] = tmp ** 2
 
 
-@jit(target=processor_target)
+@jit(target=processor_target, nopython=True)
 def get_omega(omega, r, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
@@ -162,11 +161,11 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin):
                                        d[i, j, 2] ** 2 - d[i, j, w] ** 2
                             else:
                                 tmp2 = -1 * d[i, j, w] * d[i, j, z]
-                            tmp += tmp2 * (adps[i, z] + adps[j, z])/ 2.
+                            tmp += tmp2 * (adps[i, z] + adps[j, z]) / 2.
                         grad_tau[i, j, w, qx] = tmp * a
 
 
-@jit(target=processor_target)
+@jit(target=processor_target, nopython=True)
 def get_grad_fq(grad, grad_omega, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -194,7 +193,7 @@ def get_grad_fq(grad, grad_omega, norm):
                                                                       qx]
 
 
-@jit(target=processor_target)
+@jit(target=processor_target, nopython=True)
 def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
