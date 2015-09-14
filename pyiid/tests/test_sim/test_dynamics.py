@@ -1,8 +1,6 @@
 from pyiid.tests import *
 from pyiid.sim.dynamics import classical_dynamics
 from pyiid.experiments.elasticscatter import ElasticScatter
-import pyiid.calc.pdfcalc
-from pyiid.calc.fqcalc import FQCalc
 from pyiid.calc.calc_1d import Calc1D
 
 __author__ = 'christopher'
