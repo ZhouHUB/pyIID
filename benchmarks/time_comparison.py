@@ -1,19 +1,14 @@
 __author__ = 'christopher'
-from ase.atoms import Atoms
-import ase.io as aseio
-
-from pyiid.experiments.elasticscatter import wrap_atoms
-from pyiid.calc.pdfcalc import PDFCalc
-from pyiid.utils import build_sphere_np
-
-import matplotlib.pyplot as plt
-from pprint import pprint
-import time
-from copy import deepcopy as dc
-from collections import OrderedDict
 import pickle
-from pyiid.experiments.elasticscatter import ElasticScatter
 import traceback
+
+from ase.atoms import Atoms
+import matplotlib.pyplot as plt
+
+from pyiid.calc.calc_1d import Calc1D
+from pyiid.utils import build_sphere_np
+import time
+from pyiid.experiments.elasticscatter import ElasticScatter
 
 exp = None
 scat = ElasticScatter()
@@ -40,7 +35,10 @@ for proc, alg in benchmarks:
             atoms = build_sphere_np('/mnt/work-data/dev/pyIID/benchmarks/1100138.cif', float(i) / 2)
             atoms.rattle()
             print len(atoms), i/10.
-            calc = PDFCalc(obs_data=pdf, scatter=scat, conv=1, potential='rw')
+            calc = Calc1D(target_data=pdf,
+                          exp_function=scat.get_fq,
+                          exp_grad_function=scat.get_grad_fq,
+                          conv=1, potential='rw')
             atoms.set_calculator(calc)
 
             s = time.time()
