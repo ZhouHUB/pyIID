@@ -1,7 +1,7 @@
 from pyiid.tests import *
 from pyiid.sim.dynamics import classical_dynamics
 from pyiid.experiments.elasticscatter import ElasticScatter
-from pyiid.calc.pdfcalc import PDFCalc
+import pyiid.calc.pdfcalc
 from pyiid.calc.fqcalc import FQCalc
 from pyiid.calc.calc_1d import Calc1D
 

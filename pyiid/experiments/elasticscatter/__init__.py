@@ -69,9 +69,7 @@ class ElasticScatter(object):
         # Just in case something blows up down the line set to the most base
         # processor
         self.fq = cpu_wrap_fq
-        self.adp_fq = cpu_wrap_adp_fq
         self.grad = cpu_wrap_fq_grad
-        self.grad_adp_fq = cpu_wrap_adp_fq_grad
         self.grad_pdf = cpu_grad_pdf
         self.processor = 'CPU'
         self.alg = 'nxn'
@@ -139,9 +137,7 @@ class ElasticScatter(object):
         elif processor == self.avail_pro[2]:
             if kernel_type == 'nxn':
                 self.fq = cpu_wrap_fq
-                self.adp_fq = cpu_wrap_adp_fq
                 self.grad = cpu_wrap_fq_grad
-                self.grad_adp_fq = cpu_wrap_adp_fq_grad
                 self.alg = 'nxn'
 
             elif kernel_type == 'flat':
@@ -151,8 +147,6 @@ class ElasticScatter(object):
 
                 self.fq = wrap_fq
                 self.grad = wrap_fq_grad
-                self.adp_fq = None
-                self.grad_adp_fq = None
                 self.alg = 'flat'
 
             self.grad_pdf = cpu_grad_pdf
@@ -202,13 +196,6 @@ class ElasticScatter(object):
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
-    @staticmethod
-    def _check_adps(atoms):
-        if hasattr(atoms, 'adps'):
-            return True
-        else:
-            return False
-
     def get_fq(self, atoms):
         """
         Calculate the reduced structure factor F(Q)
@@ -223,11 +210,7 @@ class ElasticScatter(object):
             The reduced structure factor
         """
         self.check_scatter(atoms)
-        if self._check_adps(atoms):
-            return self.adp_fq(atoms, self.exp['qbin'])
-
-        else:
-            return self.fq(atoms, self.exp['qbin'])
+        return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
         """
@@ -243,10 +226,7 @@ class ElasticScatter(object):
             The PDF
         """
         self.check_scatter(atoms)
-        if self._check_adps(atoms):
-            fq = self.adp_fq(atoms, self.pdf_qbin, 'PDF')
-        else:
-            fq = self.fq(atoms, self.pdf_qbin, 'PDF')
+        fq = self.fq(atoms, self.pdf_qbin, 'PDF')
         r = self.get_r()
         pdf0 = get_pdf_at_qmin(
             fq,
@@ -338,10 +318,7 @@ class ElasticScatter(object):
             The gradient of the reduced structure factor
         """
         self.check_scatter(atoms)
-        if self._check_adps(atoms):
-            return self.grad_adp_fq(atoms, self.exp['qbin'])
-        else:
-            return self.grad(atoms, self.exp['qbin'])
+        return self.grad(atoms, self.exp['qbin'])
 
     def get_grad_pdf(self, atoms):
         """

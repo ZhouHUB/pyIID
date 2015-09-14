@@ -1,7 +1,6 @@
-from itertools import product
 import numpy as np
-from pyiid.calc.fqcalc import FQCalc
-from pyiid.calc.pdfcalc import PDFCalc
+
+from itertools import product
 from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.sim.nuts_hmc import NUTSCanonicalEnsemble
