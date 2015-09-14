@@ -2,6 +2,7 @@ from itertools import product
 import numpy as np
 from pyiid.calc.fqcalc import FQCalc
 from pyiid.calc.pdfcalc import PDFCalc
+from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.sim.nuts_hmc import NUTSCanonicalEnsemble
 from pyiid.tests import test_atom_squares, test_calcs
@@ -22,14 +23,21 @@ def check_nuts(value):
     """
     ideal_atoms, _ = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
+    s = ElasticScatter()
     if value[1] == 'PDF':
-        s = ElasticScatter()
-        gobs = s.get_pdf(ideal_atoms)
-        calc = PDFCalc(obs_data=gobs, scatter=s, conv=300, potential='rw')
+        target_data = s.get_pdf(ideal_atoms)
+        exp_func = s.get_pdf
+        exp_grad = s.get_grad_pdf
+        calc = Calc1D(target_data=target_data,
+                      exp_function=exp_func, exp_grad_function=exp_grad,
+                      potential='rw', conv=30)
     elif value[1] == 'FQ':
-        s = ElasticScatter()
-        gobs = s.get_fq(ideal_atoms)
-        calc = FQCalc(obs_data=gobs, scatter=s, conv=300, potential='rw')
+        target_data = s.get_pdf(ideal_atoms)
+        exp_func = s.get_pdf
+        exp_grad = s.get_grad_pdf
+        calc = Calc1D(target_data=target_data,
+                      exp_function=exp_func, exp_grad_function=exp_grad,
+                      potential='rw', conv=30)
     else:
         calc = value[1]
     ideal_atoms.positions *= 1.02
