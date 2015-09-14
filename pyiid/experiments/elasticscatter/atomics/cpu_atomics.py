@@ -122,13 +122,13 @@ def atomic_fq(task):
 
     omega = np.zeros((k_max, qmax_bin), np.float32)
     get_omega(omega, r, qbin)
-
     if adps is None:
         fq = np.zeros((k_max, qmax_bin), np.float32)
         get_fq(fq, omega, norm)
     else:
+        print type(adps)
         sigma = np.zeros(k_max, np.float32)
-        get_sigma_from_adp(sigma, adps, r, d)
+        get_sigma_from_adp(sigma, adps, r, d, k_cov)
 
         tau = np.zeros((k_max, qmax_bin), np.float32)
         get_tau(tau, sigma, qbin)

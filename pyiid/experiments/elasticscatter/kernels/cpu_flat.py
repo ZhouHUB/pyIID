@@ -111,7 +111,7 @@ def get_adp_fq(fq, omega, tau, norm):
     kmax, qmax_bin = omega.shape
     for qx in xrange(qmax_bin):
         for k in xrange(kmax):
-            fq[qx] += norm[k, qx] * omega[k, qx] * tau[k, qx]
+            fq[k, qx] = norm[k, qx] * omega[k, qx] * tau[k, qx]
 
 
 # Gradient test_kernels -------------------------------------------------------

@@ -24,7 +24,11 @@ def setup_cpu_calc(atoms, sum_type):
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     qmax_bin = scatter_array.shape[1]
     if hasattr(atoms, 'adp'):
-        return q, atoms.adp, n, qmax_bin, scatter_array
+        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
+               scatter_array
+    elif hasattr(atoms, 'adps'):
+        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
+               scatter_array
     else:
         return q, None, n, qmax_bin, scatter_array
 
@@ -61,7 +65,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     '''
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
-    if adps is not None:
+    if adps is None:
         allocation = cpu_k_space_fq_allocation
     else:
         allocation = cpu_k_space_fq_adp_allocation
@@ -86,7 +90,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # setup variables of interest
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
-    if adps is not None:
+    if adps is None:
         allocation = k_space_grad_fq_allocation
     else:
         allocation = k_space_grad_adp_fq_allocation

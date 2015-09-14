@@ -423,14 +423,14 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    a = np.ones(atoms.positions.shape) * .1
+    a = np.random.random(atoms.positions.shape)
+    print a
     # a[:, 0] = 0.
     # a[:, 1] = 0.
     adps = ADP(atoms,
                adps=a
                )
-    s = ElasticScatter()
-    # s.set_processor('CPU', 'nxn')
+    s = ElasticScatter({'rmax':5., 'rmin':2.})
     fq = s.get_pdf(atoms)
     atoms.adps = adps
     fq2 = s.get_pdf(atoms)

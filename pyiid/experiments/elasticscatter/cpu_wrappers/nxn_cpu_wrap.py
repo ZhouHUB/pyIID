@@ -53,9 +53,13 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # Get omega array
     omega = np.zeros((n, n, qmax_bin))
     get_omega(omega, r, qbin)
-    
+
+    adps = None
     if hasattr(atoms, 'adp'):
         adps = atoms.adp
+    elif hasattr(atoms, 'adps'):
+        adps = atoms.adps
+    if adps is not None:
         sigma = np.zeros(n, n, np.float32)
         get_sigma_from_adp(sigma, adps, r, d)
 
@@ -200,8 +204,12 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     grad_omega = np.zeros((n, n, 3, qmax_bin))
     get_grad_omega(grad_omega, omega, r, d, qbin)
     
+    adps = None
     if hasattr(atoms, 'adp'):
         adps = atoms.adp
+    elif hasattr(atoms, 'adps'):
+        adps = atoms.adps
+    if adps is not None:
         sigma = np.zeros(n, n, np.float32)
         get_sigma_from_adp(sigma, adps, r, d)
 
