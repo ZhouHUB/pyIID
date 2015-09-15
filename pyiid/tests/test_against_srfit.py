@@ -5,7 +5,7 @@ __author__ = 'christopher'
 local_test_atoms = setup_atomic_square()[0] * 3
 test_data = tuple(product([local_test_atoms], [None]))
 
-
+# TODO move this back to a test generator, leave the decorator on the check
 @known_fail_if(not srfit)
 def test_fq_against_srfit():
     # unpack the atoms and experiment

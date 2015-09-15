@@ -39,6 +39,14 @@ def check_gpu():
     return tf
 
 
+def check_cudafft():
+    try:
+        from numbapro.cudalib import cufft
+        tf = True
+    except:
+        tf = False
+    return tf
+
 class ElasticScatter(object):
     """
     Scatter contains all the methods associated with producing theoretical
@@ -127,10 +135,12 @@ class ElasticScatter(object):
             self.fq = flat_fq
             self.grad = flat_grad
             self.alg = 'flat'
-            from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
-                grad_pdf
-
-            self.grad_pdf = grad_pdf
+            if check_cudafft():
+                from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
+                    grad_pdf
+                self.grad_pdf = grad_pdf
+            else:
+                self.grad_pdf = cpu_grad_pdf
             self.processor = processor
             return True
 

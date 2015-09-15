@@ -166,8 +166,6 @@ test_calcs.extend(['FQ', 'PDF'])
 
 ns = [10]
 travis = False
-# Travis CI has certain restrictions on memory and GPU availability so we
-# change the size of the tests to run
 if os.getenv('TRAVIS') or True:
     travis = True
     num_exp = 1
