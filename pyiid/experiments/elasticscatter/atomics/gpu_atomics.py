@@ -96,7 +96,8 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_d_array,
                                                                    get_r_array,
                                                                    get_normalization_array,
-                                                                   get_fq_replace,
+                                                                   get_omega,
+                                                                   get_fq_inplace,
                                                                    d2_zero,
                                                                    d2_to_d1_cleanup_kernel,
                                                                    experimental_sum_fq)
@@ -129,8 +130,25 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
     get_normalization_array[bpg_kq, tpb_kq, stream2](dnorm, dscat, k_cov)
 
-    get_fq_replace[bpg_kq, tpb_kq, stream2](dr, dnorm, qbin)
-    dfq = dnorm
+    domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                              stream=stream2)
+    get_omega[bpg_kq, tpb_kq, stream2](domega, dr, qbin)
+
+    if adps is None:
+        get_fq_inplace[bpg_kq, tpb_kq, stream2](dnorm, domega)
+        dfq = dnorm
+    else:
+        from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_sigma_from_adp,
+                                                                       get_tau,
+                                                                       get_adp_fq_inplace)
+        dadps = cuda.to_device(adps.astype(np.float32), stream=stream)
+        dsigma = cuda.device_array((k_per_thread), dtype=np.float32, stream=stream)
+        get_sigma_from_adp[bpg_k, tpb_k, stream](dsigma, dadps, dr, dd, k_cov)
+
+        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream)
+        get_tau[bpg_kq, tpb_kq, stream2](dtau, dsigma, qbin)
+        get_adp_fq_inplace[bpg_kq, tpb_kq, stream2](dnorm, domega, dtau)
+        dfq = dnorm
 
     # pseudo-recursive summation kernel
     tpb_sum = [512, 1]

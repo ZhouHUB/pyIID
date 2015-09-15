@@ -20,18 +20,17 @@ def check_dynamics(value):
     """
     ideal_atoms, _ = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
-    s = ElasticScatter()
-    if value[1] == 'PDF':
-        target_data = s.get_pdf(ideal_atoms)
-        exp_func = s.get_pdf
-        exp_grad = s.get_grad_pdf
-        calc = Calc1D(target_data=target_data,
-                      exp_function=exp_func, exp_grad_function=exp_grad,
-                      potential='rw', conv=30)
-    elif value[1] == 'FQ':
-        target_data = s.get_pdf(ideal_atoms)
-        exp_func = s.get_pdf
-        exp_grad = s.get_grad_pdf
+    if isinstance(value[1], str):
+        s = ElasticScatter()
+        if value[1] == 'PDF':
+            target_data = s.get_pdf(ideal_atoms)
+            exp_func = s.get_pdf
+            exp_grad = s.get_grad_pdf
+
+        elif value[1] == 'FQ':
+            target_data = s.get_fq(ideal_atoms)
+            exp_func = s.get_fq
+            exp_grad = s.get_grad_fq
         calc = Calc1D(target_data=target_data,
                       exp_function=exp_func, exp_grad_function=exp_grad,
                       potential='rw', conv=30)

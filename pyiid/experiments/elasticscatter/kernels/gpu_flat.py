@@ -118,9 +118,8 @@ def get_tau(dw_factor, sigma, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = qx * qbin
-    for k in xrange(kmax):
-        dw_factor[k, qx] = math.exp(-.5 * sigma[k]**2 * Q ** 2)
+    Q = f4(qx) * f4(qbin)
+    dw_factor[k, qx] = math.exp(-.5 * sigma[k]**2 * Q ** 2)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
@@ -148,7 +147,7 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = qx * qbin
+    Q = f4(qx) * fr(qbin)
     rk = r[k]
     a = Q * math.cos(Q * rk) - omega[k, qx]
     a /= rk ** 2
@@ -221,6 +220,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     for w in xrange(3):
         grad[k, w, qx] = norm[k, qx] * (tau[k, qx] * grad_omega[k, w, qx] +
                           omega[k, qx] * grad_tau[k, w, qx])
+
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
 def get_grad_fq(grad, fq, r, d, norm, qbin):
@@ -341,19 +341,17 @@ def d2_zero(A):
     A[i, j] = f4(0.)
 
 
-@cuda.jit(argtypes=[f4[:], f4[:, :], f4])
-def get_fq_replace(r, norm, qbin):
+@cuda.jit(argtypes=[f4[:, :], f4[:, :]])
+def get_fq_inplace(norm, omega):
     k, qx = cuda.grid(2)
     if k >= norm.shape[0] or qx >= norm.shape[1]:
         return
-    Q = f4(qbin) * f4(qx)
+    norm[k, qx] *= omega
 
-    # tid = cuda.threadIdx.y
-    # rk = cuda.shared.array(1, f4)
-    # if tid == 0:
-    #     rk[0] = r[k]
-    # cuda.syncthreads()
-    # fq[k, qx] = norm[k, qx] * math.sin(Q * rk[0]) / rk[0]
-
-    rk = r[k]
-    norm[k, qx] *= math.sin(Q * rk) / rk
+@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], f4[:, :]])
+def get_adp_fq_inplace(norm, omega, tau):
+    kmax, qmax_bin = omega.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    norm[k, qx] *= omega[k, qx] * tau[k, qx]

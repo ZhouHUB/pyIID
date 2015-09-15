@@ -126,7 +126,6 @@ def atomic_fq(task):
         fq = np.zeros((k_max, qmax_bin), np.float32)
         get_fq(fq, omega, norm)
     else:
-        print type(adps)
         sigma = np.zeros(k_max, np.float32)
         get_sigma_from_adp(sigma, adps, r, d, k_cov)
 

@@ -23,6 +23,7 @@ try:
     from diffpy.Structure.structure import Structure
     from diffpy.Structure.atom import Atom as dAtom
     from diffpy.srreal.pdfcalculator import DebyePDFCalculator
+
     srfit = True
 except:
     pass
@@ -132,15 +133,19 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
         print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
             np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
         fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
-        print '\n allclose failures'
-        print zip(ans1[fails].tolist(), ans2[fails].tolist())
-        print '\n allclose internals'
-        print zip(np.abs(ans1[fails] - ans2[fails]).tolist(),
-                  (atol + rtol * np.abs(ans2[fails])).tolist())
+        # print '\n allclose failures'
+        # print zip(ans1[fails].tolist(), ans2[fails].tolist())
+        # print '\n allclose internals'
+        # print zip(np.abs(ans1[fails] - ans2[fails]).tolist(),
+        #           (atol + rtol * np.abs(ans2[fails])).tolist())
         print '\n', 'without atol rtol = ', '\n'
         print np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
         print 'without rtol atol = ', '\n'
         print np.abs(ans1[fails] - ans2[fails])
+        print '\n', 'with current atol rtol = ', '\n'
+        print (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
+        print 'with current rtol atol = ', '\n'
+        print np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails])
     else:
         print np.abs(ans1 - ans2)
         print atol + rtol * np.abs(ans2)
@@ -166,7 +171,7 @@ test_calcs.extend(['FQ', 'PDF'])
 
 ns = [10]
 travis = False
-if os.getenv('TRAVIS') or True:
+if os.getenv('TRAVIS'):
     travis = True
     num_exp = 1
     proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
@@ -176,8 +181,12 @@ if os.getenv('TRAVIS') or True:
         pass
 
     elif bool(os.getenv('NUMBA_ENABLE_CUDASIM')):
-        proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
-        comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
+        proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
+                          ('CPU', 'nxn'),
+                          ]
+        comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
+                                    (('CPU', 'nxn'), ('CPU', 'flat'))
+                                    ]
 
     else:
         # Use a slightly bigger test set, since we are using the JIT
@@ -190,10 +199,10 @@ else:
           ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
-                      # ('CPU', 'nxn'),
+                      ('CPU', 'nxn'),
                       ]
-    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))
-                                # (('CPU', 'nxn'), ('CPU', 'flat')),
+    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
+                                (('CPU', 'nxn'), ('CPU', 'flat'))
                                 ]
 
 test_exp.extend([generate_experiment() for i in range(num_exp)])

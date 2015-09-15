@@ -43,8 +43,9 @@ def check_cudafft():
     try:
         from numbapro.cudalib import cufft
         tf = True
-    except:
+    except ImportError:
         tf = False
+        print 'no cudafft'
     return tf
 
 class ElasticScatter(object):
