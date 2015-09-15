@@ -36,7 +36,6 @@ def antisymmetric_reshape(out_data, in_data):
                 out_data[i, j] = in_data[ij_to_k(j, i)]
 
 
-# TODO: test this with grid(2)
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_d_array(d, q, offset):
     k = cuda.grid(1)
@@ -69,42 +68,159 @@ def get_normalization_array(norm_array, scat, offset):
         The scatter factor array
     """
     k, qx = cuda.grid(2)
-    n = norm_array.shape[0]
-    qmax_bin = norm_array.shape[1]
-    if k >= n or qx >= qmax_bin:
+    if k >= norm_array.shape[0] or qx >= norm_array.shape[1]:
         return
-
-    # tid = cuda.threadIdx.y
-    # si = cuda.shared.array(1, i4)
-    # sj = cuda.shared.array(1, i4)
-    # if tid == 0:
-    #     i, j = cuda_k_to_ij(i4(k + offset))
-    #     si[0] = i
-    #     sj[0] = j
-    # cuda.syncthreads()
-    # norm_array[k, qx] = scat[si[0], qx] * scat[sj[0], qx]
-
     i, j = cuda_k_to_ij(i4(k + offset))
     norm_array[k, qx] = scat[i, qx] * scat[j, qx]
 
 
-@cuda.jit(argtypes=[f4[:, :], f4[:], f4[:, :], f4])
-def get_fq(fq, r, norm, qbin):
-    k, qx = cuda.grid(2)
-    if k >= fq.shape[0] or qx >= fq.shape[1]:
+@cuda.jit(argtypes=[f4[:], f4[:, :], f4[:], f4[:, :], i4])
+def get_sigma_from_adp(sigma, adps, r, d, offset):
+    k = cuda.grid(1)
+    if k >= len(sigma):
         return
-    Q = f4(qbin) * f4(qx)
+    i, j = cuda_k_to_ij(i4(k + offset))
+    tmp = 0.
+    for w in xrange(3):
+        tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
+    sigma[k] = tmp
 
-    # tid = cuda.threadIdx.y
-    # rk = cuda.shared.array(1, f4)
-    # if tid == 0:
-    #     rk[0] = r[k]
-    # cuda.syncthreads()
-    # fq[k, qx] = norm[k, qx] * math.sin(Q * rk[0]) / rk[0]
 
+@cuda.jit(argtypes=[f4[:, :], f4[:], f4])
+def get_omega(omega, r, qbin):
+    """
+    Generate F(Q), not normalized, via the Debye sum
+
+    Parameters:
+    ---------
+    fq: Nd array
+        The reduced scatter pattern
+    r: NxN array
+        The pair distance array
+    scatter_array: NxM array
+        The scatter factor array
+    qbin: float
+        The qbin size
+    """
+    kmax, qmax_bin = omega.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    Q = float32(qbin) * float32(qx)
+    for k in xrange(kmax):
+        rk = r[k]
+        omega[k, qx] = math.sin(Q * rk) / rk
+
+
+@cuda.jit(argtypes=[f4[:, :], f4[:], f4])
+def get_tau(dw_factor, sigma, qbin):
+    kmax, qmax_bin = dw_factor.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    Q = qx * qbin
+    for k in xrange(kmax):
+        dw_factor[k, qx] = math.exp(-.5 * sigma[k]**2 * Q ** 2)
+
+
+@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
+def get_fq(fq, omega, norm):
+    kmax, qmax_bin = omega.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    fq[k, qx] = norm[k, qx] * omega[k, qx]
+
+
+@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], f4[:, :]])
+def get_adp_fq(fq, omega, tau, norm):
+    kmax, qmax_bin = omega.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    fq[k, qx] = norm[k, qx] * omega[k, qx] * tau[k, qx]
+
+
+# Gradient test_kernels -------------------------------------------------------
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4])
+def get_grad_omega(grad_omega, omega, r, d, qbin):
+    kmax, _, qmax_bin = grad_omega.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    Q = qx * qbin
     rk = r[k]
-    fq[k, qx] = norm[k, qx] * math.sin(Q * rk) / rk
+    a = Q * math.cos(Q * rk) - omega[k, qx]
+    a /= rk ** 2
+    for w in xrange(3):
+        grad_omega[k, w, qx] = a * d[k, w]
 
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:], f4[:, :], f4, i4])
+def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
+    kmax, _, qmax_bin = grad_tau.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    Q = qx * qbin
+    i, j = cuda_k_to_ij(i4(k + offset))
+    tmp = sigma[k] * Q ** 2 * tau[k, qx] / r[k] ** 3
+    for w in xrange(3):
+        grad_tau[k, w, qx] = tmp * (
+            d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * r[k]**2)
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
+def get_grad_fq(grad, grad_omega, norm):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+
+    Parameters
+    ------------
+    grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    d: NxNx3 array
+        The distance array for the configuration
+    r: NxN array
+        The inter-atomic distances
+    scatter_array: NxQ array
+        The scatter factor array
+    qbin: float
+        The size of the Q bins
+    """
+    kmax, _, qmax_bin = grad.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    for w in xrange(3):
+        grad[k, w, qx] = norm[k, qx] * grad_omega[k, w, qx]
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:, :], f4[:, :, :], f4[:, :, :], f4[:, :]])
+def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+
+    Parameters
+    ------------
+    grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    d: NxNx3 array
+        The distance array for the configuration
+    r: NxN array
+        The inter-atomic distances
+    scatter_array: NxQ array
+        The scatter factor array
+    qbin: float
+        The size of the Q bins
+    """
+    kmax, _, qmax_bin = grad.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    for w in xrange(3):
+        grad[k, w, qx] = norm[k, qx] * (tau[k, qx] * grad_omega[k, w, qx] +
+                          omega[k, qx] * grad_tau[k, w, qx])
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
 def get_grad_fq(grad, fq, r, d, norm, qbin):

@@ -166,7 +166,7 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     return final
 
 
-def atomic_grad_fq(q, scatter_array, qbin, k_cov, k_per_thread):
+def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
     Calculate a portion of the gradient of F(Q).  This is the smallest division
     of the grad F(Q) function.

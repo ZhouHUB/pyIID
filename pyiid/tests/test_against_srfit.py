@@ -15,7 +15,6 @@ def test_fq_against_srfit():
     # get the pyIID F(Q)
     s = ElasticScatter(exp)
     # s.set_processor('CPU', 'nxn')
-    ans1 = s.get_fq(atoms)
 
     # get the SrFit F(Q)
     stru = convert_atoms_to_stru(atoms)
@@ -25,6 +24,7 @@ def test_fq_against_srfit():
     srfit_calc.qstep = s.exp['qbin']
     r1, g1 = srfit_calc(stru)
     assert_allclose(s.get_scatter_vector(), srfit_calc.qgrid)
+    ans1 = s.get_fq(atoms)
     ans2 = srfit_calc.fq
     stats_check(ans1, ans2, rtol=1e-4, atol=5e-6)
     del srfit_calc

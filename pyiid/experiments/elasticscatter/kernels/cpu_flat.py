@@ -65,6 +65,7 @@ def get_sigma_from_adp(sigma, adps, r, d, offset):
             tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
         sigma[k] = tmp
 
+
 @jit(target=processor_target, nopython=True)
 def get_omega(omega, r, qbin):
     """

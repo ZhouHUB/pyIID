@@ -1,3 +1,10 @@
+"""
+Note there is only one CPU nxn comparison test, the CPU nxn code is
+rather slow, thus we test it against the flattened Multi core CPU code,
+which is much faster.
+Then we run all nuts_benchmarks agains the CPU flat kernels.
+Thus it is imperative that the flat CPU runs with no errors.
+"""
 import numpy as np
 from ase.atoms import Atoms
 from numpy.testing import assert_allclose
@@ -16,7 +23,6 @@ try:
     from diffpy.Structure.structure import Structure
     from diffpy.Structure.atom import Atom as dAtom
     from diffpy.srreal.pdfcalculator import DebyePDFCalculator
-
     srfit = True
 except:
     pass
@@ -143,14 +149,14 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
         print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
 
 
-# Setup lists of test variables
+# Setup lists of test variables for combinations
 test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [
     ('rw', .9),
     # ('chi_sq', 1)
 ]
-test_qbin = [.1]
+# test_qbin = [.1]
 test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
                       {'k': 100, 'rt': 1., 'sp_type': 'com'},
                       {'k': 100, 'rt': 1., 'sp_type': 'att'}]
@@ -158,51 +164,42 @@ test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
 test_calcs = [Spring(**t_kwargs) for t_kwargs in test_spring_kwargs]
 test_calcs.extend(['FQ', 'PDF'])
 
-# Travis CI has certain restrictions on memory and GPU availability so we
-# change the size of the nuts_benchmarks to run
+ns = [10]
 travis = False
+# Travis CI has certain restrictions on memory and GPU availability so we
+# change the size of the tests to run
 if os.getenv('TRAVIS') or True:
-    if bool(os.getenv('NUMBA_DISABLE_JIT')) or bool(os.getenv('NUMBA_ENABLE_CUDASIM')):
-        travis = True
-        ns = [10]
-        test_exp.extend([generate_experiment() for i in range(1)])
-        test_atoms = [setup_atoms(int(n)) for n in ns]
-        test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
+    travis = True
+    num_exp = 1
+    proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
+    comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
-        # Travis doesn't have GPUs so only CPU testing
-        proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
-        comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
+    if bool(os.getenv('NUMBA_DISABLE_JIT')):
+        pass
+
+    elif bool(os.getenv('NUMBA_ENABLE_CUDASIM')):
+        proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat')]
+        comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
+
     else:
-        travis = True
-        # use a smaller test size otherwise travis stalls
         ns = [10, 100]
-        test_exp.extend([generate_experiment() for i in range(3)])
-        test_atoms = [setup_atoms(int(n)) for n in ns]
-        test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
-
-        # Travis doesn't have GPUs so only CPU testing
-        proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
-        comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
+        num_exp = 3
 
 else:
     ns = [10, 100,
           # 1000
           ]
-    test_exp.extend([generate_experiment() for i in range(3)])
-    test_atoms = [setup_atoms(int(n)) for n in ns]
-    test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
+    num_exp = 3
     proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
                       # ('CPU', 'nxn'),
                       ]
-
-    # Note there is only one CPU nxn comparison test, the CPU nxn code is
-    # rather slow, thus we test it against the flattened Multi core CPU code,
-    # which is much faster.  Then we run all nuts_benchmarks agains the CPU flat kernels.
-    # Thus it is imperative that the flat CPU runs with no errors.
-
     comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))
                                 # (('CPU', 'nxn'), ('CPU', 'flat')),
                                 ]
+
+test_exp.extend([generate_experiment() for i in range(num_exp)])
+test_atoms = [setup_atoms(int(n)) for n in ns]
+test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
 
 test_atoms_adp = []
 for atoms in test_atoms:

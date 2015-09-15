@@ -2,7 +2,7 @@ from threading import Thread
 
 from numbapro.cudalib import cufft
 
-from experiments.elasticscatter.atomics.gpu_atomic import *
+from pyiid.experiments.elasticscatter.atomics.gpu_atomics import *
 from pyiid.experiments import *
 __author__ = 'christopher'
 
@@ -55,47 +55,6 @@ def subs_fq(fq, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread):
         fq += atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
 
 
-def wrap_fq(atoms, qbin=.1, sum_type='fq'):
-    """
-    Function which handles all the threads for the computation of F(Q)
-
-    Parameters
-    ----------
-    atoms: ase.Atoms
-        The atomic configuration
-    qbin: float
-        The Q resolution in A**-1
-    sum_type: str
-        The type of calculation being run, defaults to F(Q), but runs PDF
-        if anything other than 'fq' is provided.  This is needed because
-        the PDF runs at a different Q resolution and thus a different scatter
-        factor array for the atoms
-    Returns
-    -------
-    1darray;
-        The reduced structure factor
-    """
-    q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
-        atoms, sum_type)
-    if adps is None:
-        allocation = gpu_k_space_fq_allocation
-    else:
-        allocation = gpu_k_space_fq_adp_allocation
-    # k is used as a counter to describe the inter-atomic distances
-
-    fq = np.zeros(qmax_bin, np.float32)
-    master_task = [fq, q, adps, scatter_array, qbin]
-    fq = gpu_multithreading(subs_fq, allocation, master_task, (n, qmax_bin),
-                            (gpus, mem_list))
-    na = np.average(scatter_array, axis=0) ** 2 * n
-    old_settings = np.seterr(all='ignore')
-    fq = np.nan_to_num(fq / na)
-    np.seterr(**old_settings)
-    # Note we only calculated half of the scattering, but the symmetry allows
-    # us to multiply by 2 and get it correct
-    return 2 * fq
-
-
 def subs_grad_fq(gpu, q, scatter_array, grad_p, qbin, k_cov, k_per_thread):
     """
     Thread function to calculate a chunk of F(Q)
@@ -123,6 +82,46 @@ def subs_grad_fq(gpu, q, scatter_array, grad_p, qbin, k_cov, k_per_thread):
         grad_p += atomic_grad_fq(q, scatter_array, qbin, k_cov, k_per_thread)
 
 
+def wrap_fq(atoms, qbin=.1, sum_type='fq'):
+    """
+    Function which handles all the threads for the computation of F(Q)
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The Q resolution in A**-1
+    sum_type: str
+        The type of calculation being run, defaults to F(Q), but runs PDF
+        if anything other than 'fq' is provided.  This is needed because
+        the PDF runs at a different Q resolution and thus a different scatter
+        factor array for the atoms
+    Returns
+    -------
+    1darray;
+        The reduced structure factor
+    """
+    q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
+        atoms, sum_type)
+    if adps is None:
+        allocation = gpu_k_space_fq_allocation
+    else:
+        allocation = gpu_k_space_fq_adp_allocation
+
+    fq = np.zeros(qmax_bin, np.float32)
+    master_task = [fq, q, adps, scatter_array, qbin]
+    fq = gpu_multithreading(subs_fq, allocation, master_task, (n, qmax_bin),
+                            (gpus, mem_list))
+    na = np.average(scatter_array, axis=0) ** 2 * n
+    old_settings = np.seterr(all='ignore')
+    fq = np.nan_to_num(fq / na)
+    np.seterr(**old_settings)
+    # Note we only calculated half of the scattering, but the symmetry allows
+    # us to multiply by 2 and get it correct
+    return 2 * fq
+
+
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     """
     Function which handles all the threads for the computation of grad F(Q)
@@ -143,38 +142,22 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     1darray;
         The reduced structure factor
     """
-    q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(atoms,
-                                                                  sum_type)
+    q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
+        atoms, sum_type)
+    if adps is None:
+        allocation = gpu_k_space_fq_allocation
+    else:
+        allocation = gpu_k_space_fq_adp_allocation
 
-    # k is used as a counter to describe the inter-atomic distances
-    k_max = int((n ** 2 - n) / 2.)
-
-    gpus, mem_list = get_gpus_mem()
-    k_cov = 0
-    p_dict = {}
     grad_p = np.zeros((n, 3, qmax_bin))
-    while k_cov < k_max:
-        for gpu, mem in zip(gpus, mem_list):
-            if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
-                m = atoms_per_gpu_grad_fq(n, qmax_bin, mem)
-                if m > k_max - k_cov:
-                    m = k_max - k_cov
-                p = Thread(target=subs_grad_fq, args=(
-                    gpu, q, scatter_array, grad_p, qbin, k_cov, m,
-                ))
-                p.start()
-                p_dict[gpu] = p
-                k_cov += m
-                # print float(k_cov) / k_max * 100., '%'
-                if k_cov >= k_max:
-                    break
-    for value in p_dict.values():
-        value.join()
+    master_task = [grad_p, q, adps, scatter_array, qbin]
+    grad_p = gpu_multithreading(subs_grad_fq, allocation, master_task, (n, qmax_bin),
+                            (gpus, mem_list))
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     for tx in range(n):
         for tz in range(3):
-            grad_p[tx, tz, :] = np.nan_to_num(1 / na * grad_p[tx, tz, :])
+            grad_p[tx, tz, :] = np.nan_to_num(grad_p[tx, tz, :] / na)
     np.seterr(**old_settings)
     return grad_p
 
@@ -303,6 +286,7 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     pdf0[:, :, :] = awplo[:] * gpad[:, :, aiplo] + awphi * gpad[:, :, aiphi]
     pdf1 = pdf0 * 2
     return pdf1.real
+
 
 def gpu_multithreading(subs_function, allocation,
                         master_task, constants, gpu_info):

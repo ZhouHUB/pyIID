@@ -25,7 +25,13 @@ def test_multi_canon():
     sim = MultiCanonicalSimulation(atoms, [gce, nuts])
     traj = sim.run(10)
     assert traj[0].get_potential_energy() > traj[-1].get_potential_energy()
-    assert len(traj[0]) != len(traj[-1])
+    tf = False
+    for i in range(len(traj)):
+        if len(traj[i]) != len(traj[-1]):
+            tf = True
+            break
+    assert tf
+
 
 
 if __name__ == '__main__':
