@@ -182,6 +182,7 @@ if os.getenv('TRAVIS') or True:
         comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat'))]
 
     else:
+        # Use a slightly bigger test set, since we are using the JIT
         ns = [10, 100]
         num_exp = 3
 
