@@ -165,12 +165,12 @@ def atomic_grad_fq(task):
 
     else:
         sigma = np.zeros(k_max, np.float32)
-        get_sigma_from_adp(sigma, adps, r, d)
+        get_sigma_from_adp(sigma, adps, r, d, k_cov)
 
         tau = np.zeros((k_max, qmax_bin), np.float32)
         get_tau(tau, sigma, qbin)
 
-        grad_tau = np.zeros((k_max, 3, qmax_bin))
+        grad_tau = np.zeros((k_max, 3, qmax_bin), np.float32)
         get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, k_cov)
 
         grad = np.empty((k_max, 3, qmax_bin), np.float32)

@@ -184,7 +184,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     qbin: float
         The size of the Q bins
     """
-    kmax, qmax_bin = grad.shape
+    kmax, _, qmax_bin = grad.shape
     for k in xrange(kmax):
         for w in xrange(3):
             for qx in xrange(qmax_bin):

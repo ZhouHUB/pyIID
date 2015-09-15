@@ -56,17 +56,17 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
     adps = None
     if hasattr(atoms, 'adp'):
-        adps = atoms.adp
+        adps = atoms.adp.get_position()
     elif hasattr(atoms, 'adps'):
-        adps = atoms.adps
+        adps = atoms.adps.get_position()
     if adps is not None:
-        sigma = np.zeros(n, n, np.float32)
+        sigma = np.zeros((n, n), np.float32)
         get_sigma_from_adp(sigma, adps, r, d)
 
         tau = np.zeros((n, n, qmax_bin), np.float32)
         get_tau(tau, sigma, qbin)
 
-        fq = np.zeros((n, n, qmax_bin), np.float32)
+        fq = np.zeros(qmax_bin, np.float32)
         get_adp_fq(fq, omega, tau, norm)
         del tau, sigma, adps
     else:
@@ -193,11 +193,11 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     get_r_array(r, d)
 
     # Get normalization array
-    norm = np.zeros((n, n, qmax_bin))
+    norm = np.zeros((n, n, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array)
 
     # Get omega
-    omega = np.zeros((n, n, qmax_bin))
+    omega = np.zeros((n, n, qmax_bin), np.float32)
     get_omega(omega, r, qbin)
 
     # Get grad omega
@@ -206,25 +206,25 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     
     adps = None
     if hasattr(atoms, 'adp'):
-        adps = atoms.adp
+        adps = atoms.adp.get_position()
     elif hasattr(atoms, 'adps'):
-        adps = atoms.adps
+        adps = atoms.adps.get_position()
     if adps is not None:
-        sigma = np.zeros(n, n, np.float32)
+        sigma = np.zeros((n, n), np.float32)
         get_sigma_from_adp(sigma, adps, r, d)
 
         tau = np.zeros((n, n, qmax_bin), np.float32)
         get_tau(tau, sigma, qbin)
 
-        grad_tau = np.zeros((n, n, 3, qmax_bin))
-        get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, k_cov)
+        grad_tau = np.zeros((n, n, 3, qmax_bin), np.float32)
+        get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin)
 
-        grad = np.empty((n, n, 3, qmax_bin), np.float32)
-        get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm)
+        grad_fq = np.zeros((n, 3, qmax_bin), np.float32)
+        get_adp_grad_fq(grad_fq, omega, tau, grad_omega, grad_tau, norm)
         del tau, sigma, adps
     else:
         # Get grad FQ
-        grad_fq = np.zeros((n, 3, qmax_bin))
+        grad_fq = np.zeros((n, 3, qmax_bin), np.float32)
         get_grad_fq(grad_fq, grad_omega, norm)
 
     # Normalize FQ

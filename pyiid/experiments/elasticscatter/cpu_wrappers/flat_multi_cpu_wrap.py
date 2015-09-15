@@ -95,19 +95,16 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     else:
         allocation = k_space_grad_adp_fq_allocation
     master_task = [q, adps, scatter_array, qbin]
-    ans = cpu_multiprocessing(atomic_grad_fq, allocation, master_task, (n,
-                                                                    qmax_bin))
+    ans = cpu_multiprocessing(atomic_grad_fq, allocation, master_task,
+                              (n, qmax_bin))
     # sum the answers
     grad_p = np.sum(ans, axis=0)
-    # '''
-    # na = np.average(scatter_array, axis=0) ** 2 * n
     norm = np.empty((k_max, qmax_bin))
     get_normalization_array(norm, scatter_array, 0)
     na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
     grad_p = np.nan_to_num(grad_p / na)
     np.seterr(**old_settings)
-    # '''
     del q, n, qmax_bin, scatter_array, k_max, ans
     return grad_p
 
@@ -134,7 +131,6 @@ def cpu_multiprocessing(atomic_function, allocation,
         k_cov += m
     # multiprocessing map problem
     ans = p.map(atomic_function, tasks)
-    # p.join()
     p.close()
     return ans
 

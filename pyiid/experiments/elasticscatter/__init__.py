@@ -423,7 +423,7 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
     atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    a = np.random.random(atoms.positions.shape)
+    a = np.random.random(atoms.positions.shape) * .1
     print a
     # a[:, 0] = 0.
     # a[:, 1] = 0.

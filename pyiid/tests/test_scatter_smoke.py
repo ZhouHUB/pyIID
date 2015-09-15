@@ -1,5 +1,6 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
+
 __author__ = 'christopher'
 
 test_data = tuple(product(test_atoms, test_exp, proc_alg_pairs))
@@ -8,6 +9,11 @@ test_data = tuple(product(test_atoms, test_exp, proc_alg_pairs))
 def test_gen_scatter_smoke_fq():
     for v in test_data:
         yield check_scatter_fq, v
+
+
+def test_gen_scatter_smoke_grad_fq():
+    for v in test_data:
+        yield check_scatter_grad_fq, v
 
 
 def test_gen_scatter_smoke_sq():
@@ -23,11 +29,6 @@ def test_gen_scatter_smoke_iq():
 def test_gen_scatter_smoke_pdf():
     for v in test_data:
         yield check_scatter_pdf, v
-
-
-def test_gen_scatter_smoke_grad_fq():
-    for v in test_data:
-        yield check_scatter_grad_fq, v
 
 
 def test_gen_scatter_smoke_grad_pdf():
@@ -170,7 +171,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         # '-v'
-        # '-x',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)
