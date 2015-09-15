@@ -75,7 +75,7 @@ docs/_build/
 pyiid/grad_test.txt
 *.coverage
 
-#old_files
+old_files
 old_files/*
 benchmarks/*
 extra/*

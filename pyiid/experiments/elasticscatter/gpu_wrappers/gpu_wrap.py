@@ -2,9 +2,30 @@ from threading import Thread
 
 from numbapro.cudalib import cufft
 
+from pyiid.experiments.elasticscatter.gpu_wrappers.k_atomic_gpu import *
 from pyiid.experiments import *
-
 __author__ = 'christopher'
+
+def setup_gpu_calc(atoms, sum_type):
+    # atoms info
+    q = atoms.get_positions()
+    q = q.astype(np.float32)
+    n = len(q)
+    if sum_type == 'fq':
+        scatter_array = atoms.get_array('F(Q) scatter').astype(np.float32)
+    else:
+        scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
+    qmax_bin = scatter_array.shape[1]
+    sort_gpus, sort_gmem = get_gpus_mem()
+
+    if hasattr(atoms, 'adp'):
+        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
+               scatter_array, sort_gpus, sort_gmem
+    elif hasattr(atoms, 'adps'):
+        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
+               scatter_array, sort_gpus, sort_gmem
+    else:
+        return q, None, n, qmax_bin, scatter_array, sort_gpus, sort_gmem
 
 
 def subs_fq(gpu, q, scatter_array, fq, qbin, k_cov, k_per_thread):
@@ -54,8 +75,8 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     1darray;
         The reduced structure factor
     """
-    q, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(atoms,
-                                                                   sum_type)
+    q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
+        atoms, sum_type)
 
     # k is used as a counter to describe the inter-atomic distances
     k_max = int((n ** 2 - n) / 2.)

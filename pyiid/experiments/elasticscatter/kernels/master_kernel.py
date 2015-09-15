@@ -5,6 +5,7 @@ import numpy as np
 import xraylib
 import matplotlib.pyplot as plt
 from numpy.testing import assert_allclose
+
 __author__ = 'christopher'
 
 targ = 'cpu'

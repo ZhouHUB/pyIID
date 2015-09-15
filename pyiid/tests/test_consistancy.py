@@ -41,7 +41,7 @@ if __name__ == '__main__':
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',
-        # '--nocapture',
+        '--nocapture',
         # '-v'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},

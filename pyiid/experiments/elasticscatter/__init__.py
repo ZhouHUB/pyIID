@@ -119,15 +119,16 @@ class ElasticScatter(object):
             return True
 
         elif processor == self.avail_pro[1] and check_gpu() is True:
-            from pyiid.experiments.elasticscatter.gpu_wrappers import \
+            from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
                 wrap_fq as flat_fq
-            from pyiid.experiments.elasticscatter.gpu_wrappers import \
+            from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
                 wrap_fq_grad as flat_grad
 
             self.fq = flat_fq
             self.grad = flat_grad
             self.alg = 'flat'
-            from pyiid.experiments.elasticscatter.gpu_wrappers import grad_pdf
+            from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
+                grad_pdf
 
             self.grad_pdf = grad_pdf
             self.processor = processor
@@ -430,7 +431,7 @@ if __name__ == '__main__':
     adps = ADP(atoms,
                adps=a
                )
-    s = ElasticScatter({'rmax':5., 'rmin':2.})
+    s = ElasticScatter({'rmax': 5., 'rmin': 2.})
     fq = s.get_pdf(atoms)
     atoms.adps = adps
     fq2 = s.get_pdf(atoms)

@@ -138,7 +138,8 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
             tmp = sigma[k] * Q ** 2 * tau[k, qx] / r[k] ** 3
             for w in xrange(3):
                 grad_tau[k, w, qx] = tmp * (d[k, w] * sigma[k] -
-                                            (adps[i, w] - adps[j, w]) * r[k]**2)
+                                            (adps[i, w] - adps[j, w]) *
+                                            r[k]**2)
 
 
 @jit(target=processor_target, nopython=True)

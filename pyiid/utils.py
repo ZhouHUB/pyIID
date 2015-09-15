@@ -105,8 +105,8 @@ def get_coord_list(atoms, cutoff, element=None, tag=None):
             a = CoordinationNumbers(atms, cutoff)
             if element is not None and tag is not None:
                 coord_l.append(
-                    a[(np.asarray(atoms.get_chemical_symbols()) == element)
-                      & (atoms.get_tags() == tag)])
+                    a[(np.asarray(atoms.get_chemical_symbols()) == element) &
+                      (atoms.get_tags() == tag)])
             elif element is not None:
                 coord_l.append(
                     a[np.asarray(atoms.get_chemical_symbols()) == element])
@@ -120,8 +120,8 @@ def get_coord_list(atoms, cutoff, element=None, tag=None):
     else:
         a = CoordinationNumbers(atoms, cutoff)
         if element is not None and tag is not None:
-            return a[(np.asarray(atoms.get_chemical_symbols()) == element)
-                     & (atoms.get_tags() == tag)]
+            return a[(np.asarray(atoms.get_chemical_symbols()) == element) &
+                     (atoms.get_tags() == tag)]
         elif element is not None:
             return a[np.asarray(atoms.get_chemical_symbols()) == element]
         elif tag is not None:

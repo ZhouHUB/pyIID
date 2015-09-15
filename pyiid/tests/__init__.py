@@ -155,9 +155,7 @@ test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
                       {'k': 100, 'rt': 1., 'sp_type': 'com'},
                       {'k': 100, 'rt': 1., 'sp_type': 'att'}]
 
-test_calcs = [
-    Spring(**t_kwargs) for t_kwargs in test_spring_kwargs
-    ]
+test_calcs = [Spring(**t_kwargs) for t_kwargs in test_spring_kwargs]
 test_calcs.extend(['FQ', 'PDF'])
 
 # Travis CI has certain restrictions on memory and GPU availability so we
@@ -187,7 +185,9 @@ if os.getenv('TRAVIS') or True:
         comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 else:
-    ns = [10, 100, 1000]
+    ns = [10, 100,
+          # 1000
+          ]
     test_exp.extend([generate_experiment() for i in range(3)])
     test_atoms = [setup_atoms(int(n)) for n in ns]
     test_double_atoms = [setup_double_atoms(int(n)) for n in ns]

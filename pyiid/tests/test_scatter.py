@@ -2,8 +2,8 @@ from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
 __author__ = 'christopher'
 
-atol = 4e-5
 rtol = 5e-6
+atol = 1e-4
 
 test_data = tuple(product(test_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))
@@ -204,7 +204,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         # '-v'
-        '-x',
+        # '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

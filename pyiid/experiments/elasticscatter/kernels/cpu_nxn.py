@@ -73,7 +73,7 @@ def get_sigma_from_adp(sigma, adps, r, d):
                 tmp = 0.
                 for w in xrange(3):
                     tmp += (adps[i, w] - adps[j, w]) * d[i, j, w] / r[i, j]
-                sigma[i, j] = tmp ** 2
+                sigma[i, j] = tmp
 
 
 @jit(target=processor_target, nopython=True)
@@ -107,7 +107,7 @@ def get_tau(dw_factor, sigma, qbin):
         Q = qx * qbin
         for i in xrange(n):
             for j in xrange(n):
-                dw_factor[i, j, qx] = math.exp(-.5 * sigma[i, j] * Q ** 2)
+                dw_factor[i, j, qx] = math.exp(-.5 * sigma[i, j] ** 2 * Q ** 2)
 
 
 @jit(target=processor_target, nopython=True)
@@ -152,17 +152,12 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin):
         for i in xrange(n):
             for j in xrange(n):
                 if i != j:
-                    a = -1 * Q ** 2 * sigma[i, j] * tau[i, j, qx] / r[i, j] ** 3
+                    tmp = sigma[i, j] * Q ** 2 * tau[i, j, qx] / r[i, j] ** 3
                     for w in xrange(3):
-                        tmp = 0
-                        for z in xrange(3):
-                            if z == w:
-                                tmp2 = d[i, j, 0] ** 2 + d[i, j, 1] ** 2 + \
-                                       d[i, j, 2] ** 2 - d[i, j, w] ** 2
-                            else:
-                                tmp2 = -1 * d[i, j, w] * d[i, j, z]
-                            tmp += tmp2 * (adps[i, z] + adps[j, z]) / 2.
-                        grad_tau[i, j, w, qx] = tmp * a
+                        grad_tau[i, j, w, qx] = tmp * (
+                        d[i, j, w] * sigma[i, j] -
+                        (adps[i, w] - adps[j, w])
+                        * r[i, j] ** 2)
 
 
 @jit(target=processor_target, nopython=True)

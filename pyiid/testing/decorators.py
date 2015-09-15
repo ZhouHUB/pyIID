@@ -65,7 +65,7 @@ def known_fail_if(cond):
                     raise KnownFailureTest()
                 # if it does not fail, raise KnownFailureDidNotFailTest which
                 # is a normal exception.  This may seem counter-intuitive
-                # but knowing when nuts_benchmarks that _should_ fail don't can be useful
+                # but knowing when tests that _should_ fail don't can be useful
                 else:
                     raise KnownFailureDidNotFailTest()
             # use `make_decorator` from nose to make sure that the meta-data on

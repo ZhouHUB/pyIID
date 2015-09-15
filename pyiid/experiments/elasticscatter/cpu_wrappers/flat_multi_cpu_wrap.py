@@ -10,6 +10,7 @@ from pyiid.experiments.elasticscatter.kernels.cpu_experimental import \
     experimental_sum_grad_cpu
 import math
 from pyiid.experiments.elasticscatter.atomics.cpu_atomics import *
+
 __author__ = 'christopher'
 
 
@@ -34,35 +35,12 @@ def setup_cpu_calc(atoms, sum_type):
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
-    '''
-    # setup variables of interest
-    q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
-    k_max = int((n ** 2 - n) / 2.)
-    # break up problem
-    pool_size = cpu_count()
-    # pool_size = 4
-    if pool_size <= 0:
-        pool_size = 1
-    p = Pool(pool_size, maxtasksperchild=1)
-    tasks = []
-    k_cov = 0
-    if adps is not None:
-        allocation = cpu_k_space_fq_allocation
-    else:
-        allocation = cpu_k_space_fq_adp_allocation
-    while k_cov < k_max:
-        m = allocation(n, qmax_bin, float(
-            psutil.virtual_memory().available) / pool_size)
-        if m > k_max - k_cov:
-            m = k_max - k_cov
-        task = (q, adps, scatter_array, qbin, m, k_cov)
-        tasks.append(task)
-        k_cov += m
-    # multiprocessing map problem
-    ans = p.map(atomic_fq, tasks)
-    # p.join()
-    p.close()
-    '''
+    """
+    :param atoms:
+    :param qbin:
+    :param sum_type:
+    :return:
+    """
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
     if adps is None:
@@ -72,7 +50,8 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
     master_task = [q, adps, scatter_array, qbin]
 
-    ans = cpu_multiprocessing(atomic_fq, allocation, master_task, (n, qmax_bin))
+    ans = cpu_multiprocessing(atomic_fq, allocation, master_task,
+                              (n, qmax_bin))
 
     # sum the answers
     final = np.sum(ans, axis=0)
