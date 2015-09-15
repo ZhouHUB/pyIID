@@ -1,14 +1,7 @@
 from multiprocessing import Pool, cpu_count
 
-import numpy as np
 import psutil
 
-from pyiid.experiments.elasticscatter.kernels.cpu_flat import *
-from pyiid.experiments.elasticscatter.gpu_wrappers.k_atomic_gpu import \
-    gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
-from pyiid.experiments.elasticscatter.kernels.cpu_experimental import \
-    experimental_sum_grad_cpu
-import math
 from pyiid.experiments.elasticscatter.atomics.cpu_atomics import *
 
 __author__ = 'christopher'

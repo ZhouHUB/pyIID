@@ -65,7 +65,7 @@ def check_forces(value):
     :return:
     """
     # setup
-    rtol = 4e-5
+    rtol = 1e-4
     atol = 6e-5
     atoms1, atoms2 = value[0]
     exp_dict = value[1]

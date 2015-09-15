@@ -86,10 +86,9 @@ def check_forces(value):
     for i in range(len(atoms2)):
         dist = atoms2[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
-        assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
+        assert_allclose(np.cross(dist, forces[i]), np.zeros(3), atol=1e-7)
     del atoms1, atoms2, proc1, alg1, p, thresh, scat, target_data, calc, \
-        forces, com, \
-        dist
+        forces, com, dist
 
 
 if __name__ == '__main__':

@@ -148,7 +148,7 @@ test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
 test_potentials = [
     ('rw', .9),
-    ('chi_sq', 1)
+    # ('chi_sq', 1)
 ]
 test_qbin = [.1]
 test_spring_kwargs = [{'k': 100, 'rt': 5., 'sp_type': 'rep'},
@@ -162,7 +162,7 @@ test_calcs.extend(['FQ', 'PDF'])
 # change the size of the nuts_benchmarks to run
 travis = False
 if os.getenv('TRAVIS') or True:
-    if bool(os.getenv('NUMBA_DISABLE_JIT')):
+    if bool(os.getenv('NUMBA_DISABLE_JIT')) or bool(os.getenv('NUMBA_ENABLE_CUDASIM')):
         travis = True
         ns = [10]
         test_exp.extend([generate_experiment() for i in range(1)])

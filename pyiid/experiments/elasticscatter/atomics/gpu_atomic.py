@@ -67,7 +67,7 @@ def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
             4 * (5 * qmax_bin + 4))))
 
 
-def atomic_fq(q, scatter_array, qbin, k_cov, k_per_thread):
+def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
     Calculate a portion of F(Q).  This is the smallest division of the F(Q)
     function.

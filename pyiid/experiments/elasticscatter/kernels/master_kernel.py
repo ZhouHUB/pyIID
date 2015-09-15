@@ -5,6 +5,7 @@ import numpy as np
 import xraylib
 import matplotlib.pyplot as plt
 from numpy.testing import assert_allclose
+from multiprocessing import Pool, cpu_count
 
 __author__ = 'christopher'
 
@@ -225,7 +226,7 @@ def get_rw(gobs, gcalc, weight=None):
     if weight is None:
         weight = np.ones(gcalc.shape)
     old_settings = np.seterr(all='ignore')
-    scale = (1. / np.dot(gcalc.T, gcalc)) * np.dot(gcalc.T, gobs)
+    scale = get_scale(gobs, gcalc)
     np.seterr(**old_settings)
     if scale <= 0:
         return 1, 1
@@ -260,17 +261,14 @@ def get_chi_sq(gobs, gcalc):
     # scale = np.dot(np.dot(1. / (np.dot(gcalc.T, gcalc)), gcalc.T), gobs)
 
     old_settings = np.seterr(all='ignore')
-    scale = np.dot(gcalc.T, gobs) / np.dot(gcalc.T, gcalc)
+    scale = get_scale(gobs, gcalc)
     np.seterr(**old_settings)
     if scale <= 0:
         scale = 1
-    return np.sum((gobs - scale * gcalc) ** 2
-                  # /gobs
-                  ).real, scale
+    return np.sum((gobs - scale * gcalc) ** 2), scale
 
 
 # Gradient test_kernels -------------------------------------------------------
-from multiprocessing import Pool, cpu_count
 
 
 def grad_pdf_pool_worker(task):
@@ -346,15 +344,13 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
                 grad_a = 0
                 scale = 1
             else:
-                grad_a = (-scale * 2 * np.dot(gcalc.T,
-                                              grad_pdf[tx, tz, :]) + np.dot(
-                    gobs.T, grad_pdf[tx, tz, :])) / np.dot(gcalc.T, gcalc)
+                grad_a = get_grad_scale(gobs, gcalc, grad_pdf, tx, tz)
 
-            grad_rw[tx, tz] = rw * np.sum(
-                -(scale * grad_pdf[tx, tz, :] + gcalc[:] * grad_a) * (
-                    gobs[:] - scale * gcalc)) / np.sum(
-                (gobs[:] - scale * gcalc[:]) ** 2)
-            # '''
+            grad_rw[tx, tz] = -1 * rw / np.dot(gobs - scale * gcalc,
+                                               gobs - scale * gcalc) * \
+                              np.sum((scale * grad_pdf[tx, tz,
+                                              :] + gcalc * grad_a) * (
+                                     gobs - scale * gcalc))
 
 
 def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
@@ -382,19 +378,12 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
-            grad_a = 1. / np.dot(gcalc.T, gcalc) * (
-                -1 * scale * 2 * np.dot(gcalc.T, grad_pdf[tx, tz, :]) + np.dot(
-                    gobs.T, grad_pdf[tx, tz, :]))
+            grad_a = get_grad_scale(gobs, gcalc, grad_pdf, tx, tz)
             if scale <= 0:
                 grad_a = 0
-            grad_rw[tx, tz] = np.sum((-2 * scale * grad_pdf[tx, tz, :] -
-                                      2 * gcalc * grad_a) *
-                                     (gobs - scale * gcalc))
-
-            '''
-            grad_rw[tx, tz] = np.sum(-2 * (gobs - gcalc) * grad_pdf[tx, tz, :]
-                                     # /gobs
-            )'''
+            grad_rw[tx, tz] = -2 * np.sum(
+                (scale * grad_pdf[tx, tz, :] + gcalc * grad_a) *
+                (gobs - scale * gcalc))
 
 
 # Misc. Kernels----------------------------------------------------------------
@@ -405,3 +394,14 @@ def spring_force_kernel(direction, d, r, mag):
         for j in range(n):
             if i != j:
                 direction[i, :] += d[i, j, :] / r[i, j] * mag[i, j]
+
+
+def get_scale(target, calculated):
+    return np.dot(calculated.T, target) / np.dot(calculated.T, calculated)
+
+
+def get_grad_scale(target, calculated, grad_calculated, tx, tz):
+    a = get_scale(target, calculated)
+    return (-2 * a * np.dot(calculated, grad_calculated[tx, tz, :]) +
+            np.dot(target, grad_calculated[tx, tz, :])) / \
+           np.dot(calculated, calculated)
