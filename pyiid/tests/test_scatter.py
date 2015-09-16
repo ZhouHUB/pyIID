@@ -10,17 +10,18 @@ test_data = tuple(product(test_atoms, test_exp, test_potentials,
 
 
 # Test Generators
+'''
 def test_gen_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
-
+'''
 
 def test_gen_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
 
 
-# ''' Tests which derive from F(Q) and Grad F(Q)
+''' Tests which derive from F(Q) and Grad F(Q)
 def test_gen_scatter_pdf():
     for v in test_data:
         yield check_scatter_pdf, v
@@ -67,6 +68,32 @@ def check_scatter_fq(value):
     stats_check(ans1, ans2, rtol, atol)
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
     # assert False
+
+
+def check_scatter_grad_fq(value):
+    """
+    Check two processor, algorithm pairs against each other for gradient FQ
+    calculation
+    :param value:
+    :return:
+    """
+    # set everything up
+    atoms, exp = value[:2]
+    scat = ElasticScatter(exp_dict=exp)
+    proc1, alg1 = value[-1][0]
+    proc2, alg2 = value[-1][1]
+
+    # run algorithm 1
+    scat.set_processor(proc1, alg1)
+    ans1 = scat.get_grad_fq(atoms)
+
+    # run algorithm 2
+    scat.set_processor(proc2, alg2)
+    ans2 = scat.get_grad_fq(atoms)
+
+    # test
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_sq(value):
@@ -138,32 +165,6 @@ def check_scatter_pdf(value):
     # run algorithm 2
     scat.set_processor(proc2, alg2)
     ans2 = scat.get_pdf(atoms)
-
-    # test
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
-
-
-def check_scatter_grad_fq(value):
-    """
-    Check two processor, algorithm pairs against each other for gradient FQ
-    calculation
-    :param value:
-    :return:
-    """
-    # set everything up
-    atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
-    proc1, alg1 = value[-1][0]
-    proc2, alg2 = value[-1][1]
-
-    # run algorithm 1
-    scat.set_processor(proc1, alg1)
-    ans1 = scat.get_grad_fq(atoms)
-
-    # run algorithm 2
-    scat.set_processor(proc2, alg2)
-    ans2 = scat.get_grad_fq(atoms)
 
     # test
     stats_check(ans1, ans2, rtol, atol)

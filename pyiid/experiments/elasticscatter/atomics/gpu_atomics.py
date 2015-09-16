@@ -119,36 +119,41 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     stream2 = cuda.stream()
 
     # calculate kernels
-    dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dq = cuda.to_device(q, stream=stream)
+    dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dr = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
+
     get_d_array[bpg_k, tpb_k, stream](dd, dq, k_cov)
     get_r_array[bpg_k, tpb_k, stream](dr, dd)
 
+    dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
     dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
                               stream=stream2)
-    dscat = cuda.to_device(scatter_array.astype(np.float32), stream=stream2)
+
     get_normalization_array[bpg_kq, tpb_kq, stream2](dnorm, dscat, k_cov)
 
     domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
-                              stream=stream2)
+                               stream=stream2)
     get_omega[bpg_kq, tpb_kq, stream2](domega, dr, qbin)
 
     if adps is None:
         get_fq_inplace[bpg_kq, tpb_kq, stream2](dnorm, domega)
-        dfq = dnorm
     else:
-        from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_sigma_from_adp,
-                                                                       get_tau,
-                                                                       get_adp_fq_inplace)
+        from pyiid.experiments.elasticscatter.kernels.gpu_flat import (
+            get_sigma_from_adp,
+            get_tau,
+            get_adp_fq_inplace)
         dadps = cuda.to_device(adps.astype(np.float32), stream=stream)
-        dsigma = cuda.device_array((k_per_thread), dtype=np.float32, stream=stream)
+        dsigma = cuda.device_array((k_per_thread), dtype=np.float32,
+                                   stream=stream)
         get_sigma_from_adp[bpg_k, tpb_k, stream](dsigma, dadps, dr, dd, k_cov)
 
-        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream)
+        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                                 stream=stream)
         get_tau[bpg_kq, tpb_kq, stream2](dtau, dsigma, qbin)
         get_adp_fq_inplace[bpg_kq, tpb_kq, stream2](dnorm, domega, dtau)
-        dfq = dnorm
+
+    dfq = dnorm
 
     # pseudo-recursive summation kernel
     tpb_sum = [512, 1]
@@ -214,7 +219,8 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_d_array,
                                                                    get_r_array,
                                                                    get_normalization_array,
-                                                                   get_fq,
+                                                                   get_omega,
+                                                                   get_grad_omega,
                                                                    get_grad_fq,
                                                                    zero3d,
                                                                    fast_fast_flat_sum)
@@ -244,6 +250,7 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     # Start calculations
     dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dq = cuda.to_device(q, stream=stream)
+
     get_d_array[bpg_k, tpb_k, stream](dd, dq, k_cov)
 
     dr = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
@@ -254,19 +261,68 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     dscat = cuda.to_device(scatter_array, stream=stream2)
     get_normalization_array[bpg_kq, tpb_kq, stream2](dnorm, dscat, k_cov)
 
-    dfq = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
-                            stream=stream2)
-    get_fq[bpg_kq, tpb_kq, stream2](dfq, dr, dnorm, qbin)
+    domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                               stream=stream2)
+    get_omega[bpg_kq, tpb_kq, stream2](domega, dr, qbin)
+
+    dgrad_omega = cuda.device_array((k_per_thread, 3, qmax_bin),
+                                    dtype=np.float32,
+                                    stream=stream2)
+    get_grad_omega[bpg_kq, tpb_kq, stream2](dgrad_omega, domega, dr, dd, qbin)
 
     dgrad = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32,
                               stream=stream2)
-    get_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, dfq, dr, dd, dnorm, qbin)
 
+    if adps is None:
+        get_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, dgrad_omega, dnorm)
+    else:
+        from pyiid.experiments.elasticscatter.kernels.gpu_flat import (
+            get_sigma_from_adp,
+            get_tau,
+            get_grad_tau,
+            get_adp_grad_fq)
+        dadps = cuda.to_device(adps.astype(np.float32), stream=stream)
+        dsigma = cuda.device_array(k_per_thread, dtype=np.float32,
+                                   stream=stream)
+        get_sigma_from_adp[bpg_k, tpb_k, stream](dsigma, dadps, dr, dd, k_cov)
+
+        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                                 stream=stream)
+        get_tau[bpg_kq, tpb_kq, stream2](dtau, dsigma, qbin)
+
+        dgrad_tau = cuda.device_array((k_per_thread, 3, qmax_bin),
+                                      dtype=np.float32, stream=stream)
+        get_grad_tau[bpg_kq, tpb_kq, stream2](dgrad_tau, dtau, dr, dd, dsigma,
+                                              dadps, qbin, k_cov)
+
+        get_adp_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, domega, dtau,
+                                                 dgrad_omega, dgrad_tau, dnorm)
+        del dtau, dgrad_tau, dadps, dsigma
     dnew_grad = cuda.device_array((len(q), 3, qmax_bin), dtype=np.float32,
                                   stream=stream2)
     zero3d[bpg_nq, tpb_nq, stream2](dnew_grad)
 
     fast_fast_flat_sum[bpg_nnq, tpb_nnq, stream2](dnew_grad, dgrad, k_cov)
     new_grad2 = dnew_grad.copy_to_host(stream=stream2)
-    del dq, dscat, dd, dr, dnorm, dfq, dgrad, dnew_grad
+    del dq, dd, dr, dscat, dnorm, domega, dgrad_omega
     return new_grad2
+
+
+def gpu_k_space_fq_allocation(n, Q, mem):
+    return int(math.floor(
+        float(.8 * mem - 4 * Q * n - 4 * Q - 12 * n) / (16 * (Q + 1))))
+
+
+def gpu_k_space_fq_adp_allocation(n, Q, mem):
+    return int(math.floor(
+        float(.8 * mem - 4 * Q * n - 4 * Q - 24 * n) / (20 * (Q + 1))))
+
+
+def gpu_k_space_grad_fq_allocation(n, Q, mem):
+    return int(math.floor(
+        float(.8 * mem - 16 * Q * n - 12 * n) / (16 * (2 * Q + 1))))
+
+
+def gpu_k_space_grad_fq_adp_allocation(n, Q, mem):
+    return int(math.floor(
+        float(.8 * mem - 16 * Q * n - 24 * n) / (4 * (12 * Q + 5))))

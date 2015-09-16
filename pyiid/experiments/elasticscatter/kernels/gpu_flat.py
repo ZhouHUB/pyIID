@@ -8,18 +8,6 @@ from pyiid.experiments.elasticscatter.kernels import ij_to_k
 __author__ = 'christopher'
 
 
-@cuda.jit(device=True)
-def cuda_ij_to_k(i, j):
-    return int32(j + i * (i - 1) / 2)
-
-
-@cuda.jit(device=True)
-def cuda_k_to_ij(k):
-    i = math.floor((f4(1) + f4(math.sqrt(f4(1) + f4(8.) * f4(k)))) * f4(.5))
-    j = f4(k) - f4(i) * (f4(i) - f4(1)) * f4(.5)
-    return i4(i), i4(j)
-
-
 def symmetric_reshape(out_data, in_data):
     for i in range(len(out_data)):
         for j in range(i):
@@ -36,20 +24,31 @@ def antisymmetric_reshape(out_data, in_data):
                 out_data[i, j] = in_data[ij_to_k(j, i)]
 
 
+@cuda.jit(device=True)
+def cuda_k_to_ij(k):
+    i = math.floor((f4(1) + f4(math.sqrt(f4(1) + f4(8.) * f4(k)))) * f4(.5))
+    j = f4(k) - f4(i) * (f4(i) - f4(1)) * f4(.5)
+    return i4(i), i4(j)
+
+
+@cuda.jit(device=True)
+def cuda_ij_to_k(i, j):
+    return int32(j + i * (i - 1) / 2)
+
+
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_d_array(d, q, offset):
     k = cuda.grid(1)
     if k >= len(d):
         return
-    i, j = cuda_k_to_ij(k + offset)
-    for tz in range(3):
-        d[k, tz] = q[i, tz] - q[j, tz]
+    i, j = cuda_k_to_ij(i4(k + offset))
+    for w in range(3):
+        d[k, w] = q[i, w] - q[j, w]
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def get_r_array(r, d):
     k = cuda.grid(1)
-
     if k >= len(r):
         return
     r[k] = math.sqrt(d[k, 0] ** 2 + d[k, 1] ** 2 + d[k, 2] ** 2)
@@ -74,18 +73,6 @@ def get_normalization_array(norm_array, scat, offset):
     norm_array[k, qx] = scat[i, qx] * scat[j, qx]
 
 
-@cuda.jit(argtypes=[f4[:], f4[:, :], f4[:], f4[:, :], i4])
-def get_sigma_from_adp(sigma, adps, r, d, offset):
-    k = cuda.grid(1)
-    if k >= len(sigma):
-        return
-    i, j = cuda_k_to_ij(i4(k + offset))
-    tmp = 0.
-    for w in xrange(3):
-        tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
-    sigma[k] = tmp
-
-
 @cuda.jit(argtypes=[f4[:, :], f4[:], f4])
 def get_omega(omega, r, qbin):
     """
@@ -106,10 +93,21 @@ def get_omega(omega, r, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = float32(qbin) * float32(qx)
-    for k in xrange(kmax):
-        rk = r[k]
-        omega[k, qx] = math.sin(Q * rk) / rk
+    Q = f4(qbin) * f4(qx)
+    rk = r[k]
+    omega[k, qx] = math.sin(Q * rk) / rk
+
+
+@cuda.jit(argtypes=[f4[:], f4[:, :], f4[:], f4[:, :], i4])
+def get_sigma_from_adp(sigma, adps, r, d, offset):
+    k = cuda.grid(1)
+    if k >= len(sigma):
+        return
+    i, j = cuda_k_to_ij(i4(k + offset))
+    tmp = 0.
+    for w in xrange(3):
+        tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
+    sigma[k] = tmp
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:], f4])
@@ -119,7 +117,7 @@ def get_tau(dw_factor, sigma, qbin):
     if k >= kmax or qx >= qmax_bin:
         return
     Q = f4(qx) * f4(qbin)
-    dw_factor[k, qx] = math.exp(-.5 * sigma[k]**2 * Q ** 2)
+    dw_factor[k, qx] = math.exp(-.5 * sigma[k] ** 2 * Q ** 2)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
@@ -147,26 +145,27 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * fr(qbin)
+    Q = f4(qx) * f4(qbin)
     rk = r[k]
-    a = Q * math.cos(Q * rk) - omega[k, qx]
+    a = (Q * math.cos(Q * rk)) - omega[k, qx]
     a /= rk ** 2
     for w in xrange(3):
         grad_omega[k, w, qx] = a * d[k, w]
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:], f4[:, :], f4, i4])
+@cuda.jit(
+    argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:], f4[:, :], f4, i4])
 def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
     kmax, _, qmax_bin = grad_tau.shape
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = qx * qbin
+    Q = f4(qx) * f4(qbin)
     i, j = cuda_k_to_ij(i4(k + offset))
     tmp = sigma[k] * Q ** 2 * tau[k, qx] / r[k] ** 3
     for w in xrange(3):
         grad_tau[k, w, qx] = tmp * (
-            d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * r[k]**2)
+            d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * r[k] ** 2)
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
@@ -191,11 +190,13 @@ def get_grad_fq(grad, grad_omega, norm):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
+    a = norm[k, qx]
     for w in xrange(3):
-        grad[k, w, qx] = norm[k, qx] * grad_omega[k, w, qx]
+        grad[k, w, qx] = a * grad_omega[k, w, qx]
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:, :], f4[:, :, :], f4[:, :, :], f4[:, :]])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:, :], f4[:, :, :], f4[:, :, :],
+                    f4[:, :]])
 def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -217,22 +218,12 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
+    a = norm[k, qx]
+    b = tau[k, qx]
+    c = omega[k, qx]
     for w in xrange(3):
-        grad[k, w, qx] = norm[k, qx] * (tau[k, qx] * grad_omega[k, w, qx] +
-                          omega[k, qx] * grad_tau[k, w, qx])
-
-
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:, :], f4[:, :], f4])
-def get_grad_fq(grad, fq, r, d, norm, qbin):
-    k, qx = cuda.grid(2)
-    if k >= grad.shape[0] or qx >= fq.shape[1]:
-        return
-    Q = f4(qbin) * f4(qx)
-    rk = r[k]
-    A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / rk / rk
-    for w in range(3):
-        grad[k, w, qx] = A * d[k, w]
-        # grad[k, w, qx] = float32(qbin)
+        grad[k, w, qx] = a * (b * grad_omega[k, w, qx] +
+                              c * grad_tau[k, w, qx])
 
 
 @cuda.jit(argtypes=[f4[:, :, :]])
@@ -346,9 +337,10 @@ def get_fq_inplace(norm, omega):
     k, qx = cuda.grid(2)
     if k >= norm.shape[0] or qx >= norm.shape[1]:
         return
-    norm[k, qx] *= omega
+    norm[k, qx] *= omega[k, qx]
 
-@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], f4[:, :]])
+
+@cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
 def get_adp_fq_inplace(norm, omega, tau):
     kmax, qmax_bin = omega.shape
     k, qx = cuda.grid(2)

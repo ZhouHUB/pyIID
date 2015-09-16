@@ -120,7 +120,7 @@ def get_adp_fq(fq, omega, tau, norm):
 def get_grad_omega(grad_omega, omega, r, d, qbin):
     kmax, _, qmax_bin = grad_omega.shape
     for qx in xrange(qmax_bin):
-        Q = qx * qbin
+        Q = f4(qx) * f4(qbin)
         for k in xrange(kmax):
             rk = r[k]
             a = Q * math.cos(Q * rk) - omega[k, qx]

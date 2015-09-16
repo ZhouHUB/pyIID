@@ -5,16 +5,13 @@ __author__ = 'christopher'
 
 test_data = tuple(product(test_atoms, test_exp, proc_alg_pairs))
 
-
 def test_gen_scatter_smoke_fq():
     for v in test_data:
         yield check_scatter_fq, v
 
-
 def test_gen_scatter_smoke_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
-
 
 def test_gen_scatter_smoke_sq():
     for v in test_data:
@@ -34,7 +31,6 @@ def test_gen_scatter_smoke_pdf():
 def test_gen_scatter_smoke_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
-
 
 def check_scatter_fq(value):
     """
@@ -169,7 +165,7 @@ if __name__ == '__main__':
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',
-        # '--nocapture',
+        '--nocapture',
         # '-v'
         # '-x',
     ],

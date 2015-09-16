@@ -179,15 +179,6 @@ if os.getenv('TRAVIS'):
 
     if bool(os.getenv('NUMBA_DISABLE_JIT')):
         pass
-
-    elif bool(os.getenv('NUMBA_ENABLE_CUDASIM')):
-        proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
-                          ('CPU', 'nxn'),
-                          ]
-        comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
-                                    (('CPU', 'nxn'), ('CPU', 'flat'))
-                                    ]
-
     else:
         # Use a slightly bigger test set, since we are using the JIT
         ns = [10, 100]
@@ -199,10 +190,10 @@ else:
           ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
-                      ('CPU', 'nxn'),
+                      # ('CPU', 'nxn'),
                       ]
     comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
-                                (('CPU', 'nxn'), ('CPU', 'flat'))
+                                # (('CPU', 'nxn'), ('CPU', 'flat'))
                                 ]
 
 test_exp.extend([generate_experiment() for i in range(num_exp)])
@@ -212,6 +203,7 @@ test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
 test_atoms_adp = []
 for atoms in test_atoms:
     adps = ADP(atoms, np.random.normal(0, .1, atoms.positions.shape))
-    atoms.adps = adps
-    test_atoms_adp.append(atoms)
+    new_atoms = dc(atoms)
+    new_atoms.adps = adps
+    test_atoms_adp.append(new_atoms)
 # test_atoms.extend(test_atoms_adp)

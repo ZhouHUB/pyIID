@@ -4,7 +4,9 @@ from numbapro.cudalib import cufft
 
 from pyiid.experiments.elasticscatter.atomics.gpu_atomics import *
 from pyiid.experiments import *
+
 __author__ = 'christopher'
+
 
 def setup_gpu_calc(atoms, sum_type):
     # atoms info
@@ -55,7 +57,7 @@ def subs_fq(fq, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread):
         fq += atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
 
 
-def subs_grad_fq(gpu, q, scatter_array, grad_p, qbin, k_cov, k_per_thread):
+def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread):
     """
     Thread function to calculate a chunk of F(Q)
 
@@ -79,7 +81,46 @@ def subs_grad_fq(gpu, q, scatter_array, grad_p, qbin, k_cov, k_per_thread):
     """
     # set up GPU
     with gpu:
-        grad_p += atomic_grad_fq(q, scatter_array, qbin, k_cov, k_per_thread)
+        grad_p += atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
+
+
+def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
+    """
+    Thread function to calculate a chunk of grad PDF
+
+    Parameters
+    ----------
+    gpu: numba GPU context
+        The GPU to use
+    gpadc: Nx3xQ array
+        The input grad F(Q) array, padded and symmetry corrected
+    gpadcfft: Nx3xr array
+        The output grad PDF array, needs to be post processed
+    atoms_per_thread: int
+        Number of atoms being processed in this thread
+    n_cov: int
+        Number of atoms previously covered
+    Returns
+    """
+    input_shape = [gpadcfft.shape[-1]]
+    with gpu:
+        batch_operations = atoms_per_thread
+        plan = cufft.FFTPlan(input_shape, np.complex64, np.complex64,
+                             batch_operations)
+        for i in xrange(3):
+            batch_input = np.ravel(
+                gpadc[n_cov:n_cov + atoms_per_thread, i, :]).astype(
+                np.complex64)
+            batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
+
+            _ = plan.inverse(batch_input, out=batch_output)
+            del batch_input
+            data_out = np.reshape(batch_output,
+                                  (atoms_per_thread, input_shape[0]))
+            data_out /= input_shape[0]
+
+            gpadcfft[n_cov:n_cov + atoms_per_thread, i, :] = data_out
+            del data_out, batch_output
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
@@ -145,60 +186,25 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
         atoms, sum_type)
     if adps is None:
-        allocation = gpu_k_space_fq_allocation
+        allocation = gpu_k_space_grad_fq_allocation
     else:
-        allocation = gpu_k_space_fq_adp_allocation
+        allocation = gpu_k_space_grad_fq_adp_allocation
 
     grad_p = np.zeros((n, 3, qmax_bin))
+    # grad_p = np.zeros([(n * (n - 1) / 2), 3, qmax_bin])
+    # grad_p = np.zeros([(n * (n - 1) / 2), qmax_bin])
     master_task = [grad_p, q, adps, scatter_array, qbin]
-    grad_p = gpu_multithreading(subs_grad_fq, allocation, master_task, (n, qmax_bin),
-                            (gpus, mem_list))
+    grad_p = gpu_multithreading(subs_grad_fq, allocation, master_task,
+                                (n, qmax_bin),
+                                (gpus, mem_list))
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
-    for tx in range(n):
-        for tz in range(3):
-            grad_p[tx, tz, :] = np.nan_to_num(grad_p[tx, tz, :] / na)
+    grad_p = np.nan_to_num(grad_p / na)
+    # for tx in range(n):
+    #     for tz in range(3):
+    #         grad_p[tx, tz, :] = np.nan_to_num(grad_p[tx, tz, :] / na)
     np.seterr(**old_settings)
     return grad_p
-
-
-def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
-    """
-    Thread function to calculate a chunk of grad PDF
-
-    Parameters
-    ----------
-    gpu: numba GPU context
-        The GPU to use
-    gpadc: Nx3xQ array
-        The input grad F(Q) array, padded and symmetry corrected
-    gpadcfft: Nx3xr array
-        The output grad PDF array, needs to be post processed
-    atoms_per_thread: int
-        Number of atoms being processed in this thread
-    n_cov: int
-        Number of atoms previously covered
-    Returns
-    """
-    input_shape = [gpadcfft.shape[-1]]
-    with gpu:
-        batch_operations = atoms_per_thread
-        plan = cufft.FFTPlan(input_shape, np.complex64, np.complex64,
-                             batch_operations)
-        for i in xrange(3):
-            batch_input = np.ravel(
-                gpadc[n_cov:n_cov + atoms_per_thread, i, :]).astype(
-                np.complex64)
-            batch_output = np.zeros(batch_input.shape, dtype=np.complex64)
-
-            _ = plan.inverse(batch_input, out=batch_output)
-            del batch_input
-            data_out = np.reshape(batch_output,
-                                  (atoms_per_thread, input_shape[0]))
-            data_out /= input_shape[0]
-
-            gpadcfft[n_cov:n_cov + atoms_per_thread, i, :] = data_out
-            del data_out, batch_output
 
 
 def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
@@ -289,7 +295,7 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
 
 
 def gpu_multithreading(subs_function, allocation,
-                        master_task, constants, gpu_info):
+                       master_task, constants, gpu_info):
     n, qmax_bin = constants
     gpus, mem_list = gpu_info
     k_max = int((n ** 2 - n) / 2.)
