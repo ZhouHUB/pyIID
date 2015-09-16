@@ -6,12 +6,12 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 
 from pyiid.sim import leapfrog
 from pyiid.sim import Ensemble
-
+from ase.units import kB
 __author__ = 'christopher'
 Emax = 200
 
 
-def find_step_size(input_atoms, temp):
+def find_step_size(input_atoms, thermal_nrg):
     """
     Find a suitable starting step size for the simulation
 
@@ -28,7 +28,7 @@ def find_step_size(input_atoms, temp):
     """
     atoms = dc(input_atoms)
     step_size = .5
-    MaxwellBoltzmannDistribution(atoms, temp=temp, force_temp=True)
+    MaxwellBoltzmannDistribution(atoms, temp=thermal_nrg, force_temp=True)
 
     atoms_prime = leapfrog(atoms, step_size)
 
@@ -129,7 +129,9 @@ class NUTSCanonicalEnsemble(Ensemble):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
         self.verbose = verbose
         self.accept_target = accept_target
-        self.step_size = find_step_size(atoms, temperature)
+        self.temp = temperature
+        self.thermal_nrg = self.temp * kB
+        self.step_size = find_step_size(atoms, self.thermal_nrg)
         self.mu = np.log(10 * self.step_size)
         # self.ebar = 1
         self.sim_hbar = 0
@@ -137,7 +139,6 @@ class NUTSCanonicalEnsemble(Ensemble):
         self.t0 = 10
         # self.k = .75
         self.samples_total = 0
-        self.temp = temperature
         self.stationary = stationary
         self.zero_rotation = zero_rotation
         self.escape_level = escape_level
@@ -148,7 +149,7 @@ class NUTSCanonicalEnsemble(Ensemble):
         if self.verbose:
             print 'time step size', self.step_size / fs, 'fs'
         # sample r0
-        MaxwellBoltzmannDistribution(self.traj[-1], self.temp, force_temp=True)
+        MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg, force_temp=True)
         # self.traj[-1].set_momenta(self.random_state.normal(0, 1, (
         #     len(self.traj[-1]), 3)))
         # re-sample u, note we work in post exponential units:

@@ -5,7 +5,7 @@ from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.sim.nuts_hmc import NUTSCanonicalEnsemble
 from pyiid.tests import test_atom_squares, test_calcs
-
+from ase.visualize import view
 __author__ = 'christopher'
 
 test_nuts_data = tuple(product(test_atom_squares, test_calcs))
@@ -53,8 +53,10 @@ def check_nuts(value):
         pe_list.append(atoms.get_potential_energy())
     min_pe = np.min(pe_list)
     print len(traj)
-    del traj
     print min_pe, start_pe
+    if not min_pe < start_pe:
+        view(traj)
+    del traj
     assert min_pe < start_pe
 
 
@@ -64,6 +66,6 @@ if __name__ == '__main__':
     nose.runmodule(argv=['--with-doctest',
                          # '--nocapture',
                          '-v',
-                         '-x'
+                         # '-x'
                          ],
                    exit=False)
