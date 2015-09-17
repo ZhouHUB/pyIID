@@ -256,11 +256,11 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     dscat = cuda.to_device(scatter_array, stream=stream2)
     dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dr = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
-    dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
     domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
+    dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
     dgrad_omega = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream2)
     dgrad = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream2)
-    dnew_grad = cuda.device_array((len(q), 3, qmax_bin), dtype=np.float32, stream=stream2)
+    dnew_grad = cuda.device_array((n, 3, qmax_bin), dtype=np.float32, stream=stream2)
     cuda.synchronize()
 
     zero3d[bpg_nq, tpb_nq, stream2](dnew_grad)
@@ -295,7 +295,9 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
 
     experimental_sum_grad_fq1[bpg_kq, tpb_kq, stream2](dnew_grad, dgrad, k_cov)
     rtn = dnew_grad.copy_to_host()
-    del dq, dscat, dd, dr, domega, dnorm, dgrad, dnew_grad
+    del dq, dscat, dd, dr, domega, dnorm, dgrad_omega, dgrad, dnew_grad
+    cuda.current_context().trashing.clear()
+    # print 'final2', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
     return rtn
 
 

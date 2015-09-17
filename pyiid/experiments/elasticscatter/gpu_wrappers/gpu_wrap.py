@@ -81,8 +81,9 @@ def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread)
     """
     # set up GPU
     with gpu:
+        print 'initial', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
         grad_p += atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
-
+        print 'final', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
 
 def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
     """
@@ -191,8 +192,6 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
         allocation = gpu_k_space_grad_fq_adp_allocation
 
     grad_p = np.zeros((n, 3, qmax_bin))
-    # grad_p = np.zeros([(n * (n - 1) / 2), 3, qmax_bin])
-    # grad_p = np.zeros([(n * (n - 1) / 2), qmax_bin])
     master_task = [grad_p, q, adps, scatter_array, qbin]
     grad_p = gpu_multithreading(subs_grad_fq, allocation, master_task,
                                 (n, qmax_bin),

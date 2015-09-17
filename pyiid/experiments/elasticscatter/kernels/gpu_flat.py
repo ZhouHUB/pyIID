@@ -362,7 +362,9 @@ def get_adp_fq_inplace(norm, omega, tau):
     norm[k, qx] *= omega[k, qx] * tau[k, qx]
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4],
+          debug=True
+          )
 def experimental_sum_grad_fq1(new_grad, grad, k_cov):
     k, qx = cuda.grid(2)
     if k >= len(grad) or qx >= grad.shape[2]:
