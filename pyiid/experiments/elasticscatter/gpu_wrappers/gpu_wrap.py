@@ -81,7 +81,9 @@ def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread)
     """
     # set up GPU
     with gpu:
+        # print ('i',cuda.current_context().get_memory_info()[0], cuda.current_context().get_memory_info()[1])
         grad_p += atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
+        # print ('f', cuda.current_context().get_memory_info()[0], cuda.current_context().get_memory_info()[1])
 
 
 def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):

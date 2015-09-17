@@ -1,8 +1,9 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
+
 __author__ = 'christopher'
 
-rtol = 5e-6
+rtol = 7e-5
 atol = 1e-4
 
 test_data = tuple(product(test_atoms, test_exp, test_potentials,
@@ -10,18 +11,21 @@ test_data = tuple(product(test_atoms, test_exp, test_potentials,
 
 
 # Test Generators
-'''
+# '''
 def test_gen_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
-'''
+
+
+# '''
 
 def test_gen_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
 
 
-''' Tests which derive from F(Q) and Grad F(Q)
+# '''
+# Tests which derive from F(Q) and Grad F(Q)
 def test_gen_scatter_pdf():
     for v in test_data:
         yield check_scatter_pdf, v
@@ -40,6 +44,8 @@ def test_gen_scatter_sq():
 def test_gen_scatter_iq():
     for v in test_data:
         yield check_scatter_iq, v
+
+
 # '''
 
 
@@ -204,8 +210,8 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        # '-v'
-        # '-x',
+        '-v',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

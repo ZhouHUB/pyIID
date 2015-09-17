@@ -93,17 +93,9 @@ def experimental_sum_grad_fq1(new_grad, grad, k_cov):
         return
     i, j = cuda_k_to_ij(i4(k + k_cov))
     for tz in range(3):
-        new_grad[i, tz, qx] -= grad[k, tz, qx]
-        new_grad[j, tz, qx] += grad[k, tz, qx]
-        # cuda.atomic.add(new_grad, (i, 0, qx), grad[k, 0, qx] * -1)
-        # cuda.atomic.add(new_grad, (j, 0, qx), grad[k, 0, qx] * 1)
-        #
-        # cuda.atomic.add(new_grad, (i, 1, qx), grad[k, 1, qx] * -1)
-        # cuda.atomic.add(new_grad, (j, 1, qx), grad[k, 1, qx] * 1)
-        #
-        # cuda.atomic.add(new_grad, (i, 2, qx), grad[k, 2, qx] * -1)
-        # cuda.atomic.add(new_grad, (j, 2, qx), grad[k, 2, qx] * 1)
-
+        a = grad[k, tz, qx]
+        cuda.atomic.add(new_grad, (j, tz, qx), a)
+        cuda.atomic.add(new_grad, (i, tz, qx), -1 * a)
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
 def experimental_sum_grad_fq2(new_grad, grad, k_cov):
@@ -115,3 +107,27 @@ def experimental_sum_grad_fq2(new_grad, grad, k_cov):
         cuda.atomic.add(new_grad, (j, tz, qx), 1)
         # new_grad[i, tz, qx] = j
         # cuda.atomic.add(new_grad, (i, tz, qx), j)
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
+def experimental_sum_grad_fq3(new_grad, grad, k_cov):
+    k, qx = cuda.grid(2)
+    if k >= len(grad) or qx >= grad.shape[2]:
+        return
+    i, j = cuda_k_to_ij(i4(k + k_cov))
+    # for tz in range(3):
+    #     new_grad[i, tz, qx] -= grad[k, tz, qx]
+    #     new_grad[j, tz, qx] += grad[k, tz, qx]
+    # cuda.atomic.add(new_grad, (i, 0, qx), grad[k, 0, qx] * -1)
+    # cuda.atomic.add(new_grad, (j, 0, qx), grad[k, 0, qx] * 1)
+    #
+    # cuda.atomic.add(new_grad, (i, 1, qx), grad[k, 1, qx] * -1)
+    # cuda.atomic.add(new_grad, (j, 1, qx), grad[k, 1, qx] * 1)
+    #
+    # cuda.atomic.add(new_grad, (i, 2, qx), grad[k, 2, qx] * -1)
+    # cuda.atomic.add(new_grad, (j, 2, qx), grad[k, 2, qx] * 1)
+    new_grad[i, 0, qx] -= grad[k, 0, qx]
+    new_grad[j, 0, qx] += grad[k, 0, qx]
+    new_grad[i, 1, qx] -= grad[k, 1, qx]
+    new_grad[j, 1, qx] += grad[k, 1, qx]
+    new_grad[i, 2, qx] -= grad[k, 2, qx]
+    new_grad[j, 2, qx] += grad[k, 2, qx]

@@ -122,36 +122,37 @@ def setup_atomic_square():
 
 
 def stats_check(ans1, ans2, rtol=1e-7, atol=0):
-    print 'bulk statistics:'
-    print 'max', np.max(np.abs(ans2 - ans1)),
-    print 'min', np.min(np.abs(ans2 - ans1)),
-    print 'men', np.mean(np.abs(ans2 - ans1)),
-    print 'med', np.median(np.abs(ans2 - ans1)),
-    print 'std', np.std(np.abs(ans2 - ans1))
+    if np.any(np.abs(ans2 - ans1) >= atol + rtol * np.abs(ans2)):
+        print 'bulk statistics:'
+        print 'max', np.max(np.abs(ans2 - ans1)),
+        print 'min', np.min(np.abs(ans2 - ans1)),
+        print 'men', np.mean(np.abs(ans2 - ans1)),
+        print 'med', np.median(np.abs(ans2 - ans1)),
+        print 'std', np.std(np.abs(ans2 - ans1))
 
-    if isinstance(ans1, type(np.asarray([1]))):
-        print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
-            np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
-        fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
-        # print '\n allclose failures'
-        # print zip(ans1[fails].tolist(), ans2[fails].tolist())
-        # print '\n allclose internals'
-        # print zip(np.abs(ans1[fails] - ans2[fails]).tolist(),
-        #           (atol + rtol * np.abs(ans2[fails])).tolist())
-        print '\n', 'without atol rtol = ', '\n'
-        print np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
-        print 'without rtol atol = ', '\n'
-        print np.abs(ans1[fails] - ans2[fails])
-        print '\n', 'with current atol rtol = ', '\n'
-        print (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
-        print 'with current rtol atol = ', '\n'
-        print np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails])
-    else:
-        print np.abs(ans1 - ans2)
-        print atol + rtol * np.abs(ans2)
-        print 'without atol'
-        print rtol * np.abs(ans2)
-        print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
+        if isinstance(ans1, type(np.asarray([1]))):
+            print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
+                np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
+            fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
+            print '\n allclose failures'
+            print zip(ans1[fails].tolist(), ans2[fails].tolist())
+            print '\n allclose internals'
+            print zip(np.abs(ans1[fails] - ans2[fails]).tolist(),
+                      (atol + rtol * np.abs(ans2[fails])).tolist())
+            print '\n', 'without atol rtol = ', '\n'
+            print np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
+            print 'without rtol atol = ', '\n'
+            print np.abs(ans1[fails] - ans2[fails])
+            print '\n', 'with current atol rtol = ', '\n'
+            print (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
+            print 'with current rtol atol = ', '\n'
+            print np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails])
+        else:
+            print np.abs(ans1 - ans2)
+            print atol + rtol * np.abs(ans2)
+            print 'without atol'
+            print rtol * np.abs(ans2)
+            print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
 
 
 # Setup lists of test variables for combinations
@@ -186,15 +187,17 @@ if os.getenv('TRAVIS'):
 
 else:
     ns = [10, 100,
-          # 1000
+          1000
           ]
     num_exp = 3
-    proc_alg_pairs = [('CPU', 'flat'), ('Multi-GPU', 'flat'),
-                      # ('CPU', 'nxn'),
+    proc_alg_pairs = [('CPU', 'flat'),
+                      # ('Multi-GPU', 'flat'),
+                      ('CPU', 'nxn'),
                       ]
-    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
+    # comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
                                 # (('CPU', 'nxn'), ('CPU', 'flat'))
-                                ]
+                                # ]
+    comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 test_exp.extend([generate_experiment() for i in range(num_exp)])
 test_atoms = [setup_atoms(int(n)) for n in ns]
@@ -207,3 +210,4 @@ for atoms in test_atoms:
     new_atoms.adps = adps
     test_atoms_adp.append(new_atoms)
 # test_atoms.extend(test_atoms_adp)
+# test_atoms = test_atoms_adp
