@@ -222,8 +222,8 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
                                                                    get_omega,
                                                                    get_grad_omega,
                                                                    zero3d,
+                                                                   experimental_sum_grad_fq1,
                                                                    )
-    from pyiid.experiments.elasticscatter.kernels.experimental import experimental_sum_grad_fq1
     if adps is None:
         from pyiid.experiments.elasticscatter.kernels.gpu_flat import get_grad_fq
     else:

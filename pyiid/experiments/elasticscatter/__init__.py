@@ -54,6 +54,21 @@ class ElasticScatter(object):
     diffraction patterns and PDFs from atomic configurations.  It does not
     include potential energies, such as Rw and chi**2 which are under the
     Calculator object.
+
+    >>>from ase.atoms import Atoms
+    >>>from pyiid.adp import ADP
+    >>>import matplotlib.pyplot as plt
+    >>>atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
+    >>>a = np.random.random(atoms.positions.shape) * .1
+    >>>adps = ADP(atoms, adps=a)
+    >>>s = ElasticScatter({'rmax': 5., 'rmin': 2.})
+    >>>fq = s.get_pdf(atoms)
+    >>>atoms.adps = adps
+    >>>fq2 = s.get_pdf(atoms)
+    >>>plt.plot(s.get_r(), fq)
+    >>>plt.plot(s.get_r(), fq2)
+    >>>plt.show()
+
     """
 
     def __init__(self, exp_dict=None):
@@ -429,25 +444,3 @@ def wrap_atoms(atoms, exp_dict=None):
     atoms.set_array('PDF scatter', scatter_array)
 
     atoms.info['exp'] = exp_dict
-
-
-if __name__ == '__main__':
-    from ase.atoms import Atoms
-    from pyiid.adp import ADP
-    import matplotlib.pyplot as plt
-
-    atoms = Atoms('Au4', [[0, 0, 0], [3, 0, 0], [0, 3, 0], [3, 3, 0]])
-    a = np.random.random(atoms.positions.shape) * .1
-    print a
-    # a[:, 0] = 0.
-    # a[:, 1] = 0.
-    adps = ADP(atoms,
-               adps=a
-               )
-    s = ElasticScatter({'rmax': 5., 'rmin': 2.})
-    fq = s.get_pdf(atoms)
-    atoms.adps = adps
-    fq2 = s.get_pdf(atoms)
-    plt.plot(s.get_r(), fq)
-    plt.plot(s.get_r(), fq2)
-    plt.show()

@@ -11,20 +11,16 @@ test_data = tuple(product(test_atoms, test_exp, test_potentials,
 
 
 # Test Generators
-# '''
 def test_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
 
-
-# '''
 
 def test_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
 
 
-# '''
 # Tests which derive from F(Q) and Grad F(Q)
 def test_scatter_pdf():
     for v in test_data:
@@ -35,6 +31,7 @@ def test_scatter_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
 
+'''
 
 def test_scatter_sq():
     for v in test_data:

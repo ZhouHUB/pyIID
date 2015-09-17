@@ -347,3 +347,41 @@ def get_adp_fq_inplace(norm, omega, tau):
     if k >= kmax or qx >= qmax_bin:
         return
     norm[k, qx] *= omega[k, qx] * tau[k, qx]
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
+def experimental_sum_grad_fq1(new_grad, grad, k_cov):
+    k, qx = cuda.grid(2)
+    if k >= len(grad) or qx >= grad.shape[2]:
+        return
+    i, j = cuda_k_to_ij(i4(k + k_cov))
+    for tz in range(3):
+        a = grad[k, tz, qx]
+        cuda.atomic.add(new_grad, (j, tz, qx), a)
+        cuda.atomic.add(new_grad, (i, tz, qx), -1 * a)
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
+def get_grad_fq_inplace(grad_omega, norm):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+
+    Parameters
+    ------------
+    grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    d: NxNx3 array
+        The distance array for the configuration
+    r: NxN array
+        The inter-atomic distances
+    scatter_array: NxQ array
+        The scatter factor array
+    qbin: float
+        The size of the Q bins
+    """
+    kmax, _, qmax_bin = grad_omega.shape
+    k, qx = cuda.grid(2)
+    if k >= kmax or qx >= qmax_bin:
+        return
+    a = norm[k, qx]
+    for w in xrange(3):
+        grad_omega[k, w, qx] *= a

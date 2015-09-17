@@ -87,17 +87,6 @@ def get_grad_fq_e(E, D, C):
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
-def experimental_sum_grad_fq1(new_grad, grad, k_cov):
-    k, qx = cuda.grid(2)
-    if k >= len(grad) or qx >= grad.shape[2]:
-        return
-    i, j = cuda_k_to_ij(i4(k + k_cov))
-    for tz in range(3):
-        a = grad[k, tz, qx]
-        cuda.atomic.add(new_grad, (j, tz, qx), a)
-        cuda.atomic.add(new_grad, (i, tz, qx), -1 * a)
-
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
 def experimental_sum_grad_fq2(new_grad, grad, k_cov):
     k, qx = cuda.grid(2)
     if k >= len(grad) or qx >= grad.shape[2]:
