@@ -204,10 +204,10 @@ if __name__ == '__main__':
     import nose
 
     nose.runmodule(argv=[
-        # '-s',
+        '-s',
         '--with-doctest',
         # '--nocapture',
-        '-v',
+        # '-v',
         # '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},

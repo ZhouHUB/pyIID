@@ -134,6 +134,8 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
             print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
                 np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
             fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
+
+            print 'percentage of failed tests', ans1[fails].size / float(ans1.size) * 100., '%'
             if ans1[fails].size <= 100:
                 print '\n allclose failures'
                 print zip(ans1[fails].tolist(), ans2[fails].tolist())

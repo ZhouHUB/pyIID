@@ -360,7 +360,7 @@ def experimental_sum_grad_fq1(new_grad, grad, k_cov):
         cuda.atomic.add(new_grad, (j, tz, qx), a)
         cuda.atomic.add(new_grad, (i, tz, qx), -1 * a)
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_grad_fq_inplace(grad_omega, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
