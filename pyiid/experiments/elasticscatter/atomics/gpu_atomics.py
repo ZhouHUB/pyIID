@@ -252,62 +252,50 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     stream2 = cuda.stream()
 
     # Start calculations
-    dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dq = cuda.to_device(q, stream=stream)
-
-    get_d_array[bpg_k, tpb_k, stream](dd, dq, k_cov)
-    del dq
+    dscat = cuda.to_device(scatter_array, stream=stream2)
+    dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dr = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
+    dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
+    domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
+    dgrad_omega = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream2)
+    dgrad = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream2)
+    dnew_grad = cuda.device_array((len(q), 3, qmax_bin), dtype=np.float32, stream=stream2)
+    cuda.synchronize()
+
+    zero3d[bpg_nq, tpb_nq, stream2](dnew_grad)
+    get_d_array[bpg_k, tpb_k, stream](dd, dq, k_cov)
     get_r_array[bpg_k, tpb_k, stream](dr, dd)
 
-    dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
-                              stream=stream2)
-    dscat = cuda.to_device(scatter_array, stream=stream2)
     get_normalization_array[bpg_kq, tpb_kq, stream2](dnorm, dscat, k_cov)
-    del dscat
-    domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
-                               stream=stream2)
     get_omega[bpg_kq, tpb_kq, stream2](domega, dr, qbin)
 
-    dgrad_omega = cuda.device_array((k_per_thread, 3, qmax_bin),
-                                    dtype=np.float32,
-                                    stream=stream2)
     get_grad_omega[bpg_kq, tpb_kq, stream2](dgrad_omega, domega, dr, dd, qbin)
 
-    dgrad = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32,
-                              stream=stream2)
 
     if adps is None:
-        del dd, dr, domega
         get_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, dgrad_omega, dnorm)
-        del dnorm
     else:
         dadps = cuda.to_device(adps.astype(np.float32), stream=stream)
-        dsigma = cuda.device_array(k_per_thread, dtype=np.float32,
-                                   stream=stream)
+        dsigma = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
+        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream)
+        dgrad_tau = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream)
+
         get_sigma_from_adp[bpg_k, tpb_k, stream](dsigma, dadps, dr, dd, k_cov)
 
-        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
-                                 stream=stream)
         get_tau[bpg_kq, tpb_kq, stream2](dtau, dsigma, qbin)
 
-        dgrad_tau = cuda.device_array((k_per_thread, 3, qmax_bin),
-                                      dtype=np.float32, stream=stream)
         get_grad_tau[bpg_kq, tpb_kq, stream2](dgrad_tau, dtau, dr, dd, dsigma,
                                               dadps, qbin, k_cov)
 
         get_adp_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, domega, dtau,
                                                  dgrad_omega, dgrad_tau, dnorm)
-        del dtau, dgrad_tau, dadps, dsigma, dd, dr, domega, dnorm
+        del dtau, dgrad_tau, dadps, dsigma
 
-    dnew_grad = cuda.device_array((len(q), 3, qmax_bin), dtype=np.float32,
-                                  stream=stream2)
-    zero3d[bpg_nq, tpb_nq, stream2](dnew_grad)
 
     experimental_sum_grad_fq1[bpg_kq, tpb_kq, stream2](dnew_grad, dgrad, k_cov)
-    del dgrad
     rtn = dnew_grad.copy_to_host()
-    del dnew_grad
+    del dq, dscat, dd, dr, domega, dnorm, dgrad, dnew_grad
     return rtn
 
 

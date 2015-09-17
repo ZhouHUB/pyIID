@@ -3,25 +3,7 @@ import math
 from numba import *
 from numba import cuda, f4, i4
 
-from pyiid.experiments.elasticscatter.kernels import ij_to_k
-
 __author__ = 'christopher'
-
-
-def symmetric_reshape(out_data, in_data):
-    for i in range(len(out_data)):
-        for j in range(i):
-            out_data[i, j] = in_data[j + i * (i - 1) / 2]
-            out_data[j, i] = in_data[j + i * (i - 1) / 2]
-
-
-def antisymmetric_reshape(out_data, in_data):
-    for i in range(len(out_data)):
-        for j in range(len(out_data)):
-            if j < i:
-                out_data[i, j] = -1 * in_data[ij_to_k(i, j)]
-            elif i < j:
-                out_data[i, j] = in_data[ij_to_k(j, i)]
 
 
 @cuda.jit(device=True)
@@ -51,7 +33,8 @@ def get_r_array(r, d):
     k = cuda.grid(1)
     if k >= len(r):
         return
-    r[k] = math.sqrt(d[k, 0] ** 2 + d[k, 1] ** 2 + d[k, 2] ** 2)
+    a, b, c = d[k, :]
+    r[k] = math.sqrt(a * a + b * b + c * c)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
@@ -117,7 +100,7 @@ def get_tau(dw_factor, sigma, qbin):
     if k >= kmax or qx >= qmax_bin:
         return
     Q = f4(qx) * f4(qbin)
-    dw_factor[k, qx] = math.exp(-.5 * sigma[k] ** 2 * Q ** 2)
+    dw_factor[k, qx] = math.exp(f4(-.5) * f4(sigma[k] * sigma[k]) * f4(Q * Q))
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
@@ -148,7 +131,7 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
     Q = f4(qx) * f4(qbin)
     rk = r[k]
     a = (Q * math.cos(Q * rk)) - omega[k, qx]
-    a /= rk ** 2
+    a /= f4(rk * rk)
     for w in xrange(3):
         grad_omega[k, w, qx] = a * d[k, w]
 
@@ -162,10 +145,11 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
         return
     Q = f4(qx) * f4(qbin)
     i, j = cuda_k_to_ij(i4(k + offset))
-    tmp = sigma[k] * Q ** 2 * tau[k, qx] / r[k] ** 3
+    rk = r[k]
+    tmp = f4(sigma[k] * f4(Q * Q) * tau[k, qx]) / f4(rk * rk * rk)
     for w in xrange(3):
-        grad_tau[k, w, qx] = tmp * (
-            d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * r[k] ** 2)
+        grad_tau[k, w, qx] = f4(tmp) * f4(
+            d[k, w] * sigma[k] - f4(adps[i, w] - adps[j, w]) * f4(rk * rk))
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
@@ -358,7 +342,8 @@ def experimental_sum_grad_fq1(new_grad, grad, k_cov):
     for tz in range(3):
         a = grad[k, tz, qx]
         cuda.atomic.add(new_grad, (j, tz, qx), a)
-        cuda.atomic.add(new_grad, (i, tz, qx), -1 * a)
+        cuda.atomic.add(new_grad, (i, tz, qx), f4(-1.) * a)
+
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_grad_fq_inplace(grad_omega, norm):

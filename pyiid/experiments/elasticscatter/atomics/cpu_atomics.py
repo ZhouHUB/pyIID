@@ -175,8 +175,6 @@ def atomic_grad_fq(task):
         grad = np.empty((k_max, 3, qmax_bin), np.float32)
         get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm)
 
-    rtn = np.empty((n, 3, qmax_bin), np.float32)
-    fast_fast_flat_sum(rtn, grad, k_cov)
     rtn = np.zeros((n, 3, qmax_bin), np.float32)
     experimental_sum_grad_cpu(rtn, grad, k_cov)
 

@@ -1,5 +1,6 @@
 from pyiid.experiments.elasticscatter.kernels import *
 import math
+
 __author__ = 'christopher'
 
 processor_target = 'cpu'
@@ -18,7 +19,7 @@ def get_d_array(d, q, offset):
         The atomic positions
     """
     for k in range(len(d)):
-        i, j = k_to_ij(k + offset)
+        i, j = k_to_ij(i4(k + offset))
         for tz in range(3):
             d[k, tz] = q[i, tz] - q[j, tz]
 
@@ -35,7 +36,8 @@ def get_r_array(r, d):
         The coordinate pair distances
     """
     for k in xrange(len(r)):
-        r[k] = math.sqrt(d[k, 0] ** 2 + d[k, 1] ** 2 + d[k, 2] ** 2)
+        a, b, c = d[k, :]
+        r[k] = math.sqrt(a * a + b * b + c * c)
 
 
 @jit(target=processor_target, nopython=True)
@@ -51,19 +53,9 @@ def get_normalization_array(norm, scat, offset):
         The scatter factor array
     """
     for k in xrange(norm.shape[0]):
-        i, j = k_to_ij(k + offset)
+        i, j = k_to_ij(i4(k + offset))
         for qx in xrange(norm.shape[1]):
             norm[k, qx] = scat[i, qx] * scat[j, qx]
-
-
-@jit(target=processor_target, nopython=True)
-def get_sigma_from_adp(sigma, adps, r, d, offset):
-    for k in xrange(len(sigma)):
-        i, j = k_to_ij(k + offset)
-        tmp = 0.
-        for w in xrange(3):
-            tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
-        sigma[k] = tmp
 
 
 @jit(target=processor_target, nopython=True)
@@ -84,19 +76,29 @@ def get_omega(omega, r, qbin):
     """
     kmax, qmax_bin = omega.shape
     for qx in xrange(qmax_bin):
-        Q = float32(qbin) * float32(qx)
+        Q = f4(qbin) * f4(qx)
         for k in xrange(kmax):
             rk = r[k]
             omega[k, qx] = math.sin(Q * rk) / rk
 
 
 @jit(target=processor_target, nopython=True)
+def get_sigma_from_adp(sigma, adps, r, d, offset):
+    for k in xrange(len(sigma)):
+        i, j = k_to_ij(i4(k + offset))
+        tmp = 0.
+        for w in xrange(3):
+            tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
+        sigma[k] = tmp
+
+
+@jit(target=processor_target, nopython=True)
 def get_tau(dw_factor, sigma, qbin):
     kmax, qmax_bin = dw_factor.shape
     for qx in xrange(qmax_bin):
-        Q = qx * qbin
+        Q = f4(qbin) * f4(qx)
         for k in xrange(kmax):
-            dw_factor[k, qx] = math.exp(-.5 * sigma[k]**2 * Q ** 2)
+            dw_factor[k, qx] = math.exp(f4(-.5) * f4(sigma[k] * sigma[k]) * f4(Q * Q))
 
 
 @jit(target=processor_target, nopython=True)
@@ -124,7 +126,7 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
         for k in xrange(kmax):
             rk = r[k]
             a = Q * math.cos(Q * rk) - omega[k, qx]
-            a /= rk ** 2
+            a /= f4(rk * rk)
             for w in xrange(3):
                 grad_omega[k, w, qx] = a * d[k, w]
 
@@ -136,11 +138,11 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
         Q = qx * qbin
         for k in xrange(kmax):
             i, j = k_to_ij(k + offset)
-            tmp = sigma[k] * Q ** 2 * tau[k, qx] / r[k] ** 3
+            rk = r[k]
+            tmp = f4(sigma[k] * f4(Q * Q) * tau[k, qx]) / f4(rk * rk * rk)
             for w in xrange(3):
-                grad_tau[k, w, qx] = tmp * (d[k, w] * sigma[k] -
-                                            (adps[i, w] - adps[j, w]) *
-                                            r[k]**2)
+                grad_tau[k, w, qx] = f4(tmp) * f4(
+                    d[k, w] * sigma[k] - f4(adps[i, w] - adps[j, w]) * f4(rk * rk))
 
 
 @jit(target=processor_target, nopython=True)
@@ -207,6 +209,8 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
             elif i < j:
                 k = i + j * (j - 1) / 2 - k_cov
                 alpha = 1
+            else:
+                k = -1
             if 0 <= k < k_max:
                 for qx in xrange(grad.shape[2]):
                     for tz in xrange(3):

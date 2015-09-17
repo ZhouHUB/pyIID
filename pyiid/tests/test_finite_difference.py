@@ -12,9 +12,9 @@ def finite_difference_grad(atoms, exp_dict):
     for i in range(len(atoms)):
         for w in range(3):
             atoms2 = dc(atoms)
-            atoms2[i].position[w] = dq
+            atoms2[i].position[w] += dq
             fq2 = s.get_fq(atoms2)
-            finite_difference_grad_fq[i, w, :] = -1 * (fq2 - start_fq) / dq/2.
+            finite_difference_grad_fq[i, w, :] = (fq2 - start_fq) / dq
     return finite_difference_grad_fq
 
 
@@ -24,9 +24,9 @@ if __name__ == '__main__':
     import matplotlib.pyplot as plt
     from pyiid.adp import ADP
 
-    atoms = setup_atomic_square()[0]
+    # atoms = setup_atomic_square()[0]
     # atoms.adps = ADP(atoms, adps=np.random.random((len(atoms), 3)))
-    # atoms = Atoms('Au2', [[0, 0, 0], [3, 0, 0]])
+    atoms = Atoms('Au2', [[0, 0, 0], [3, 0, 0]])
     exp = None
     s = ElasticScatter(exp)
     # s.set_processor('CPU', 'nxn')
