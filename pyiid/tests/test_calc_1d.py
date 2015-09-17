@@ -24,7 +24,7 @@ def check_nrg(value):
     :return:
     """
     rtol = 4e-6
-    atol = 1e-7
+    atol = 5e-7
     # setup
     atoms1, atoms2 = value[0]
     exp_dict = value[1]

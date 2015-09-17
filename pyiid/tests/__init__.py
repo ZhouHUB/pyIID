@@ -157,9 +157,15 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
         else:
             print np.abs(ans1 - ans2)
             print atol + rtol * np.abs(ans2)
-            print 'without atol'
+            print 'without rtol atol ='
             print rtol * np.abs(ans2)
             print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
+            print '\n', 'with current atol rtol = ', '\n'
+            print (np.abs(ans1 - ans2) - atol) / np.abs(ans2)
+            print np.max((np.abs(ans1 - ans2) - atol) / np.abs(ans2))
+            print 'with current rtol atol = ', '\n'
+            print np.abs(ans1 - ans2) - rtol * np.abs(ans2)
+            print np.max(np.abs(ans1 - ans2) - rtol * np.abs(ans2))
 
 
 # Setup lists of test variables for combinations

@@ -6,17 +6,20 @@ __author__ = 'christopher'
 processor_target = 'cpu'
 
 
-# F(Q) test_kernels -----------------------------------------------------------
+# F(Q) kernels ---------------------------------------------------------------
 @jit(target=processor_target, nopython=True)
 def get_d_array(d, q, offset):
     """
-    Generate the NxNx3 array which holds the coordinate pair distances
+    Generate the kx3 array which holds the pair displacements
 
     Parameters
     ----------
-    d: NxNx3 array
+    d: kx3 array
+        The displacement array
     q: Nx3 array
         The atomic positions
+    offset: int
+        The amount of previously covered pairs
     """
     for k in range(len(d)):
         i, j = k_to_ij(i4(k + offset))
@@ -27,13 +30,14 @@ def get_d_array(d, q, offset):
 @jit(target=processor_target, nopython=True)
 def get_r_array(r, d):
     """
-    Generate the Nx3 array which holds the pair distances
+    Generate the k array which holds the pair distances
 
     Parameters
     ----------
-    r: Nx3 array
-    d: NxNx3 array
-        The coordinate pair distances
+    r: k array
+        The pair distances
+    d: kx3 array
+        The pair displacements
     """
     for k in xrange(len(r)):
         a, b, c = d[k, :]
@@ -47,10 +51,12 @@ def get_normalization_array(norm, scat, offset):
 
     Parameters:
     -----------
-    norm_array: NxNxQ array
+    norm_array: kxQ array
         Normalization array
     scatter_array: NxQ array
         The scatter factor array
+    offset: int
+        The amount of previously covered pairs
     """
     for k in xrange(norm.shape[0]):
         i, j = k_to_ij(i4(k + offset))
@@ -61,15 +67,14 @@ def get_normalization_array(norm, scat, offset):
 @jit(target=processor_target, nopython=True)
 def get_omega(omega, r, qbin):
     """
-    Generate F(Q), not normalized, via the Debye sum
+    Generate Omega
 
     Parameters:
     ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
+    omega: kxQ array
+    r: k array
         The pair distance array
-    scatter_array: NxM array
+    scatter_array: kxQ array
         The scatter factor array
     qbin: float
         The qbin size

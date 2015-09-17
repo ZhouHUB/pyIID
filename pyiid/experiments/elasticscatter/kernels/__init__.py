@@ -1,5 +1,6 @@
 import math
 from numba import *
+from numba import cuda, f4, i4, int32
 
 __author__ = 'christopher'
 
@@ -30,3 +31,15 @@ def antisymmetric_reshape(out_data, in_data):
                 out_data[i, j] = -1 * in_data[ij_to_k(i, j)]
             elif i < j:
                 out_data[i, j] = in_data[ij_to_k(j, i)]
+
+
+@cuda.jit(device=True)
+def cuda_k_to_ij(k):
+    i = math.floor((f4(1) + f4(math.sqrt(f4(1) + f4(8.) * f4(k)))) * f4(.5))
+    j = f4(k) - f4(i) * (f4(i) - f4(1)) * f4(.5)
+    return i4(i), i4(j)
+
+
+@cuda.jit(device=True)
+def cuda_ij_to_k(i, j):
+    return int32(j + i * (i - 1) / 2)

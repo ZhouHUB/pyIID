@@ -3,23 +3,25 @@ import math
 from numba import *
 from numba import cuda, f4, i4
 
+from pyiid.experiments.elasticscatter.kernels import cuda_k_to_ij, cuda_ij_to_k
+
 __author__ = 'christopher'
 
-
-@cuda.jit(device=True)
-def cuda_k_to_ij(k):
-    i = math.floor((f4(1) + f4(math.sqrt(f4(1) + f4(8.) * f4(k)))) * f4(.5))
-    j = f4(k) - f4(i) * (f4(i) - f4(1)) * f4(.5)
-    return i4(i), i4(j)
-
-
-@cuda.jit(device=True)
-def cuda_ij_to_k(i, j):
-    return int32(j + i * (i - 1) / 2)
-
-
+# F(Q) kernels ---------------------------------------------------------------
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_d_array(d, q, offset):
+    """
+    Generate the kx3 array which holds the pair displacements
+
+    Parameters
+    ----------
+    d: NxNx3 array
+        The displacement array
+    q: Nx3 array
+        The atomic positions
+    offset: int
+        The amount of previously covered pairs
+    """
     k = cuda.grid(1)
     if k >= len(d):
         return
@@ -30,6 +32,16 @@ def get_d_array(d, q, offset):
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
 def get_r_array(r, d):
+    """
+    Generate the k array which holds the pair distances
+
+    Parameters
+    ----------
+    r: k array
+        The pair distances
+    d: kx3 array
+        The pair displacements
+    """
     k = cuda.grid(1)
     if k >= len(r):
         return
@@ -44,10 +56,12 @@ def get_normalization_array(norm_array, scat, offset):
 
     Parameters:
     -----------
-    norm_array: NxNx3 array
+    norm_array: kxQ array
         Normalization array
-    scatter_array: NxM array
+    scatter_array: NxQ array
         The scatter factor array
+    offset: int
+        The amount of previously covered pairs
     """
     k, qx = cuda.grid(2)
     if k >= norm_array.shape[0] or qx >= norm_array.shape[1]:
@@ -59,15 +73,14 @@ def get_normalization_array(norm_array, scat, offset):
 @cuda.jit(argtypes=[f4[:, :], f4[:], f4])
 def get_omega(omega, r, qbin):
     """
-    Generate F(Q), not normalized, via the Debye sum
+    Generate Omega
 
     Parameters:
     ---------
-    fq: Nd array
-        The reduced scatter pattern
-    r: NxN array
+    omega: kxQ array
+    r: k array
         The pair distance array
-    scatter_array: NxM array
+    scatter_array: kxQ array
         The scatter factor array
     qbin: float
         The qbin size
@@ -83,6 +96,22 @@ def get_omega(omega, r, qbin):
 
 @cuda.jit(argtypes=[f4[:], f4[:, :], f4[:], f4[:, :], i4])
 def get_sigma_from_adp(sigma, adps, r, d, offset):
+    """
+    Get the thermal broadening standard deviation from atomic displacement
+    parameters
+
+    Parameters
+    ----------
+    :param sigma: k array
+    :param adps: nx3 array
+        The atomic displacment parameters
+    :param r: k array
+        The interatomic distances
+    :param d:
+        The interatomic displacements
+    :param offset:
+    :return:
+    """
     k = cuda.grid(1)
     if k >= len(sigma):
         return

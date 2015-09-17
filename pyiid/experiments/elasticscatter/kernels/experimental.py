@@ -2,7 +2,8 @@ import math
 
 from numba import *
 
-from gpu_flat import cuda_k_to_ij
+from experiments.elasticscatter.kernels import cuda_k_to_ij
+
 __author__ = 'christopher'
 
 
