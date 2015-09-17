@@ -142,19 +142,14 @@ def atomic_fq(task):
 def atomic_grad_fq(task):
     q, adps, scatter_array, qbin, k_max, k_cov = task
     n, qmax_bin = scatter_array.shape
-
     d = np.empty((k_max, 3), np.float32)
     get_d_array(d, q, k_cov)
-
     r = np.empty(k_max, np.float32)
     get_r_array(r, d)
-
     norm = np.empty((k_max, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array, k_cov)
-
     omega = np.zeros((k_max, qmax_bin), np.float32)
     get_omega(omega, r, qbin)
-
     grad_omega = np.zeros((k_max, 3, qmax_bin), np.float32)
     get_grad_omega(grad_omega, omega, r, d, qbin)
 

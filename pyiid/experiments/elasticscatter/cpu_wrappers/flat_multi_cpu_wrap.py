@@ -98,7 +98,7 @@ def cpu_multiprocessing(atomic_function, allocation,
             psutil.virtual_memory().available) / pool_size)
         if m > k_max - k_cov:
             m = k_max - k_cov
-        sub_task = tuple(master_task + [k_max, k_cov])
+        sub_task = tuple(master_task + [m, k_cov])
         tasks.append(sub_task)
         k_cov += m
     # multiprocessing map problem

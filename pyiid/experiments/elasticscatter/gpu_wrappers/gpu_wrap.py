@@ -200,9 +200,6 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     na = np.average(scatter_array, axis=0) ** 2 * n
     old_settings = np.seterr(all='ignore')
     grad_p = np.nan_to_num(grad_p / na)
-    # for tx in range(n):
-    #     for tz in range(3):
-    #         grad_p[tx, tz, :] = np.nan_to_num(grad_p[tx, tz, :] / na)
     np.seterr(**old_settings)
     return grad_p
 

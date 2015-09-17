@@ -185,7 +185,7 @@ test_calcs.extend(['FQ', 'PDF'])
 
 ns = [10]
 travis = False
-if os.getenv('TRAVIS') or True:
+if os.getenv('TRAVIS'):
     travis = True
     num_exp = 1
     proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
@@ -199,7 +199,8 @@ if os.getenv('TRAVIS') or True:
         num_exp = 3
 
 else:
-    ns = [10, 100,
+    ns = [
+        10, 100,
           1000
           ]
     num_exp = 3
@@ -222,5 +223,5 @@ for atoms in test_atoms:
     new_atoms = dc(atoms)
     new_atoms.adps = adps
     test_atoms_adp.append(new_atoms)
-# test_atoms.extend(test_atoms_adp)
+test_atoms.extend(test_atoms_adp)
 # test_atoms = test_atoms_adp

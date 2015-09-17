@@ -110,7 +110,7 @@ def get_sigma_from_adp(sigma, adps, r, d, offset):
     :param d:
         The interatomic displacements
     :param offset:
-    :return:
+        Atomic pair offset for parallelization
     """
     k = cuda.grid(1)
     if k >= len(sigma):

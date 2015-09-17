@@ -21,9 +21,9 @@ def get_d_array(d, q, offset):
     offset: int
         The amount of previously covered pairs
     """
-    for k in range(len(d)):
+    for k in xrange(len(d)):
         i, j = k_to_ij(i4(k + offset))
-        for tz in range(3):
+        for tz in xrange(3):
             d[k, tz] = q[i, tz] - q[j, tz]
 
 
@@ -40,8 +40,10 @@ def get_r_array(r, d):
         The pair displacements
     """
     for k in xrange(len(r)):
-        a, b, c = d[k, :]
-        r[k] = math.sqrt(a * a + b * b + c * c)
+        tmp = 0.
+        for w in xrange(3):
+            tmp += d[k, w] * d[k, w]
+        r[k] = math.sqrt(tmp)
 
 
 @jit(target=processor_target, nopython=True)
