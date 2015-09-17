@@ -1,5 +1,4 @@
 from ase.cluster import FaceCenteredCubic
-from scipy.misc import comb
 from pyiid.utils import *
 
 __author__ = 'christopher'
@@ -13,6 +12,7 @@ def test_tag_surface_atoms():
 
 
 def test_get_angle_list():
+    from scipy.special import comb
     angles = get_angle_list(atoms, 3.6)
     coord = get_coord_list(atoms, 3.6)
     assert len(angles) == int(sum([comb(n, 2) for n in coord]))

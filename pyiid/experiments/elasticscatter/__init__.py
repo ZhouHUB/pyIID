@@ -221,6 +221,8 @@ class ElasticScatter(object):
         1darray:
             The reduced structure factor
         """
+        if hasattr(atoms, 'adp') or hasattr(atoms, 'adps'):
+            print 'ADPs'
         self.check_scatter(atoms)
         return self.fq(atoms, self.exp['qbin'])
 

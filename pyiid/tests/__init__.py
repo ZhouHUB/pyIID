@@ -172,7 +172,7 @@ test_calcs.extend(['FQ', 'PDF'])
 
 ns = [10]
 travis = False
-if os.getenv('TRAVIS'):
+if os.getenv('TRAVIS') or True:
     travis = True
     num_exp = 1
     proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
@@ -182,7 +182,7 @@ if os.getenv('TRAVIS'):
         pass
     else:
         # Use a slightly bigger test set, since we are using the JIT
-        ns = [10, 100]
+        ns = [10, 100, 500]
         num_exp = 3
 
 else:
@@ -191,13 +191,13 @@ else:
           ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'flat'),
-                      # ('Multi-GPU', 'flat'),
+                      ('Multi-GPU', 'flat'),
                       ('CPU', 'nxn'),
                       ]
-    # comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
-                                # (('CPU', 'nxn'), ('CPU', 'flat'))
-                                # ]
-    comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
+    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
+                                (('CPU', 'nxn'), ('CPU', 'flat'))
+                                ]
+    # comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 test_exp.extend([generate_experiment() for i in range(num_exp)])
 test_atoms = [setup_atoms(int(n)) for n in ns]
@@ -209,5 +209,5 @@ for atoms in test_atoms:
     new_atoms = dc(atoms)
     new_atoms.adps = adps
     test_atoms_adp.append(new_atoms)
-# test_atoms.extend(test_atoms_adp)
+test_atoms.extend(test_atoms_adp)
 # test_atoms = test_atoms_adp

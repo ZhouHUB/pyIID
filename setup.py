@@ -19,5 +19,5 @@ setup(
     license='',
     author='christopher',
     author_email='',
-    description=''
+    description='', requires=['scipy']
 )
