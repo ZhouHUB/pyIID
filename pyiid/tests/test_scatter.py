@@ -6,8 +6,7 @@ __author__ = 'christopher'
 rtol = 4e-4
 atol = 4e-4
 
-test_data = list(product(test_atoms, test_exp, test_potentials,
-                          comparison_pro_alg_pairs))
+test_data = list(product(test_atoms, test_exp, comparison_pro_alg_pairs))
 # remove the ultra slow nxn 1000 atom tests
 # for f in test_data:
 #     if len(f[0]) > 200 and ('CPU', 'nxn') in f[3]:
@@ -18,7 +17,7 @@ def test_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
 '''
-
+# '''
 def test_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
@@ -34,8 +33,8 @@ def test_scatter_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
 
+# '''
 '''
-
 def test_scatter_sq():
     for v in test_data:
         yield check_scatter_sq, v

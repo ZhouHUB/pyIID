@@ -215,7 +215,8 @@ else:
                       ]
     comparison_pro_alg_pairs = [
         # (('CPU', 'flat'), ('Multi-GPU', 'flat')),
-        (('CPU', 'nxn'), ('CPU', 'flat'))
+        # (('CPU', 'nxn'), ('CPU', 'flat')),
+        (('CPU', 'nxn'), ('Multi-GPU', 'flat'))
     ]
     # comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 

@@ -35,9 +35,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
         scatter_array = atoms.get_array('PDF scatter')
     # define scatter_q information and initialize constants
 
-    qmax_bin = scatter_array.shape[1]
-    n = len(q)
-
+    n, qmax_bin = scatter_array.shape
     # Get pair coordinate distance array
     d = np.zeros((n, n, 3))
     get_d_array(d, q)

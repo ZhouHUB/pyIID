@@ -11,12 +11,11 @@ def setup_cpu_calc(atoms, sum_type):
     # atoms info
     q = atoms.get_positions()
     q = q.astype(np.float32)
-    n = len(q)
     if sum_type == 'fq':
         scatter_array = atoms.get_array('F(Q) scatter').astype(np.float32)
     else:
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
-    qmax_bin = scatter_array.shape[1]
+    n, qmax_bin = scatter_array.shape
     if hasattr(atoms, 'adp'):
         return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
                scatter_array

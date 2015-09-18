@@ -4,6 +4,8 @@ from numbapro.cudalib import cufft
 
 from pyiid.experiments.elasticscatter.atomics.gpu_atomics import *
 from pyiid.experiments import *
+from pyiid.experiments.elasticscatter.kernels.cpu_flat import \
+    get_normalization_array
 
 __author__ = 'christopher'
 
@@ -57,7 +59,8 @@ def subs_fq(fq, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread):
         fq += atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
 
 
-def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread):
+def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov,
+                 k_per_thread):
     """
     Thread function to calculate a chunk of F(Q)
 
@@ -82,8 +85,10 @@ def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread)
     # set up GPU
     with gpu:
         # print 'initial', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
-        grad_p += atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread)
+        grad_p += atomic_grad_fq(q, adps, scatter_array, qbin, k_cov,
+                                 k_per_thread)
         # print 'final', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
+
 
 def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
     """
@@ -196,7 +201,9 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     grad_p = gpu_multithreading(subs_grad_fq, allocation, master_task,
                                 (n, qmax_bin),
                                 (gpus, mem_list))
-    na = np.average(scatter_array, axis=0) ** 2 * n
+    norm = np.empty((n * (n - 1) / 2., qmax_bin))
+    get_normalization_array(norm, scatter_array, 0)
+    na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
     grad_p = np.nan_to_num(grad_p / na)
     np.seterr(**old_settings)

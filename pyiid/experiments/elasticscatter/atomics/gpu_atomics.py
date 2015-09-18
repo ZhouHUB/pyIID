@@ -300,7 +300,6 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     return rtn
 
 
-
 def gpu_k_space_fq_allocation(n, Q, mem):
     return int(math.floor(
         float(.8 * mem - 4 * Q * n - 4 * Q - 12 * n) / (16 * (Q + 1))))
