@@ -10,8 +10,8 @@ __author__ = 'christopher'
 class MultiCanonicalSimulation(Ensemble):
     def __init__(self, atoms, ensemble_list,
                  logfile=None, trajectory=None, ensemble_prob=None,
-                 seed=None):
-        Ensemble.__init__(self, atoms, logfile, trajectory, seed)
+                 seed=None, verbose=False):
+        Ensemble.__init__(self, atoms, logfile, trajectory, seed, verbose)
         self.ensembles = []
 
         # build the ensemble and init

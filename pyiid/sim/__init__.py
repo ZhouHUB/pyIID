@@ -36,12 +36,13 @@ def leapfrog(atoms, step, center=True):
 
 
 class Ensemble(Optimizer):
-    def __init__(self, atoms, restart, logfile, trajectory, seed=None):
+    def __init__(self, atoms, restart, logfile, trajectory, seed=None, verbose=False):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory)
         atoms.get_forces()
         atoms.get_potential_energy()
         if seed is None:
             seed = np.random.randint(0, 2 ** 31)
+        self.verbose = verbose
         self.random_state = RandomState(seed)
         self.starting_atoms = dc(atoms)
         self.traj = [dc(atoms)]
@@ -58,6 +59,8 @@ class Ensemble(Optimizer):
             if eq_steps is not None:
                 if self.check_eq(eq_steps, eq_tol):
                     break
+            if self.verbose:
+                print 'iteration number', i
             self.step()
         return self.traj
 

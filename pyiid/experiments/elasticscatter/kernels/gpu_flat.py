@@ -362,9 +362,7 @@ def get_adp_fq_inplace(norm, omega, tau):
     norm[k, qx] *= omega[k, qx] * tau[k, qx]
 
 
-@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4],
-          debug=True
-          )
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])
 def experimental_sum_grad_fq1(new_grad, grad, k_cov):
     k, qx = cuda.grid(2)
     if k >= len(grad) or qx >= grad.shape[2]:
@@ -374,7 +372,6 @@ def experimental_sum_grad_fq1(new_grad, grad, k_cov):
         a = grad[k, tz, qx]
         cuda.atomic.add(new_grad, (j, tz, qx), a)
         cuda.atomic.add(new_grad, (i, tz, qx), f4(-1.) * a)
-
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_grad_fq_inplace(grad_omega, norm):

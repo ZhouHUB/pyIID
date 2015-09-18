@@ -135,7 +135,8 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
                 np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
             fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
 
-            print 'percentage of failed tests', ans1[fails].size / float(ans1.size) * 100., '%'
+            print 'percentage of failed tests', ans1[fails].size / float(
+                ans1.size) * 100., '%'
             if ans1[fails].size <= 100:
                 print '\n allclose failures'
                 print zip(ans1[fails].tolist(), ans2[fails].tolist())
@@ -149,11 +150,15 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
             print 'without rtol atol = ', '\n'
             print np.abs(ans1[fails] - ans2[fails])
             print '\n', 'with current atol rtol = ', '\n'
-            print (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
-            print np.max((np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails]))
+            print (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
+                ans2[fails])
+            print np.max((np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
+                ans2[fails]))
             print 'with current rtol atol = ', '\n'
-            print np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails])
-            print np.max(np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails]))
+            print np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(
+                ans2[fails])
+            print np.max(
+                np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails]))
         else:
             print np.abs(ans1 - ans2)
             print atol + rtol * np.abs(ans2)
@@ -201,16 +206,17 @@ if os.getenv('TRAVIS'):
 else:
     ns = [
         10, 100,
-          1000
-          ]
+        1000
+    ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'flat'),
-                      ('Multi-GPU', 'flat'),
                       ('CPU', 'nxn'),
+                      ('Multi-GPU', 'flat'),
                       ]
-    comparison_pro_alg_pairs = [(('CPU', 'flat'), ('Multi-GPU', 'flat')),
-                                (('CPU', 'nxn'), ('CPU', 'flat'))
-                                ]
+    comparison_pro_alg_pairs = [
+        # (('CPU', 'flat'), ('Multi-GPU', 'flat')),
+        (('CPU', 'nxn'), ('CPU', 'flat'))
+    ]
     # comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 test_exp.extend([generate_experiment() for i in range(num_exp)])
