@@ -38,15 +38,14 @@ def find_step_size(input_atoms, thermal_nrg):
 
     while (np.exp(-1 * atoms_prime.get_total_energy() +
                       atoms.get_total_energy())) ** a > 2 ** -a:
-        print 'initial step size', a
         step_size *= 2 ** a
+        print 'trying step size', step_size
         atoms_prime = leapfrog(atoms, step_size)
-    print step_size
+    print 'optimal step size', step_size
     return step_size
 
 
-def buildtree(input_atoms, u, v, j, e, e0, rs, stationary=False,
-              zero_rotation=False):
+def buildtree(input_atoms, u, v, j, e, e0, rs):
     """
     Build the tree of samples for NUTS, recursively
 
@@ -92,17 +91,14 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, stationary=False,
                               input_atoms.get_total_energy())), 1)
     else:
         (neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime,
-         na_prime) = buildtree(input_atoms, u, v, j - 1, e, e0, rs,
-                               stationary, zero_rotation)
+         na_prime) = buildtree(input_atoms, u, v, j - 1, e, e0, rs)
         if s_prime == 1:
             if v == -1:
                 (neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs,
-                                        stationary, zero_rotation)
+                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs)
             else:
                 (_, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs,
-                                        stationary, zero_rotation)
+                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs)
 
             if rs.uniform() < float(n_prime_prime / (
                     max(n_prime + n_prime_prime, 1))):
@@ -123,9 +119,8 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, stationary=False,
 
 class NUTSCanonicalEnsemble(Ensemble):
     def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
-                 temperature=100,
-                 stationary=False, zero_rotation=False, escape_level=13,
-                 accept_target=.65, seed=None, verbose=False):
+                 temperature=100, escape_level=13, accept_target=.65,
+                 seed=None, verbose=False):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
         self.verbose = verbose
         self.accept_target = accept_target
@@ -139,8 +134,6 @@ class NUTSCanonicalEnsemble(Ensemble):
         self.t0 = 10
         # self.k = .75
         self.samples_total = 0
-        self.stationary = stationary
-        self.zero_rotation = zero_rotation
         self.escape_level = escape_level
         self.m = 0
 
@@ -169,14 +162,10 @@ class NUTSCanonicalEnsemble(Ensemble):
             v = self.random_state.choice([-1, 1])
             if v == -1:
                 (neg_atoms, _, atoms_prime, n_prime, s_prime, a,
-                 na) = buildtree(neg_atoms, u, v, j, e, e0,
-                                 self.random_state, self.stationary,
-                                 self.zero_rotation)
+                 na) = buildtree(neg_atoms, u, v, j, e, e0, self.random_state)
             else:
                 (_, pos_atoms, atoms_prime, n_prime, s_prime, a,
-                 na) = buildtree(pos_atoms, u, v, j, e, e0,
-                                 self.random_state, self.stationary,
-                                 self.zero_rotation)
+                 na) = buildtree(pos_atoms, u, v, j, e, e0, self.random_state)
 
             if s_prime == 1 and self.random_state.uniform() < min(
                     1, n_prime * 1. / n):

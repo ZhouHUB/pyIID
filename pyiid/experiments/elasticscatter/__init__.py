@@ -192,7 +192,10 @@ class ElasticScatter(object):
         """
         if self.scatter_needs_update is True \
                 or 'exp' not in atoms.info.keys() \
-                or atoms.info['exp'] != self.exp:
+                or atoms.info['exp'] != self.exp\
+                or atoms.info['scatter_atoms'] != len(atoms)\
+                or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1)\
+                or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
             wrap_atoms(atoms, self.exp)
             self.scatter_needs_update = False
 
@@ -444,3 +447,4 @@ def wrap_atoms(atoms, exp_dict=None):
     atoms.set_array('PDF scatter', scatter_array)
 
     atoms.info['exp'] = exp_dict
+    atoms.info['scatter_atoms'] = n
