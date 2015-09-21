@@ -3,8 +3,6 @@ from numba import *
 import mkl
 import numpy as np
 import xraylib
-import matplotlib.pyplot as plt
-from numpy.testing import assert_allclose
 from multiprocessing import Pool, cpu_count
 
 __author__ = 'christopher'
@@ -147,7 +145,8 @@ def fft_gr_to_fq(g, rstep, rmin):
     f: Nd array
         The reduced structure factor
     """
-    if g is None: return g
+    if g is None:
+        return g
     padrmin = int(round(rmin / rstep))
     npad1 = padrmin + len(g)
 
@@ -292,7 +291,7 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     return pdf_grad
 
 
-def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
+def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale):
     """
     Get the gradient of the model PDF
     
@@ -335,8 +334,6 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
     '''
 
     """
-    if weight is None:
-        weight = np.ones(gcalc.shape)
     n = len(grad_pdf)
     for tx in range(n):
         for tz in range(3):
@@ -348,9 +345,9 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale, weight=None):
 
             grad_rw[tx, tz] = -1 * rw / np.dot(gobs - scale * gcalc,
                                                gobs - scale * gcalc) * \
-                              np.sum((scale * grad_pdf[tx, tz,
-                                              :] + gcalc * grad_a) * (
-                                     gobs - scale * gcalc))
+                              np.sum((scale * grad_pdf[tx, tz, :] +
+                                      gcalc * grad_a) *
+                                     (gobs - scale * gcalc))
 
 
 def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):

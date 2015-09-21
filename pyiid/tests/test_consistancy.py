@@ -26,7 +26,7 @@ def test_consistancy2():
         srfit_calc.qmin = s.exp['qmin']
         srfit_calc.qmax = s.exp['qmax']
         srfit_calc.qstep = s.exp['qbin']
-        r1, g1 = srfit_calc(stru)
+        srfit_calc(stru)
         assert_allclose(s.get_scatter_vector(), srfit_calc.qgrid)
         fq = srfit_calc.fq
         outs[i % len(test_atoms)].append(fq)

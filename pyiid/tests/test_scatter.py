@@ -34,6 +34,7 @@ def test_scatter_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
 
+
 def test_scatter_sq():
     for v in test_data:
         yield check_scatter_sq, v
@@ -208,7 +209,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         '-v',
-        '-x',
+        # '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

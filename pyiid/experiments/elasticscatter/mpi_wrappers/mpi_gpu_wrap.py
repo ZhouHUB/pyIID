@@ -4,11 +4,9 @@ import numpy as np
 from numba import cuda
 
 from pyiid.experiments.elasticscatter.mpi_wrappers.mpi_master import \
-    gpu_avail, \
-    mpi_fq, mpi_grad_fq
-from pyiid.experiments.elasticscatter.gpu_wrappers import \
-    gpu_fq_atoms_allocation, \
-    atoms_per_gpu_grad_fq
+    gpu_avail, mpi_fq, mpi_grad_fq
+from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
+    gpu_fq_atoms_allocation, atoms_per_gpu_grad_fq
 __author__ = 'christopher'
 
 
@@ -111,7 +109,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     assert sum(m_list) == n
 
     # list of list of tuples, I think
-    reports = mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin)
+    reports = mpi_grad_fq(n_nodes, m_list, q, scatter_array, qbin)
     grad_p = np.zeros((n, 3, qmax_bin), dtype=np.float32)
     for r in reports:
         grad_p += r

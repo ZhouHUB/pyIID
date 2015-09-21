@@ -20,7 +20,7 @@ def test_multi_canon():
         calc2
     ])
     atoms.set_calculator(calc)
-    gce = GrandCanonicalEnsemble(atoms, {'Au': 0})
+    gce = GrandCanonicalEnsemble(atoms, {'Au': 100})
     nuts = NUTSCanonicalEnsemble(atoms, escape_level=4)
     sim = MultiCanonicalSimulation(atoms, [gce, nuts])
     traj = sim.run(10)

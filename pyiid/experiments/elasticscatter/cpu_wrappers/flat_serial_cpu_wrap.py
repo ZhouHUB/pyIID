@@ -169,12 +169,3 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     np.seterr(**old_settings)
     del d, r, scatter_array, norm, omega, grad_omega
     return rtn
-    '''
-    a = grad_omega
-    # out = np.zeros((n, n), np.float32)
-    # out = np.zeros((n, n, qmax_bin), np.float32)
-    out = np.zeros((n, n, 3, qmax_bin), np.float32)
-    antisymmetric_reshape(out, a)
-    # symmetric_reshape(out, a)
-    return rtn
-    # '''

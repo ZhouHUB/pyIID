@@ -23,11 +23,11 @@ def setup_gpu_calc(atoms, sum_type):
     sort_gpus, sort_gmem = get_gpus_mem()
 
     if hasattr(atoms, 'adp'):
-        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
-               scatter_array, sort_gpus, sort_gmem
+        return (q, atoms.adps.get_position().astype(np.float32), n, qmax_bin,
+                scatter_array, sort_gpus, sort_gmem)
     elif hasattr(atoms, 'adps'):
-        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
-               scatter_array, sort_gpus, sort_gmem
+        return (q, atoms.adps.get_position().astype(np.float32), n, qmax_bin,
+                scatter_array, sort_gpus, sort_gmem)
     else:
         return q, None, n, qmax_bin, scatter_array, sort_gpus, sort_gmem
 
@@ -84,10 +84,8 @@ def subs_grad_fq(grad_p, q, adps, scatter_array, qbin, gpu, k_cov,
     """
     # set up GPU
     with gpu:
-        # print 'initial', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
         grad_p += atomic_grad_fq(q, adps, scatter_array, qbin, k_cov,
                                  k_per_thread)
-        # print 'final', float(cuda.current_context().get_memory_info()[0])/cuda.current_context().get_memory_info()[1]
 
 
 def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):

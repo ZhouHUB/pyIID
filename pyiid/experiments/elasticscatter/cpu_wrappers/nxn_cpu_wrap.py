@@ -175,6 +175,3 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     np.seterr(**old_settings)
     del d, r, scatter_array, norm, omega, grad_omega
     return grad_fq
-    '''
-    return grad_fq
-    # '''

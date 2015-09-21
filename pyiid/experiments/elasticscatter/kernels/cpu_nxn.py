@@ -7,7 +7,7 @@ __author__ = 'christopher'
 processor_target = 'cpu'
 
 
-# F(Q) test_kernels -----------------------------------------------------------
+# F(sv) test_kernels -----------------------------------------------------------
 
 @jit(void(f4[:, :, :], f4[:, :]), target=processor_target, nopython=True,
      cache=True)
@@ -53,7 +53,7 @@ def get_r_array(r, d):
      cache=True)
 def get_normalization_array(norm_array, scatter_array):
     """
-    Generate the Q dependant normalization factors for the F(Q) array
+    Generate the sv dependant normalization factors for the F(sv) array
 
     Parameters:
     -----------
@@ -87,7 +87,7 @@ def get_sigma_from_adp(sigma, adps, r, d):
      cache=True)
 def get_omega(omega, r, qbin):
     """
-    Generate F(Q), not normalized, via the Debye sum
+    Generate F(sv), not normalized, via the Debye sum
 
     Parameters:
     ---------
@@ -102,12 +102,12 @@ def get_omega(omega, r, qbin):
     """
     n, _, qmax_bin = omega.shape
     for qx in xrange(i4(qmax_bin)):
-        Q = f4(qx) * qbin
+        sv = f4(qx) * qbin
         for i in xrange(i4(n)):
             for j in xrange(i4(n)):
                 if i != j:
                     rij = r[i, j]
-                    omega[i, j, qx] = math.sin(Q * rij) / rij
+                    omega[i, j, qx] = math.sin(sv * rij) / rij
 
 
 @jit(void(f4[:, :, :], f4[:, :], f4), target=processor_target, nopython=True,
@@ -115,11 +115,11 @@ def get_omega(omega, r, qbin):
 def get_tau(dw_factor, sigma, qbin):
     n, _, qmax_bin = dw_factor.shape
     for qx in xrange(i4(qmax_bin)):
-        Q = f4(qx) * qbin
+        sv = f4(qx) * qbin
         for i in xrange(i4(n)):
             for j in xrange(i4(n)):
                 dw_factor[i, j, qx] = math.exp(
-                    f4(-.5) * sigma[i, j] * sigma[i, j] * Q * Q)
+                    f4(-.5) * sigma[i, j] * sigma[i, j] * sv * sv)
 
 
 @jit(void(f4[:], f4[:, :, :], f4[:, :, :]), target=processor_target,
@@ -160,12 +160,12 @@ def get_fq_inplace(omega, norm):
 def get_grad_omega(grad_omega, omega, r, d, qbin):
     n, _, _, qmax_bin = grad_omega.shape
     for qx in xrange(i4(qmax_bin)):
-        Q = f4(qx) * qbin
+        sv = f4(qx) * qbin
         for i in xrange(i4(n)):
             for j in xrange(i4(n)):
                 if i != j:
                     rij = r[i, j]
-                    a = Q * math.cos(Q * rij) - omega[i, j, qx]
+                    a = sv * math.cos(sv * rij) - omega[i, j, qx]
                     a /= rij * rij
                     for w in xrange(i4(3)):
                         grad_omega[i, j, w, qx] = a * d[i, j, w]
@@ -176,23 +176,23 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
 def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin):
     n, _, _, qmax_bin = grad_tau.shape
     for qx in xrange(i4(qmax_bin)):
-        Q = qx * qbin
+        sv = qx * qbin
         for i in xrange(i4(n)):
             for j in xrange(i4(n)):
                 if i != j:
-                    tmp = sigma[i, j] * Q ** 2 * tau[i, j, qx] / r[i, j] ** 3
+                    tmp = sigma[i, j] * sv ** 2 * tau[i, j, qx] / r[i, j] ** 3
                     for w in xrange(i4(3)):
                         grad_tau[i, j, w, qx] = tmp * (
                             d[i, j, w] * sigma[i, j] -
-                            (adps[i, w] - adps[j, w])
-                            * r[i, j] ** 2)
+                            (adps[i, w] - adps[j, w]) *
+                            r[i, j] ** 2)
 
 
 @jit(void(f4[:, :, :, :], f4[:, :, :, :], f4[:, :, :]),
      target=processor_target, nopython=True, cache=True)
 def get_grad_fq(grad, grad_omega, norm):
     """
-    Generate the gradient F(Q) for an atomic configuration
+    Generate the gradient F(sv) for an atomic configuration
 
     Parameters
     ------------
@@ -205,7 +205,7 @@ def get_grad_fq(grad, grad_omega, norm):
     scatter_array: NxQ array
         The scatter factor array
     qbin: float
-        The size of the Q bins
+        The size of the sv bins
     """
     n, _, _, qmax_bin = grad.shape
     for i in xrange(i4(n)):
@@ -222,7 +222,7 @@ def get_grad_fq(grad, grad_omega, norm):
      target=processor_target, nopython=True, cache=True)
 def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
-    Generate the gradient F(Q) for an atomic configuration
+    Generate the gradient F(sv) for an atomic configuration
 
     Parameters
     ------------
@@ -235,7 +235,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     scatter_array: NxQ array
         The scatter factor array
     qbin: float
-        The size of the Q bins
+        The size of the sv bins
     """
     n, _, _, qmax_bin = grad.shape
     for i in xrange(i4(n)):
@@ -254,7 +254,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
      cache=True)
 def get_grad_fq_inplace(grad_omega, norm):
     """
-    Generate the gradient F(Q) for an atomic configuration
+    Generate the gradient F(sv) for an atomic configuration
 
     Parameters
     ------------
@@ -267,7 +267,7 @@ def get_grad_fq_inplace(grad_omega, norm):
     scatter_array: NxQ array
         The scatter factor array
     qbin: float
-        The size of the Q bins
+        The size of the sv bins
     """
     n, _, _, qmax_bin = grad_omega.shape
     for i in xrange(i4(n)):

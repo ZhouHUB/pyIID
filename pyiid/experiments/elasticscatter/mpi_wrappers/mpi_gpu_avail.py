@@ -1,6 +1,5 @@
 __author__ = 'christopher'
 if __name__ == '__main__':
-    import socket
     from mpi4py import MPI
     from numba import cuda
 

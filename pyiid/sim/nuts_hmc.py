@@ -7,6 +7,7 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from pyiid.sim import leapfrog
 from pyiid.sim import Ensemble
 from ase.units import kB
+
 __author__ = 'christopher'
 Emax = 200
 
@@ -96,10 +97,12 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
         if s_prime == 1:
             if v == -1:
                 (neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs, beta)
+                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs,
+                                        beta)
             else:
                 (_, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs, beta)
+                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs,
+                                        beta)
 
             if rs.uniform() < float(n_prime_prime / (
                     max(n_prime + n_prime_prime, 1))):
@@ -143,7 +146,8 @@ class NUTSCanonicalEnsemble(Ensemble):
         if self.verbose:
             print 'time step size', self.step_size / fs, 'fs'
         # sample r0
-        MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg, force_temp=True)
+        MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg,
+                                     force_temp=True)
         # self.traj[-1].set_momenta(self.random_state.normal(0, 1, (
         #     len(self.traj[-1]), 3)))
         # re-sample u, note we work in post exponential units:
@@ -163,10 +167,12 @@ class NUTSCanonicalEnsemble(Ensemble):
             v = self.random_state.choice([-1, 1])
             if v == -1:
                 (neg_atoms, _, atoms_prime, n_prime, s_prime, a,
-                 na) = buildtree(neg_atoms, u, v, j, e, e0, self.random_state, 1/self.thermal_nrg)
+                 na) = buildtree(neg_atoms, u, v, j, e, e0, self.random_state,
+                                 1 / self.thermal_nrg)
             else:
                 (_, pos_atoms, atoms_prime, n_prime, s_prime, a,
-                 na) = buildtree(pos_atoms, u, v, j, e, e0, self.random_state, 1/self.thermal_nrg)
+                 na) = buildtree(pos_atoms, u, v, j, e, e0, self.random_state,
+                                 1 / self.thermal_nrg)
 
             if s_prime == 1 and self.random_state.uniform() < min(
                     1, n_prime * 1. / n):
@@ -194,8 +200,8 @@ class NUTSCanonicalEnsemble(Ensemble):
                     print 'jmax emergency escape at {}'.format(j)
                 s = 0
         w = 1. / (self.m + self.t0)
-        self.sim_hbar = (1 - w) * self.sim_hbar + w * (self.accept_target - a /
-                                                       na)
+        self.sim_hbar = (1 - w) * self.sim_hbar + w * \
+                                                  (self.accept_target - a / na)
 
         self.step_size = np.exp(self.mu - (self.m ** .5 / self.gamma) *
                                 self.sim_hbar)

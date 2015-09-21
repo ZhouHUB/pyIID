@@ -43,7 +43,7 @@ class ADP:
         self.adp_momenta = new_momenta
 
     def get_forces(self, atoms):
-        return self.calc.calculate_forces()
+        return self.calc.calculate_forces(atoms)
 
     def set_calc(self, calc):
         self.calc = calc

@@ -8,17 +8,17 @@ from pyiid.experiments import generate_grid
 __author__ = 'christopher'
 
 
-def gpu_fq_atoms_allocation(n, Q, mem):
+def gpu_fq_atoms_allocation(n, sv, mem):
     """
     Determine the maximum amount of atoms which can be placed on a gpu for a
-    computation of F(Q).  This depends on how exactly the F(Q) function makes
+    computation of F(sv).  This depends on how exactly the F(sv) function makes
     arrays on the GPU.
 
     Parameters
     ----------
     n: int
         Number of atoms
-    Q: int
+    sv: int
         Size of the scatter vector
     mem: int
         Size of the GPU memory
@@ -38,21 +38,21 @@ def gpu_fq_atoms_allocation(n, Q, mem):
         i += 1
 
     return int(math.floor(
-        float(.8 * mem / 4 - 3 * n - summation_mem - Q * n) / (Q + 4)
+        float(.8 * mem / 4 - 3 * n - summation_mem - sv * n) / (sv + 4)
     ))
 
 
 def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
     """
     Determine the maximum amount of atoms which can be placed on a gpu for a
-    computation of grad F(Q).  This depends on how exactly the grad F(Q)
+    computation of grad F(sv).  This depends on how exactly the grad F(sv)
     function makes arrays on the GPU.
 
     Parameters
     ----------
     n: int
         Number of atoms
-    Q: int
+    sv: int
         Size of the scatter vector
     mem: int
         Size of the GPU memory
@@ -69,7 +69,7 @@ def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
 
 def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
-    Calculate a portion of F(Q).  This is the smallest division of the F(Q)
+    Calculate a portion of F(sv).  This is the smallest division of the F(sv)
     function.
 
     Parameters
@@ -79,7 +79,7 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     scatter_array: NxQ array
         The atomic scatter factors
     qbin: float
-        The Q resolution of the experiment
+        The sv resolution of the experiment
     k_cov: int
         The number of atoms pairs previously run, used as an offset
     k_max: int
@@ -88,19 +88,22 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     Returns
     -------
     1darray:
-        The calculated chunk of F(Q)
+        The calculated chunk of F(sv)
 
     """
     qmax_bin = scatter_array.shape[1]
     # load kernels
-    from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_d_array,
-                                                                   get_r_array,
-                                                                   get_normalization_array,
-                                                                   get_omega,
-                                                                   get_fq_inplace,
-                                                                   d2_zero,
-                                                                   d2_to_d1_cleanup_kernel,
-                                                                   experimental_sum_fq)
+    from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
+        (
+        get_d_array,
+        get_r_array,
+        get_normalization_array,
+        get_omega,
+        get_fq_inplace,
+        d2_zero,
+        d2_to_d1_cleanup_kernel,
+        experimental_sum_fq
+    )
     # generate grids for the GPU
     elements_per_dim_1 = [k_per_thread]
     tpb_k = [32]
@@ -144,7 +147,7 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
             get_tau,
             get_adp_fq_inplace)
         dadps = cuda.to_device(adps.astype(np.float32), stream=stream)
-        dsigma = cuda.device_array((k_per_thread), dtype=np.float32,
+        dsigma = cuda.device_array(k_per_thread, dtype=np.float32,
                                    stream=stream)
         get_sigma_from_adp[bpg_k, tpb_k, stream](dsigma, dadps, dr, dd, k_cov)
 
@@ -191,8 +194,8 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
 
 def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
-    Calculate a portion of the gradient of F(Q).  This is the smallest division
-    of the grad F(Q) function.
+    Calculate a portion of the gradient of F(sv).  This is the smallest division
+    of the grad F(sv) function.
 
     Parameters
     ----------
@@ -201,7 +204,7 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     scatter_array: NxQ array
         The atomic scatter factors
     qbin: float
-        The Q resolution of the experiment
+        The sv resolution of the experiment
     k_max: int
         The number of atoms pairs to be run in this chunk
     k_cov: int
@@ -210,28 +213,29 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     Returns
     -------
     1darray:
-        The calculated chunk of grad F(Q)
+        The calculated chunk of grad F(sv)
 
     """
     qmax_bin = scatter_array.shape[1]
 
     # load kernels
-    from pyiid.experiments.elasticscatter.kernels.gpu_flat import (get_d_array,
-                                                                   get_r_array,
-                                                                   get_normalization_array,
-                                                                   get_omega,
-                                                                   get_grad_omega,
-                                                                   zero3d,
-                                                                   experimental_sum_grad_fq1,
-                                                                   )
+    from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
+        (get_d_array,
+         get_r_array,
+         get_normalization_array,
+         get_omega,
+         get_grad_omega,
+         zero3d,
+         experimental_sum_grad_fq1)
     if adps is None:
-        from pyiid.experiments.elasticscatter.kernels.gpu_flat import get_grad_fq
+        from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
+            get_grad_fq
     else:
-        from pyiid.experiments.elasticscatter.kernels.gpu_flat import (
-            get_sigma_from_adp,
-            get_tau,
-            get_grad_tau,
-            get_adp_grad_fq)
+        from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
+            (get_sigma_from_adp,
+             get_tau,
+             get_grad_tau,
+             get_adp_grad_fq)
 
     n = len(q)
     # generate GPU grids
@@ -257,11 +261,16 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
 
     dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
     dr = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
-    domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
-    dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream2)
-    dgrad_omega = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream2)
-    dgrad = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream2)
-    dnew_grad = cuda.device_array((n, 3, qmax_bin), dtype=np.float32, stream=stream2)
+    domega = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                               stream=stream2)
+    dnorm = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                              stream=stream2)
+    dgrad_omega = cuda.device_array((k_per_thread, 3, qmax_bin),
+                                    dtype=np.float32, stream=stream2)
+    dgrad = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32,
+                              stream=stream2)
+    dnew_grad = cuda.device_array((n, 3, qmax_bin), dtype=np.float32,
+                                  stream=stream2)
     cuda.synchronize()
 
     zero3d[bpg_nq, tpb_nq, stream2](dnew_grad)
@@ -273,22 +282,24 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
 
     get_grad_omega[bpg_kq, tpb_kq, stream](dgrad_omega, domega, dr, dd, qbin)
 
-
     if adps is None:
         cuda.synchronize()
         get_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, dgrad_omega, dnorm)
     else:
         dadps = cuda.to_device(adps.astype(np.float32), stream=stream)
-        dsigma = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
-        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32, stream=stream)
-        dgrad_tau = cuda.device_array((k_per_thread, 3, qmax_bin), dtype=np.float32, stream=stream)
+        dsigma = cuda.device_array(k_per_thread, dtype=np.float32,
+                                   stream=stream)
+        dtau = cuda.device_array((k_per_thread, qmax_bin), dtype=np.float32,
+                                 stream=stream)
+        dgrad_tau = cuda.device_array((k_per_thread, 3, qmax_bin),
+                                      dtype=np.float32, stream=stream)
 
         get_sigma_from_adp[bpg_k, tpb_k, stream](dsigma, dadps, dr, dd, k_cov)
 
         get_tau[bpg_kq, tpb_kq, stream](dtau, dsigma, qbin)
 
         get_grad_tau[bpg_kq, tpb_kq, stream](dgrad_tau, dtau, dr, dd, dsigma,
-                                              dadps, qbin, k_cov)
+                                             dadps, qbin, k_cov)
         cuda.synchronize()
         get_adp_grad_fq[bpg_kq, tpb_kq, stream2](dgrad, domega, dtau,
                                                  dgrad_omega, dgrad_tau, dnorm)
@@ -300,21 +311,21 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     return rtn
 
 
-def gpu_k_space_fq_allocation(n, Q, mem):
+def gpu_k_space_fq_allocation(n, sv, mem):
     return int(math.floor(
-        float(.8 * mem - 4 * Q * n - 4 * Q - 12 * n) / (16 * (Q + 1))))
+        float(.8 * mem - 4 * sv * n - 4 * sv - 12 * n) / (16 * (sv + 1))))
 
 
-def gpu_k_space_fq_adp_allocation(n, Q, mem):
+def gpu_k_space_fq_adp_allocation(n, sv, mem):
     return int(math.floor(
-        float(.8 * mem - 4 * Q * n - 4 * Q - 24 * n) / (20 * (Q + 1))))
+        float(.8 * mem - 4 * sv * n - 4 * sv - 24 * n) / (20 * (sv + 1))))
 
 
-def gpu_k_space_grad_fq_allocation(n, Q, mem):
+def gpu_k_space_grad_fq_allocation(n, sv, mem):
     return int(math.floor(
-        float(.8 * mem - 16 * Q * n - 12 * n) / (16 * (2 * Q + 1))))
+        float(.8 * mem - 16 * sv * n - 12 * n) / (16 * (2 * sv + 1))))
 
 
-def gpu_k_space_grad_fq_adp_allocation(n, Q, mem):
+def gpu_k_space_grad_fq_adp_allocation(n, sv, mem):
     return int(math.floor(
-        float(.8 * mem - 16 * Q * n - 24 * n) / (4 * (12 * Q + 5))))
+        float(.8 * mem - 16 * sv * n - 24 * n) / (4 * (12 * sv + 5))))

@@ -44,13 +44,13 @@ def check_cudafft():
         print 'no cudafft'
     return tf
 
+
 class ElasticScatter(object):
     """
     Scatter contains all the methods associated with producing theoretical
     diffraction patterns and PDFs from atomic configurations.  It does not
     include potential energies, such as Rw and chi**2 which are under the
     Calculator object.
-
     >>>from ase.atoms import Atoms
     >>>from pyiid.adp import ADP
     >>>import matplotlib.pyplot as plt
@@ -197,9 +197,9 @@ class ElasticScatter(object):
         """
         if self.scatter_needs_update is True \
                 or 'exp' not in atoms.info.keys() \
-                or atoms.info['exp'] != self.exp\
-                or atoms.info['scatter_atoms'] != len(atoms)\
-                or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1)\
+                or atoms.info['exp'] != self.exp \
+                or atoms.info['scatter_atoms'] != len(atoms) \
+                or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
                 or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
             wrap_atoms(atoms, self.exp)
             self.scatter_needs_update = False

@@ -3,6 +3,7 @@ from ase.optimize.optimize import Optimizer
 import numpy as np
 from numpy.random import RandomState
 from ase.md.velocitydistribution import Stationary, ZeroRotation
+
 __author__ = 'christopher'
 
 
@@ -36,7 +37,8 @@ def leapfrog(atoms, step, center=True):
 
 
 class Ensemble(Optimizer):
-    def __init__(self, atoms, restart, logfile, trajectory, seed=None, verbose=False):
+    def __init__(self, atoms, restart, logfile, trajectory, seed=None,
+                 verbose=False):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory)
         atoms.get_forces()
         atoms.get_potential_energy()

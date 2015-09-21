@@ -212,7 +212,8 @@ if os.getenv('TRAVIS'):
 else:
     ns = [
         10, 100,
-        400, 1000
+        # 400,
+        1000
     ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'nxn'),
@@ -221,8 +222,9 @@ else:
                       ('Multi-GPU', 'flat'),
                       ]
     comparison_pro_alg_pairs = [
-        (('CPU', 'nxn'), ('CPU', 'flat-serial')),
-        (('CPU', 'flat-serial'), ('CPU', 'flat')),
+        # (('CPU', 'nxn'), ('CPU', 'flat-serial')),
+        # (('CPU', 'flat-serial'), ('CPU', 'flat')),
+        (('CPU', 'nxn'), ('CPU', 'flat')),
         (('CPU', 'flat'), ('Multi-GPU', 'flat')),
 
     ]

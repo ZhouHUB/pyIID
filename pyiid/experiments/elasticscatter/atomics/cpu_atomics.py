@@ -7,7 +7,7 @@ from pyiid.experiments.elasticscatter.kernels.cpu_experimental import \
 __author__ = 'christopher'
 
 
-def cpu_k_space_fq_allocation(n, Q, mem):
+def cpu_k_space_fq_allocation(n, sv, mem):
     """
     Determine the maximum amount of atoms which can be placed on a gpu for a
     computation of F(Q).  This depends on how exactly the F(Q) function makes
@@ -28,11 +28,11 @@ def cpu_k_space_fq_allocation(n, Q, mem):
         The number of atom pairs which can go on the GPU
     """
     return int(math.floor(
-        float(.8 * mem - 4 * Q * n - 12 * n) / (4 * (3 * Q + 4))
+        float(.8 * mem - 4 * sv * n - 12 * n) / (4 * (3 * sv + 4))
     ))
 
 
-def cpu_k_space_fq_adp_allocation(n, Q, mem):
+def cpu_k_space_fq_adp_allocation(n, sv, mem):
     """
     Determine the maximum amount of atoms which can be placed on a gpu for a
     computation of F(Q).  This depends on how exactly the F(Q) function makes
@@ -53,7 +53,7 @@ def cpu_k_space_fq_adp_allocation(n, Q, mem):
         The number of atom pairs which can go on the GPU
     """
     return int(math.floor(
-        float(.8 * mem - 4 * Q * n - 24 * n) / (4 * (3 * Q + 5))
+        float(.8 * mem - 4 * sv * n - 24 * n) / (4 * (3 * sv + 5))
     ))
 
 

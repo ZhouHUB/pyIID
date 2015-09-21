@@ -12,8 +12,13 @@ def test_negative_mu():
     calc = Spring(rt=2.5, k=200)
     atoms.set_calculator(calc)
     gce = GrandCanonicalEnsemble(atoms, {'Au': -100})
-    traj = gce.run(1000)
-    assert len(traj[-1]) < len(traj[0])
+    traj = gce.run(100)
+    tf = False
+    for i in range(len(traj)):
+        if len(traj[i]) < len(traj[0]):
+            tf = True
+            break
+    assert tf
 
 
 def test_positive_mu():
@@ -22,8 +27,13 @@ def test_positive_mu():
     calc = Spring(rt=2.5, k=200)
     atoms.set_calculator(calc)
     gce = GrandCanonicalEnsemble(atoms, {'Au': 100})
-    traj = gce.run(1000)
-    assert len(traj[-1]) > len(traj[0])
+    traj = gce.run(100)
+    tf = False
+    for i in range(len(traj)):
+        if len(traj[i]) > len(traj[0]):
+            tf = True
+            break
+    assert tf
 
 if __name__ == '__main__':
     import nose

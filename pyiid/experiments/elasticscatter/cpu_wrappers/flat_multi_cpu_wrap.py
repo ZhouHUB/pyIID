@@ -17,13 +17,14 @@ def setup_cpu_calc(atoms, sum_type):
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     n, qmax_bin = scatter_array.shape
     if hasattr(atoms, 'adp'):
-        return q.astype(np.float32), atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
-               scatter_array.astype(np.float32)
+        return q.astype(np.float32), atoms.adps.get_position().astype(
+            np.float32), n, qmax_bin, scatter_array.astype(np.float32)
     elif hasattr(atoms, 'adps'):
-        return q.astype(np.float32), atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
-               scatter_array.astype(np.float32)
+        return q.astype(np.float32), atoms.adps.get_position().astype(
+            np.float32), n, qmax_bin, scatter_array.astype(np.float32)
     else:
-        return q.astype(np.float32), None, n, qmax_bin, scatter_array.astype(np.float32)
+        return q.astype(np.float32), None, n, qmax_bin, scatter_array.astype(
+            np.float32)
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):

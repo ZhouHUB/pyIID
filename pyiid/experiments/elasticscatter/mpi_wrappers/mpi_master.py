@@ -4,8 +4,10 @@ from threading import Thread
 
 from numba import cuda
 
-import pyiid.experiments.mpi.mpi_gpu_avail as mpi_gpu_avail
-import pyiid.experiments.mpi.mpi_fq_worker as mpi_fq_worker
+import pyiid.experiments.elasticscatter.mpi_wrappers.mpi_gpu_avail as \
+    mpi_gpu_avail
+import pyiid.experiments.elasticscatter.mpi_wrappers.mpi_fq_worker as \
+    mpi_fq_worker
 import pyiid.experiments.elasticscatter.mpi_wrappers.mpi_grad_worker as \
     mpi_grad_worker
 from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import subs_fq
@@ -95,7 +97,7 @@ def mpi_fq(n_nodes, m_list, q, scatter_array, qbin):
     return reports
 
 
-def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qmax_bin, qbin):
+def mpi_grad_fq(n_nodes, m_list, q, scatter_array, qbin):
     """
     Breakup the grad F(Q) job across GPU enabled nodes
 

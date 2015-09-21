@@ -7,7 +7,7 @@ from pyiid.experiments.elasticscatter.kernels import cuda_k_to_ij, cuda_ij_to_k
 
 __author__ = 'christopher'
 
-# F(Q) kernels ---------------------------------------------------------------
+# F(sv) kernels ---------------------------------------------------------------
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_d_array(d, q, offset):
     """
@@ -52,7 +52,7 @@ def get_r_array(r, d):
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_normalization_array(norm_array, scat, offset):
     """
-    Generate the Q dependant normalization factors for the F(Q) array
+    Generate the sv dependant normalization factors for the F(sv) array
 
     Parameters:
     -----------
@@ -89,9 +89,9 @@ def get_omega(omega, r, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = qbin * f4(qx)
+    sv = qbin * f4(qx)
     rk = r[k]
-    omega[k, qx] = math.sin(Q * rk) / rk
+    omega[k, qx] = math.sin(sv * rk) / rk
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :], f4[:], f4[:, :], i4])
@@ -102,14 +102,14 @@ def get_sigma_from_adp(sigma, adps, r, d, offset):
 
     Parameters
     ----------
-    :param sigma: k array
-    :param adps: nx3 array
+    sigma: k array
+    adps: nx3 array
         The atomic displacment parameters
-    :param r: k array
+    r: k array
         The interatomic distances
-    :param d:
+    d:
         The interatomic displacements
-    :param offset:
+    offset:
         Atomic pair offset for parallelization
     """
     k = cuda.grid(1)
@@ -129,28 +129,28 @@ def get_tau(dw_factor, sigma, qbin):
 
     Parameters
     -----------
-    :param dw_factor: kxQ array
-    :param sigma: k array
+    dw_factor: kxQ array
+    sigma: k array
         Thermal broadening standard deviation
-    :param qbin: float
-        The Q resolution of the experiment
+    qbin: float
+        The sv resolution of the experiment
     """
     kmax, qmax_bin = dw_factor.shape
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * qbin
-    dw_factor[k, qx] = math.exp(f4(-.5) * sigma[k] * sigma[k] * Q * Q)
+    sv = f4(qx) * qbin
+    dw_factor[k, qx] = math.exp(f4(-.5) * sigma[k] * sigma[k] * sv * sv)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
 def get_fq(fq, omega, norm):
     """
-    Get the reduced structure factor F(Q) via the Debye Sum
-    :param fq: kxQ array
-    :param omega: kxQ array
+    Get the reduced structure factor F(sv) via the Debye Sum
+    fq: kxQ array
+    omega: kxQ array
         Debye sum
-    :param norm: kxQ
+    norm: kxQ
         Outer Product of the scatter factors
     """
     kmax, qmax_bin = omega.shape
@@ -163,16 +163,16 @@ def get_fq(fq, omega, norm):
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], f4[:, :]])
 def get_adp_fq(fq, omega, tau, norm):
     """
-    Get the reduced structure factor F(Q) via the Debye Sum
+    Get the reduced structure factor F(sv) via the Debye Sum
 
     Parameters
     ----------
-    :param fq: kxQ array
-    :param omega: kxQ array
+    fq: kxQ array
+    omega: kxQ array
         Debye sum
-    :param tau: kxQ array
+    tau: kxQ array
         Debye-Waller factor
-    :param norm: kxQ
+    norm: kxQ
         Outer Product of the scatter factors
     """
     kmax, qmax_bin = omega.shape
@@ -190,13 +190,13 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
 
     Parameters
     ----------
-    :param grad_omega: kx3xQ array
+    grad_omega: kx3xQ array
         The gradient
-    :param omega: kxQ array
+    omega: kxQ array
         Debye sum
     r: k array
         The pair distance array
-    :param d: kx3 array
+    d: kx3 array
         The pair displacements
     qbin: float
         The qbin size
@@ -205,9 +205,9 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * qbin
+    sv = f4(qx) * qbin
     rk = r[k]
-    a = (Q * math.cos(Q * rk)) - omega[k, qx]
+    a = (sv * math.cos(sv * rk)) - omega[k, qx]
     a /= rk * rk
     for w in xrange(i4(3)):
         grad_omega[k, w, qx] = a * d[k, w]
@@ -219,39 +219,40 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
     """
     Get the gradient of the Debye-Waller factors with respect to atomic position
 
-    :param grad_tau: kx3xQ array
+    grad_tau: kx3xQ array
      The gradient
-    :param tau: kxQ array
+    tau: kxQ array
         The Debye-Waller factor
-    :param r:k array
+    r:k array
         The interatomic distances
-    :param d: kx3 array
+    d: kx3 array
         The interatomic displacements
-    :param sigma: k array
+    sigma: k array
         Thermal broadenings
-    :param adps: Nx3 array
+    adps: Nx3 array
         The atomic displacement parameters
-    :param qbin: float
+    qbin: float
         The experimental resolution
-    :param offset: int
+    offset: int
         The parallelization offset
     """
     kmax, _, qmax_bin = grad_tau.shape
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * qbin
+    sv = f4(qx) * qbin
     i, j = cuda_k_to_ij(i4(k + offset))
     rk = r[k]
-    tmp = sigma[k] * Q * Q * tau[k, qx] / (rk * rk * rk)
+    tmp = sigma[k] * sv * sv * tau[k, qx] / (rk * rk * rk)
     for w in xrange(i4(3)):
-        grad_tau[k, w, qx] = tmp * (d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * (rk * rk))
+        grad_tau[k, w, qx] = tmp * (
+            d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * (rk * rk))
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
 def get_grad_fq(grad, grad_omega, norm):
     """
-    Generate the gradient F(Q) for an atomic configuration
+    Generate the gradient F(sv) for an atomic configuration
 
     Parameters
     ------------
@@ -275,7 +276,7 @@ def get_grad_fq(grad, grad_omega, norm):
                     f4[:, :]])
 def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
-    Generate the gradient F(Q) for an atomic configuration
+    Generate the gradient F(sv) for an atomic configuration
 
     Parameters
     ------------
@@ -288,7 +289,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     scatter_array: NxQ array
         The scatter factor array
     qbin: float
-        The size of the Q bins
+        The size of the sv bins
     """
     kmax, _, qmax_bin = grad.shape
     k, qx = cuda.grid(2)
@@ -304,6 +305,13 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
 
 @cuda.jit(argtypes=[f4[:, :, :]])
 def zero3d(A):
+    """
+    Zero out a 3D array on the GPU
+    
+    Parameters
+    ----------
+    A: Mx3xQ array
+    """
     i, qx = cuda.grid(2)
     if i >= A.shape[0] or qx >= A.shape[2]:
         return
@@ -439,7 +447,7 @@ def experimental_sum_grad_fq1(new_grad, grad, k_cov):
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :]])
 def get_grad_fq_inplace(grad_omega, norm):
     """
-    Generate the gradient F(Q) for an atomic configuration
+    Generate the gradient F(sv) for an atomic configuration
 
     Parameters
     ------------
@@ -452,7 +460,7 @@ def get_grad_fq_inplace(grad_omega, norm):
     scatter_array: NxQ array
         The scatter factor array
     qbin: float
-        The size of the Q bins
+        The size of the sv bins
     """
     kmax, _, qmax_bin = grad_omega.shape
     k, qx = cuda.grid(2)
