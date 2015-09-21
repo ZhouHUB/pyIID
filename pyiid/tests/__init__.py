@@ -147,7 +147,8 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
                 print 'large number of failed tests'
             print '\n', 'without atol rtol = ', '\n'
             print np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
-            print np.max(np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))
+            print np.max(
+                np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))
             print 'without rtol atol = ', '\n'
             print np.abs(ans1[fails] - ans2[fails])
             print np.max(np.abs(ans1[fails] - ans2[fails]))
@@ -177,6 +178,7 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
     else:
         return True
 
+
 # Setup lists of test variables for combinations
 test_exp = [None]
 test_atom_squares = [setup_atomic_square()]
@@ -197,14 +199,14 @@ travis = False
 if os.getenv('TRAVIS'):
     travis = True
     num_exp = 1
-    proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat']))
+    proc_alg_pairs = list(product(['CPU'], ['nxn', 'flat', 'flat-serial']))
     comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
     if bool(os.getenv('NUMBA_DISABLE_JIT')):
         pass
     else:
         # Use a slightly bigger test set, since we are using the JIT
-        ns = [10, 100, 300]
+        ns = [10, 100, 400]
         num_exp = 3
 
 else:
@@ -212,18 +214,17 @@ else:
         10, 100,
         400, 1000
     ]
-    # num_exp = 3
-    num_exp = 0
-    proc_alg_pairs = [('CPU', 'flat'),
+    num_exp = 3
+    proc_alg_pairs = [('CPU', 'nxn'),
+                      ('CPU', 'flat'),
                       ('CPU', 'flat-serial'),
-                      ('CPU', 'nxn'),
                       ('Multi-GPU', 'flat'),
                       ]
     comparison_pro_alg_pairs = [
+        (('CPU', 'nxn'), ('CPU', 'flat-serial')),
+        (('CPU', 'flat-serial'), ('CPU', 'flat')),
         (('CPU', 'flat'), ('Multi-GPU', 'flat')),
-        # (('CPU', 'flat-serial'), ('CPU', 'flat')),
-        # (('CPU', 'nxn'), ('CPU', 'flat-serial')),
-        # (('CPU', 'nxn'), ('Multi-GPU', 'flat'))
+
     ]
     # comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
