@@ -81,11 +81,11 @@ class Spring(Calculator):
 
 
 def spring_nrg(atoms, k, rt):
-    q = atoms.positions
+    q = atoms.get_positions().astype(np.float32)
     n = len(atoms)
-    d = np.zeros((n, n, 3))
+    d = np.zeros((n, n, 3), dtype=np.float32)
     get_d_array(d, q)
-    r = np.zeros((n, n))
+    r = np.zeros((n, n), dtype=np.float32)
     get_r_array(r, d)
 
     thresh = np.less(r, rt)
@@ -100,11 +100,11 @@ def spring_nrg(atoms, k, rt):
 
 
 def spring_force(atoms, k, rt):
-    q = atoms.positions
+    q = atoms.get_positions().astype(np.float32)
     n = len(atoms)
-    d = np.zeros((n, n, 3))
+    d = np.zeros((n, n, 3), dtype=np.float32)
     get_d_array(d, q)
-    r = np.zeros((n, n))
+    r = np.zeros((n, n), dtype=np.float32)
     get_r_array(r, d)
 
     thresh = np.less(r, rt)
@@ -127,7 +127,7 @@ def spring_force(atoms, k, rt):
 
 def com_spring_nrg(atoms, k, rt):
     com = atoms.get_center_of_mass()
-    q = atoms.positions
+    q = atoms.get_positions().astype(np.float32)
     disp = q - com
     dist = np.sqrt(np.sum(disp ** 2, axis=1))
     thresh = np.greater(dist, rt)
@@ -140,7 +140,7 @@ def com_spring_nrg(atoms, k, rt):
 
 def com_spring_force(atoms, k, rt):
     com = atoms.get_center_of_mass()
-    q = atoms.positions
+    q = atoms.get_positions().astype(np.float32)
     disp = q - com
     dist = np.sqrt(np.sum(disp ** 2, axis=1))
     thresh = np.greater(dist, rt)
@@ -158,11 +158,11 @@ def com_spring_force(atoms, k, rt):
 
 
 def att_spring_nrg(atoms, k, rt):
-    q = atoms.positions
+    q = atoms.get_positions().astype(np.float32)
     n = len(atoms)
-    d = np.zeros((n, n, 3))
+    d = np.zeros((n, n, 3), dtype=np.float32)
     get_d_array(d, q)
-    r = np.zeros((n, n))
+    r = np.zeros((n, n), dtype=np.float32)
     get_r_array(r, d)
 
     thresh = np.greater(r, rt)
@@ -177,11 +177,11 @@ def att_spring_nrg(atoms, k, rt):
 
 
 def att_spring_force(atoms, k, rt):
-    q = atoms.positions
+    q = atoms.get_positions().astype(np.float32)
     n = len(atoms)
-    d = np.zeros((n, n, 3))
+    d = np.zeros((n, n, 3), dtype=np.float32)
     get_d_array(d, q)
-    r = np.zeros((n, n))
+    r = np.zeros((n, n), dtype=np.float32)
     get_r_array(r, d)
 
     thresh = np.greater(r, rt)
