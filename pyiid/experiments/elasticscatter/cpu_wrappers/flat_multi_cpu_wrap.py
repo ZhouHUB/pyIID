@@ -17,13 +17,13 @@ def setup_cpu_calc(atoms, sum_type):
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     n, qmax_bin = scatter_array.shape
     if hasattr(atoms, 'adp'):
-        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
-               scatter_array
+        return q.astype(np.float32), atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
+               scatter_array.astype(np.float32)
     elif hasattr(atoms, 'adps'):
-        return q, atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
-               scatter_array
+        return q.astype(np.float32), atoms.adps.get_position().astype(np.float32), n, qmax_bin, \
+               scatter_array.astype(np.float32)
     else:
-        return q, None, n, qmax_bin, scatter_array
+        return q.astype(np.float32), None, n, qmax_bin, scatter_array.astype(np.float32)
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
@@ -47,7 +47,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
     # sum the answers
     final = np.sum(ans, axis=0)
-    norm = np.empty((k_max, qmax_bin))
+    norm = np.empty((k_max, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array, 0)
     na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')
@@ -70,7 +70,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
                               (n, qmax_bin))
     # sum the answers
     grad_p = np.sum(ans, axis=0)
-    norm = np.empty((k_max, qmax_bin))
+    norm = np.empty((k_max, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array, 0)
     na = np.mean(norm, axis=0) * n
     old_settings = np.seterr(all='ignore')

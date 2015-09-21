@@ -11,10 +11,6 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq as cpu_wrap_fq
-from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
-    wrap_apd_fq as cpu_wrap_adp_fq
-from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
-    wrap_apd_fq_grad as cpu_wrap_adp_fq_grad
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
 
@@ -175,6 +171,15 @@ class ElasticScatter(object):
                 self.fq = wrap_fq
                 self.grad = wrap_fq_grad
                 self.alg = 'flat'
+
+            elif kernel_type == 'flat-serial':
+                from pyiid.experiments.elasticscatter.cpu_wrappers \
+                    .flat_serial_cpu_wrap import \
+                    wrap_fq, wrap_fq_grad
+
+                self.fq = wrap_fq
+                self.grad = wrap_fq_grad
+                self.alg = 'flat-serial'
 
             self.grad_pdf = cpu_grad_pdf
             self.processor = processor

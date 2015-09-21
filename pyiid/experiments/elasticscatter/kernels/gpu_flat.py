@@ -89,7 +89,7 @@ def get_omega(omega, r, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qbin) * f4(qx)
+    Q = qbin * f4(qx)
     rk = r[k]
     omega[k, qx] = math.sin(Q * rk) / rk
 
@@ -116,8 +116,8 @@ def get_sigma_from_adp(sigma, adps, r, d, offset):
     if k >= len(sigma):
         return
     i, j = cuda_k_to_ij(i4(k + offset))
-    tmp = 0.
-    for w in xrange(3):
+    tmp = f4(0.)
+    for w in xrange(i4(3)):
         tmp += (adps[i, w] - adps[j, w]) * d[k, w] / r[k]
     sigma[k] = tmp
 
@@ -139,8 +139,8 @@ def get_tau(dw_factor, sigma, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * f4(qbin)
-    dw_factor[k, qx] = math.exp(f4(-.5) * f4(sigma[k] * sigma[k]) * f4(Q * Q))
+    Q = f4(qx) * qbin
+    dw_factor[k, qx] = math.exp(f4(-.5) * sigma[k] * sigma[k] * Q * Q)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
@@ -205,11 +205,11 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * f4(qbin)
+    Q = f4(qx) * qbin
     rk = r[k]
     a = (Q * math.cos(Q * rk)) - omega[k, qx]
-    a /= f4(rk * rk)
-    for w in xrange(3):
+    a /= rk * rk
+    for w in xrange(i4(3)):
         grad_omega[k, w, qx] = a * d[k, w]
 
 
@@ -240,13 +240,12 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, offset):
     k, qx = cuda.grid(2)
     if k >= kmax or qx >= qmax_bin:
         return
-    Q = f4(qx) * f4(qbin)
+    Q = f4(qx) * qbin
     i, j = cuda_k_to_ij(i4(k + offset))
     rk = r[k]
-    tmp = f4(sigma[k] * f4(Q * Q) * tau[k, qx]) / f4(rk * rk * rk)
-    for w in xrange(3):
-        grad_tau[k, w, qx] = f4(tmp) * f4(
-            d[k, w] * sigma[k] - f4(adps[i, w] - adps[j, w]) * f4(rk * rk))
+    tmp = sigma[k] * Q * Q * tau[k, qx] / (rk * rk * rk)
+    for w in xrange(i4(3)):
+        grad_tau[k, w, qx] = tmp * (d[k, w] * sigma[k] - (adps[i, w] - adps[j, w]) * (rk * rk))
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], f4[:, :]])
@@ -268,7 +267,7 @@ def get_grad_fq(grad, grad_omega, norm):
     if k >= kmax or qx >= qmax_bin:
         return
     a = norm[k, qx]
-    for w in xrange(3):
+    for w in xrange(i4(3)):
         grad[k, w, qx] = a * grad_omega[k, w, qx]
 
 
@@ -298,7 +297,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     a = norm[k, qx]
     b = tau[k, qx]
     c = omega[k, qx]
-    for w in xrange(3):
+    for w in xrange(i4(3)):
         grad[k, w, qx] = a * (b * grad_omega[k, w, qx] +
                               c * grad_tau[k, w, qx])
 
@@ -336,7 +335,7 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
         alpha = float32(1)
     k -= k_cov
     if 0 <= k < len(grad):
-        for tz in xrange(3):
+        for tz in xrange(i4(3)):
             cuda.atomic.add(new_grad, (i, tz, qx), grad[k, tz, qx] * alpha)
 
 
@@ -460,5 +459,5 @@ def get_grad_fq_inplace(grad_omega, norm):
     if k >= kmax or qx >= qmax_bin:
         return
     a = norm[k, qx]
-    for w in xrange(3):
+    for w in xrange(i4(3)):
         grad_omega[k, w, qx] *= a

@@ -3,8 +3,10 @@ from pyiid.experiments.elasticscatter import ElasticScatter
 
 __author__ = 'christopher'
 
-rtol = 4e-4
-atol = 4e-4
+# rtol = 4e-4
+# atol = 4e-4
+rtol = 5e-4
+atol = 5e-5
 
 test_data = list(product(test_atoms, test_exp, comparison_pro_alg_pairs))
 # remove the ultra slow nxn 1000 atom tests
@@ -12,17 +14,17 @@ test_data = list(product(test_atoms, test_exp, comparison_pro_alg_pairs))
 #     if len(f[0]) > 200 and ('CPU', 'nxn') in f[3]:
 #         test_data.remove(f)
 # Test Generators
-'''
+# '''
 def test_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
-'''
+# '''
 # '''
 def test_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v
-
-
+# '''
+'''
 # Tests which derive from F(Q) and Grad F(Q)
 def test_scatter_pdf():
     for v in test_data:
@@ -70,7 +72,8 @@ def check_scatter_fq(value):
     ans2 = scat.get_fq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
+    if not stats_check(ans1, ans2, rtol, atol):
+        print value
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
     # assert False
 
@@ -97,7 +100,8 @@ def check_scatter_grad_fq(value):
     ans2 = scat.get_grad_fq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
+    if not stats_check(ans1, ans2, rtol, atol):
+        print value
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
@@ -210,7 +214,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         '-v',
-        # '-x',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

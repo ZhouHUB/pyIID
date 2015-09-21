@@ -45,12 +45,13 @@ def find_step_size(input_atoms, thermal_nrg):
     return step_size
 
 
-def buildtree(input_atoms, u, v, j, e, e0, rs):
+def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
     """
     Build the tree of samples for NUTS, recursively
 
     Parameters
     -----------
+    :param beta:
     input_atoms: ase.Atoms object
         The atoms for the tree
     u: float
@@ -91,14 +92,14 @@ def buildtree(input_atoms, u, v, j, e, e0, rs):
                               input_atoms.get_total_energy())), 1)
     else:
         (neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime,
-         na_prime) = buildtree(input_atoms, u, v, j - 1, e, e0, rs)
+         na_prime) = buildtree(input_atoms, u, v, j - 1, e, e0, rs, beta)
         if s_prime == 1:
             if v == -1:
                 (neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs)
+                 app, napp) = buildtree(neg_atoms, u, v, j - 1, e, e0, rs, beta)
             else:
                 (_, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime,
-                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs)
+                 app, napp) = buildtree(pos_atoms, u, v, j - 1, e, e0, rs, beta)
 
             if rs.uniform() < float(n_prime_prime / (
                     max(n_prime + n_prime_prime, 1))):
@@ -162,10 +163,10 @@ class NUTSCanonicalEnsemble(Ensemble):
             v = self.random_state.choice([-1, 1])
             if v == -1:
                 (neg_atoms, _, atoms_prime, n_prime, s_prime, a,
-                 na) = buildtree(neg_atoms, u, v, j, e, e0, self.random_state)
+                 na) = buildtree(neg_atoms, u, v, j, e, e0, self.random_state, 1/self.thermal_nrg)
             else:
                 (_, pos_atoms, atoms_prime, n_prime, s_prime, a,
-                 na) = buildtree(pos_atoms, u, v, j, e, e0, self.random_state)
+                 na) = buildtree(pos_atoms, u, v, j, e, e0, self.random_state, 1/self.thermal_nrg)
 
             if s_prime == 1 and self.random_state.uniform() < min(
                     1, n_prime * 1. / n):

@@ -9,7 +9,8 @@ processor_target = 'cpu'
 
 # F(Q) test_kernels -----------------------------------------------------------
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :], f4[:, :]), target=processor_target, nopython=True,
+     cache=True)
 def get_d_array(d, q):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
@@ -21,13 +22,14 @@ def get_d_array(d, q):
         The atomic positions
     """
     n = len(q)
-    for i in xrange(n):
-        for j in xrange(n):
-            for w in xrange(3):
+    for i in xrange(i4(n)):
+        for j in xrange(i4(n)):
+            for w in xrange(i4(3)):
                 d[i, j, w] = q[j, w] - q[i, w]
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :], f4[:, :, :]), target=processor_target, nopython=True,
+     cache=True)
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -39,13 +41,16 @@ def get_r_array(r, d):
         The coordinate pair distances
     """
     n = len(r)
-    for i in xrange(n):
-        for j in xrange(n):
-            r[i, j] = math.sqrt(
-                d[i, j, 0] ** 2 + d[i, j, 1] ** 2 + d[i, j, 2] ** 2)
+    for i in xrange(i4(n)):
+        for j in xrange(i4(n)):
+            tmp = f4(0.)
+            for w in xrange(i4(3)):
+                tmp += d[i, j, w] * d[i, j, w]
+            r[i, j] = math.sqrt(tmp)
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :], f4[:, :]), target=processor_target, nopython=True,
+     cache=True)
 def get_normalization_array(norm_array, scatter_array):
     """
     Generate the Q dependant normalization factors for the F(Q) array
@@ -58,25 +63,28 @@ def get_normalization_array(norm_array, scatter_array):
         The scatter factor array
     """
     n, _, qmax_bin = norm_array.shape
-    for qx in xrange(qmax_bin):
-        for i in xrange(n):
-            for j in xrange(n):
-                norm_array[i, j, qx] = scatter_array[i, qx] * \
-                                       scatter_array[j, qx]
+    for qx in xrange(i4(qmax_bin)):
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                if i != j:
+                    norm_array[i, j, qx] = scatter_array[i, qx] * \
+                                           scatter_array[j, qx]
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :], f4[:, :], f4[:, :], f4[:, :, :]),
+     target=processor_target, nopython=True, cache=True)
 def get_sigma_from_adp(sigma, adps, r, d):
-    for i in xrange(len(sigma)):
-        for j in xrange(len(sigma)):
+    for i in xrange(i4(len(sigma))):
+        for j in xrange(i4(len(sigma))):
             if i != j:
-                tmp = 0.
-                for w in xrange(3):
+                tmp = f4(0.)
+                for w in xrange(i4(3)):
                     tmp += (adps[i, w] - adps[j, w]) * d[i, j, w] / r[i, j]
                 sigma[i, j] = tmp
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :], f4[:, :], f4), target=processor_target, nopython=True,
+     cache=True)
 def get_omega(omega, r, qbin):
     """
     Generate F(Q), not normalized, via the Debye sum
@@ -93,74 +101,95 @@ def get_omega(omega, r, qbin):
         The qbin size
     """
     n, _, qmax_bin = omega.shape
-    for i in xrange(n):
-        for j in xrange(n):
-            if i != j:
-                for qx in xrange(qmax_bin):
-                    omega[i, j, qx] = math.sin(qx * qbin * r[i, j]) / r[i, j]
+    for qx in xrange(i4(qmax_bin)):
+        Q = f4(qx) * qbin
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                if i != j:
+                    rij = r[i, j]
+                    omega[i, j, qx] = math.sin(Q * rij) / rij
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :], f4[:, :], f4), target=processor_target, nopython=True,
+     cache=True)
 def get_tau(dw_factor, sigma, qbin):
     n, _, qmax_bin = dw_factor.shape
-    for qx in xrange(qmax_bin):
-        Q = qx * qbin
-        for i in xrange(n):
-            for j in xrange(n):
-                dw_factor[i, j, qx] = math.exp(-.5 * sigma[i, j] ** 2 * Q ** 2)
+    for qx in xrange(i4(qmax_bin)):
+        Q = f4(qx) * qbin
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                dw_factor[i, j, qx] = math.exp(
+                    f4(-.5) * sigma[i, j] * sigma[i, j] * Q * Q)
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:], f4[:, :, :], f4[:, :, :]), target=processor_target,
+     nopython=True, cache=True)
 def get_fq(fq, omega, norm):
     n, _, qmax_bin = omega.shape
-    for qx in xrange(qmax_bin):
-        for i in xrange(n):
-            for j in xrange(n):
+    for qx in xrange(i4(qmax_bin)):
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
                 fq[qx] += norm[i, j, qx] * omega[i, j, qx]
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :], f4[:, :, :], f4[:, :, :], f4[:, :, :]),
+     target=processor_target, nopython=True, cache=True)
 def get_adp_fq(fq, omega, tau, norm):
     n, _, qmax_bin = omega.shape
-    for qx in xrange(qmax_bin):
-        for i in xrange(n):
-            for j in xrange(n):
-                fq[qx] += norm[i, j, qx] * omega[i, j, qx] * tau[i, j, qx]
+    for qx in xrange(i4(qmax_bin)):
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                fq[i, j, qx] = norm[i, j, qx] * omega[i, j, qx] * tau[i, j, qx]
+
+
+@jit(void(f4[:, :, :], f4[:, :, :]), target=processor_target, nopython=True,
+     cache=True)
+def get_fq_inplace(omega, norm):
+    n, _, qmax_bin = omega.shape
+    for qx in xrange(i4(qmax_bin)):
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                omega[i, j, qx] *= norm[i, j, qx]
 
 
 # Gradient test_kernels -------------------------------------------------------
-@jit(target=processor_target, nopython=True)
+
+
+@jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :], f4[:, :, :], f4),
+     target=processor_target, nopython=True, cache=True)
 def get_grad_omega(grad_omega, omega, r, d, qbin):
     n, _, _, qmax_bin = grad_omega.shape
-    for qx in xrange(qmax_bin):
-        Q = qx * qbin
-        for i in xrange(n):
-            for j in xrange(n):
+    for qx in xrange(i4(qmax_bin)):
+        Q = f4(qx) * qbin
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
                 if i != j:
                     rij = r[i, j]
-                    A = Q * math.cos(Q * rij) - omega[i, j, qx]
-                    A /= rij ** 2
-                    for w in xrange(3):
-                        grad_omega[i, j, w, qx] = A * d[i, j, w]
+                    a = Q * math.cos(Q * rij) - omega[i, j, qx]
+                    a /= rij * rij
+                    for w in xrange(i4(3)):
+                        grad_omega[i, j, w, qx] = a * d[i, j, w]
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :], f4[:, :, :], f4[:, :],
+          f4[:, :, ], f4), target=processor_target, nopython=True, cache=True)
 def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin):
     n, _, _, qmax_bin = grad_tau.shape
-    for qx in xrange(qmax_bin):
+    for qx in xrange(i4(qmax_bin)):
         Q = qx * qbin
-        for i in xrange(n):
-            for j in xrange(n):
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
                 if i != j:
                     tmp = sigma[i, j] * Q ** 2 * tau[i, j, qx] / r[i, j] ** 3
-                    for w in xrange(3):
+                    for w in xrange(i4(3)):
                         grad_tau[i, j, w, qx] = tmp * (
-                        d[i, j, w] * sigma[i, j] -
-                        (adps[i, w] - adps[j, w])
-                        * r[i, j] ** 2)
+                            d[i, j, w] * sigma[i, j] -
+                            (adps[i, w] - adps[j, w])
+                            * r[i, j] ** 2)
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :, :], f4[:, :, :, :], f4[:, :, :]),
+     target=processor_target, nopython=True, cache=True)
 def get_grad_fq(grad, grad_omega, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -178,17 +207,19 @@ def get_grad_fq(grad, grad_omega, norm):
     qbin: float
         The size of the Q bins
     """
-    n, _, qmax_bin = grad.shape
-    for i in xrange(n):
-        for w in xrange(3):
-            for j in xrange(n):
+    n, _, _, qmax_bin = grad.shape
+    for i in xrange(i4(n)):
+        for w in xrange(i4(3)):
+            for j in xrange(i4(n)):
                 if i != j:
-                    for qx in xrange(grad.shape[2]):
-                        grad[i, w, qx] += norm[i, j, qx] * grad_omega[i, j, w,
-                                                                      qx]
+                    for qx in xrange(grad.shape[3]):
+                        grad[i, j, w, qx] = norm[i, j, qx] * grad_omega[
+                            i, j, w, qx]
 
 
-@jit(target=processor_target, nopython=True)
+@jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :, :], f4[:, :, :, :],
+          f4[:, :, :, :], f4[:, :, :]),
+     target=processor_target, nopython=True, cache=True)
 def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
     Generate the gradient F(Q) for an atomic configuration
@@ -206,14 +237,42 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     qbin: float
         The size of the Q bins
     """
-    n, _, qmax_bin = grad.shape
-    for i in xrange(n):
-        for w in xrange(3):
-            for j in xrange(n):
+    n, _, _, qmax_bin = grad.shape
+    for i in xrange(i4(n)):
+        for w in xrange(i4(3)):
+            for j in xrange(i4(n)):
                 if i != j:
-                    for qx in xrange(qmax_bin):
-                        grad[i, w, qx] += norm[i, j, qx] * \
-                                          (tau[i, j, qx] *
-                                           grad_omega[i, j, w, qx] +
-                                           omega[i, j, qx] *
-                                           grad_tau[i, j, w, qx])
+                    for qx in xrange(i4(qmax_bin)):
+                        grad[i, j, w, qx] = norm[i, j, qx] * \
+                                            (tau[i, j, qx] *
+                                             grad_omega[i, j, w, qx] +
+                                             omega[i, j, qx] *
+                                             grad_tau[i, j, w, qx])
+
+
+@jit(void(f4[:, :, :, :], f4[:, :, :]), target=processor_target, nopython=True,
+     cache=True)
+def get_grad_fq_inplace(grad_omega, norm):
+    """
+    Generate the gradient F(Q) for an atomic configuration
+
+    Parameters
+    ------------
+    grad_p: Nx3xQ numpy array
+        The array which will store the FQ gradient
+    d: NxNx3 array
+        The distance array for the configuration
+    r: NxN array
+        The inter-atomic distances
+    scatter_array: NxQ array
+        The scatter factor array
+    qbin: float
+        The size of the Q bins
+    """
+    n, _, _, qmax_bin = grad_omega.shape
+    for i in xrange(i4(n)):
+        for w in xrange(i4(3)):
+            for j in xrange(i4(n)):
+                if i != j:
+                    for qx in xrange(i4(qmax_bin)):
+                        grad_omega[i, j, w, qx] *= norm[i, j, qx]

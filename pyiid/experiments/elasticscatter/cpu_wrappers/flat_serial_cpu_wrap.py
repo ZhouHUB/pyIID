@@ -1,7 +1,11 @@
 import numpy as np
 
-from pyiid.experiments.elasticscatter.kernels.cpu_nxn import *
-from ..kernels.cpu_flat import get_normalization_array as flat_norm
+from pyiid.experiments.elasticscatter.kernels.cpu_flat import *
+from pyiid.experiments.elasticscatter.kernels.cpu_experimental import \
+    experimental_sum_grad_cpu
+
+from pyiid.experiments.elasticscatter.kernels import antisymmetric_reshape, \
+    symmetric_reshape
 
 __author__ = 'christopher'
 
@@ -37,20 +41,19 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     # define scatter_q information and initialize constants
 
     n, qmax_bin = scatter_array.shape
-    # Get pair coordinate distance array
-    d = np.zeros((n, n, 3), np.float32)
-    get_d_array(d, q)
+    k_max = n * (n - 1) / 2.
+    k_cov = i4(0)
 
-    # Get pair distance array
-    r = np.zeros((n, n), np.float32)
+    d = np.zeros((k_max, 3), np.float32)
+    get_d_array(d, q, k_cov)
+
+    r = np.zeros(k_max, np.float32)
     get_r_array(r, d)
 
-    # Get normalization array
-    norm = np.zeros((n, n, qmax_bin), np.float32)
-    get_normalization_array(norm, scatter_array)
+    norm = np.zeros((k_max, qmax_bin), np.float32)
+    get_normalization_array(norm, scatter_array, k_cov)
 
-    # Get omega
-    omega = np.zeros((n, n, qmax_bin), np.float32)
+    omega = np.zeros((k_max, qmax_bin), np.float32)
     get_omega(omega, r, qbin)
 
     adps = None
@@ -63,28 +66,25 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
         get_fq_inplace(omega, norm)
         fq = omega
     else:
-        sigma = np.zeros((n, n), np.float32)
-        get_sigma_from_adp(sigma, adps, r, d)
+        sigma = np.zeros(k_max, np.float32)
+        get_sigma_from_adp(sigma, adps, r, d, k_cov)
 
-        tau = np.zeros((n, n, qmax_bin), np.float32)
+        tau = np.zeros((k_max, qmax_bin), np.float32)
         get_tau(tau, sigma, qbin)
 
-        fq = np.zeros((n, n, qmax_bin), np.float32)
+        fq = np.zeros((k_max, qmax_bin), np.float32)
         get_adp_fq(fq, omega, tau, norm)
         del tau, sigma, adps
 
     # Normalize fq
     # '''
-    fq = np.sum(fq, axis=0, dtype=np.float32)
-    fq = np.sum(fq, axis=0, dtype=np.float32)
-    norm2 = np.zeros((n * (n - 1) / 2., qmax_bin), np.float32)
-    flat_norm(norm2, scatter_array, 0)
-    na = np.mean(norm2, axis=0, dtype=np.float32) * np.float32(n)
+    fq = np.sum(fq, 0, dtype=np.float32)
+    na = np.mean(norm, axis=0, dtype=np.float32) * np.float32(n)
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(fq / na)
     np.seterr(**old_settings)
     del q, d, r, norm, omega, na
-    return fq
+    return fq * 2.
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
@@ -110,6 +110,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     """
     q = atoms.get_positions().astype(np.float32)
     qbin = np.float32(qbin)
+
     # get scatter array
     if sum_type == 'fq':
         scatter_array = atoms.get_array('F(Q) scatter')
@@ -119,25 +120,22 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # define scatter_q information and initialize constants
     qmax_bin = scatter_array.shape[1]
     n = len(q)
+    k_max = n * (n - 1) / 2.
+    k_cov = 0
 
-    # Get pair coordinate distance array
-    d = np.zeros((n, n, 3), np.float32)
-    get_d_array(d, q)
+    d = np.empty((k_max, 3), np.float32)
+    get_d_array(d, q, k_cov)
 
-    # Get pair distance array
-    r = np.zeros((n, n), np.float32)
+    r = np.empty(k_max, np.float32)
     get_r_array(r, d)
 
-    # Get normalization array
-    norm = np.zeros((n, n, qmax_bin), np.float32)
-    get_normalization_array(norm, scatter_array)
+    norm = np.empty((k_max, qmax_bin), np.float32)
+    get_normalization_array(norm, scatter_array, k_cov)
 
-    # Get omega
-    omega = np.zeros((n, n, qmax_bin), np.float32)
+    omega = np.zeros((k_max, qmax_bin), np.float32)
     get_omega(omega, r, qbin)
 
-    # Get grad omega
-    grad_omega = np.zeros((n, n, 3, qmax_bin), np.float32)
+    grad_omega = np.zeros((k_max, 3, qmax_bin), np.float32)
     get_grad_omega(grad_omega, omega, r, d, qbin)
 
     adps = None
@@ -145,36 +143,38 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
         adps = atoms.adp.get_position().astype(np.float32)
     elif hasattr(atoms, 'adps'):
         adps = atoms.adps.get_position().astype(np.float32)
-
     if adps is None:
-        # Get grad FQ
         get_grad_fq_inplace(grad_omega, norm)
-        grad_fq = grad_omega
+        grad = grad_omega
     else:
-        sigma = np.zeros((n, n), np.float32)
-        get_sigma_from_adp(sigma, adps, r, d)
+        sigma = np.zeros(k_max, np.float32)
+        get_sigma_from_adp(sigma, adps, r, d, k_cov)
 
-        tau = np.zeros((n, n, qmax_bin), np.float32)
+        tau = np.zeros((k_max, qmax_bin), np.float32)
         get_tau(tau, sigma, qbin)
 
-        grad_tau = np.zeros((n, n, 3, qmax_bin), np.float32)
-        get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin)
+        grad_tau = np.zeros((k_max, 3, qmax_bin), np.float32)
+        get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin, k_cov)
 
-        grad_fq = np.zeros((n, n, 3, qmax_bin), np.float32)
-        get_adp_grad_fq(grad_fq, omega, tau, grad_omega, grad_tau, norm)
-        del tau, sigma, adps
+        grad = np.empty((k_max, 3, qmax_bin), np.float32)
+        get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm)
 
-    # Normalize FQ
-    grad_fq = grad_fq.sum(1)
+    rtn = np.zeros((n, 3, qmax_bin), np.float32)
+    experimental_sum_grad_cpu(rtn, grad, k_cov)
     # '''
-    norm = np.zeros((n * (n - 1) / 2., qmax_bin), np.float32)
-    flat_norm(norm, scatter_array, 0)
+    # Normalize FQ
     na = np.mean(norm, axis=0) * np.float32(n)
     old_settings = np.seterr(all='ignore')
-    grad_fq = np.nan_to_num(grad_fq / na)
+    rtn = np.nan_to_num(rtn / na)
     np.seterr(**old_settings)
     del d, r, scatter_array, norm, omega, grad_omega
-    return grad_fq
+    return rtn
     '''
-    return grad_fq
+    a = grad_omega
+    # out = np.zeros((n, n), np.float32)
+    # out = np.zeros((n, n, qmax_bin), np.float32)
+    out = np.zeros((n, n, 3, qmax_bin), np.float32)
+    antisymmetric_reshape(out, a)
+    # symmetric_reshape(out, a)
+    return rtn
     # '''

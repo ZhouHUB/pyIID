@@ -14,23 +14,21 @@ def ij_to_k(i, j):
 def k_to_ij(k):
     i = math.floor(float((1 + math.sqrt(1 + 8. * k))) / 2.)
     j = k - i * (i - 1) / 2.
-    return int(i), int(j)
+    return i4(i), i4(j)
 
 
 def symmetric_reshape(out_data, in_data):
-    for i in range(len(out_data)):
-        for j in range(i):
-            out_data[i, j] = in_data[j + i * (i - 1) / 2]
-            out_data[j, i] = in_data[j + i * (i - 1) / 2]
+    for k in xrange(in_data.shape[0]):
+        i, j = k_to_ij(k)
+        out_data[i, j] = in_data[k]
+        out_data[j, i] = in_data[k]
 
 
 def antisymmetric_reshape(out_data, in_data):
-    for i in range(len(out_data)):
-        for j in range(len(out_data)):
-            if j < i:
-                out_data[i, j] = -1 * in_data[ij_to_k(i, j)]
-            elif i < j:
-                out_data[i, j] = in_data[ij_to_k(j, i)]
+    for k in xrange(in_data.shape[0]):
+        i, j = k_to_ij(k)
+        out_data[i, j] = -1 * in_data[k]
+        out_data[j, i] = in_data[k]
 
 
 @cuda.jit(device=True)
