@@ -2,7 +2,7 @@
 Note there is only one CPU nxn comparison test, the CPU nxn code is
 rather slow, thus we test it against the flattened Multi core CPU code,
 which is much faster.
-Then we run all nuts_benchmarks agains the CPU flat kernels.
+Then we run all nuts_benchmarks against the CPU flat kernels.
 Thus it is imperative that the flat CPU runs with no errors.
 """
 import numpy as np

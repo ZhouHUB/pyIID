@@ -17,7 +17,7 @@ def wrap_rw(gcalc, gobs):
     atoms: ase.Atoms
         The atomic configuration
     gobs: 1darray
-        The observed atomic pair distributuion function
+        The observed atomic pair distribution function
     qmax: float
         The maximum scatter vector value
     qmin: float

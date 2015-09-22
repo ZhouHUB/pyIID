@@ -25,8 +25,10 @@ def add_atom(atoms, chem_potentials, beta):
     mu = chem_potentials[new_symbol]
     # calculate acceptance
     if np.random.random((1,)) < np.exp(
-            min([0, np.log(atoms.get_volume() / (
-                        len(atoms) + 1)) - beta * delta_energy + beta * mu])):
+            min([0,
+                 np.log(atoms.get_volume() / (len(atoms) + 1))
+                         - beta * delta_energy + beta * mu
+                 ])):
         return atoms_prime
     else:
         return None
@@ -50,9 +52,10 @@ def del_atom(atoms, chem_potentials, beta):
     mu = chem_potentials[del_symbol]
     # calculate acceptance
     if np.random.random() < np.exp(
-            min([0, np.log(len(atoms) / atoms.get_volume()) -
-                            beta * delta_energy -
-                            beta * mu
+            min([0,
+                 np.log(len(atoms) / atoms.get_volume())
+                         - beta * delta_energy
+                         - beta * mu
                  ])):
         return atoms_prime
     else:

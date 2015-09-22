@@ -5,7 +5,7 @@ __author__ = 'christopher'
 test_data = test_atoms * 10
 
 
-def test_consistancy():
+def test_consistency():
     outs = [[] for i in range(len(test_atoms))]
     s = ElasticScatter()
     for i, atoms in enumerate(test_data):
@@ -17,7 +17,7 @@ def test_consistancy():
 
 
 @known_fail_if(not srfit)
-def test_consistancy2():
+def test_consistency2():
     outs = [[] for i in range(len(test_atoms))]
     s = ElasticScatter()
     for i, atoms in enumerate(test_data):

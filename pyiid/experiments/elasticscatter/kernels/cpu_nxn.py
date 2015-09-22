@@ -7,7 +7,7 @@ __author__ = 'christopher'
 processor_target = 'cpu'
 
 
-# F(sv) test_kernels -----------------------------------------------------------
+# F(sv) test_kernels ----------------------------------------------------------
 
 @jit(void(f4[:, :, :], f4[:, :]), target=processor_target, nopython=True,
      cache=True)
