@@ -12,8 +12,8 @@ import time
 from copy import deepcopy as dc
 from collections import OrderedDict
 import pickle
-from pyiid.wrappers.elasticscatter import ElasticScatter
 import traceback
+from pyiid.experiments.elasticscatter import ElasticScatter
 
 exp = None
 scat = ElasticScatter()
@@ -61,11 +61,11 @@ for proc, alg in benchmarks:
         break
     time_list.append((nrg_l, f_l))
 
-for i in range(len(benchmarks)):
-    for j, calc_type in enumerate(['energy', 'force']):
-        f_str = benchmarks[i][0]+'_'+benchmarks[i][0]+'_'+calc_type+'.pkl'
-        with open(f_str, 'w') as f:
-            pickle.dump(time_list[i][j], f)
+# for i in range(len(benchmarks)):
+#     for j, calc_type in enumerate(['energy', 'force']):
+#         f_str = benchmarks[i][0]+'_'+benchmarks[i][0]+'_'+calc_type+'.pkl'
+#         with open(f_str, 'w') as f:
+#             pickle.dump(time_list[i][j], f)
 '''
 for i in range(len(benchmarks)):
     for j, (calc_type, line) in enumerate(zip(['energy', 'force'], ['o', 's'])):
@@ -93,6 +93,6 @@ ax2.set_xlim(ax1.get_xlim())
 ax2.set_xticks(ax1.get_xticks())
 ax2.set_xticklabels(number_of_atoms)
 ax2.set_xlabel('Number of Atoms')
-plt.savefig('/mnt/bulk-data/Dropbox/BNL_Project/HMC_paper/figures/speed_log.eps', bbox_inches='tight', transparent=True)
-plt.savefig('/mnt/bulk-data/Dropbox/BNL_Project/HMC_paper/figures/speed_log.png', bbox_inches='tight', transparent=True)
+# plt.savefig('/mnt/bulk-data/Dropbox/BNL_Project/HMC_paper/figures/speed_log.eps', bbox_inches='tight', transparent=True)
+# plt.savefig('/mnt/bulk-data/Dropbox/BNL_Project/HMC_paper/figures/speed_log.png', bbox_inches='tight', transparent=True)
 plt.show()
