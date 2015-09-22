@@ -17,7 +17,7 @@ env:
 install:
   - export GIT_FULL_HASH=`git rev-parse HEAD`
   - conda update conda --yes
-  - conda create -n testenv --yes pip nose python=$TRAVIS_PYTHON_VERSION xraylib numpy=1.8.2 scipy six numba mkl matplotlib numbapro mpi4py psutil
+  - conda create -n testenv --yes pip nose python=$TRAVIS_PYTHON_VERSION xraylib numpy=1.9.1 scipy six numba mkl matplotlib numbapro mpi4py psutil
   - source activate testenv
   - pip install python-ase pympler
   - pip install nose-exclude
