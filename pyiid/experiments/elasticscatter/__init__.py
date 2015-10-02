@@ -4,6 +4,7 @@ and processor information needed to calculate the elastic powder scattering
 from a collection of atoms.
 """
 import math
+from ase.units import s
 import numpy as np
 from numba import cuda
 
@@ -11,6 +12,10 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq as cpu_wrap_fq
+from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+    wrap_voxel_insert as cpu_wrap_voxel_insert
+from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
+    wrap_voxel_remove as cpu_wrap_voxel_remove
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
 
@@ -45,6 +50,8 @@ def check_cudafft():
     return tf
 
 
+# TODO: store PDF and F(Q) for atoms, check if need to recalculate,
+# which should prevent double calculation
 class ElasticScatter(object):
     """
     Scatter contains all the methods associated with producing theoretical
@@ -91,6 +98,8 @@ class ElasticScatter(object):
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
         self.grad_pdf = cpu_grad_pdf
+        self.wrap_voxel_insert = cpu_wrap_voxel_insert
+        self.wrap_voxel_remove = cpu_wrap_voxel_remove
         self.processor = 'CPU'
         self.alg = 'nxn'
 
@@ -274,6 +283,29 @@ class ElasticScatter(object):
         )
 
         return pdf0
+
+    # TODO: this approach is very memory intensive, need a sparce way
+    def get_total_3d_overlap(self, atoms, pdf=None, sparse=True):
+        # cute decomposition of voxel problem returns voxels with min=0.
+        if pdf is not None:
+            pdf = self.get_pdf(atoms)
+        voxels = self.wrap_voxel_insert(atoms, pdf, self.exp['rmin'], self.exp['rstep'])
+        voxels = voxels.astype(np.float64)
+        # Normalize voxels
+        sv = np.sum(voxels)
+        assert sv != 0.0
+        voxels /= sv
+        return voxels
+
+    def get_atomic_3d_overlap(self, atoms):
+        pdf = self.get_pdf(atoms)
+        # cute decomposition of voxel problem returns voxels with min=0.
+        voxels = self.wrap_voxel_remove(atoms, pdf, self.exp['rmin'], self.exp['rstep'])
+        voxels = voxels.astype(np.float64)
+        # Normalize voxels
+        sv = np.sum(voxels)
+        voxels /= sv
+        return voxels
 
     def get_sq(self, atoms):
         """

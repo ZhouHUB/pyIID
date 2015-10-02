@@ -67,6 +67,26 @@ def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
             4 * (5 * qmax_bin + 4))))
 
 
+def gpu_k_space_fq_allocation(n, sv, mem):
+    return int(math.floor(
+        float(.8 * mem - 4 * sv * n - 4 * sv - 12 * n) / (16 * (sv + 1))))
+
+
+def gpu_k_space_fq_adp_allocation(n, sv, mem):
+    return int(math.floor(
+        float(.8 * mem - 4 * sv * n - 4 * sv - 24 * n) / (20 * (sv + 1))))
+
+
+def gpu_k_space_grad_fq_allocation(n, sv, mem):
+    return int(math.floor(
+        float(.8 * mem - 16 * sv * n - 12 * n) / (16 * (2 * sv + 1))))
+
+
+def gpu_k_space_grad_fq_adp_allocation(n, sv, mem):
+    return int(math.floor(
+        float(.8 * mem - 16 * sv * n - 24 * n) / (4 * (12 * sv + 5))))
+
+
 def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
     Calculate a portion of F(sv).  This is the smallest division of the F(sv)
@@ -311,21 +331,68 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     return rtn
 
 
-def gpu_k_space_fq_allocation(n, sv, mem):
-    return int(math.floor(
-        float(.8 * mem - 4 * sv * n - 4 * sv - 12 * n) / (16 * (sv + 1))))
+def atomic_voxel_overlap_insert(q, cell, pdf, rmax, rmin, rstep):
+    from pyiid.experiments.elasticscatter.kernels.gpu_flat import (
+        get_3d_overlap, zero_voxels, zero_occupied_atoms,
+        subtract_scalar)
+    from pyiid.experiments.elasticscatter.atomics import pad_pdf
+    diag = np.diagonal(cell)
+    stream = cuda.stream()
+    stream2 = cuda.stream()
+    dq = cuda.to_device(q.astype(np.float32), stream=stream2)
+    pdf = pad_pdf(pdf, rmin, rmax, rstep).astype(np.float32)
+    dpdf = cuda.to_device(pdf, stream=stream2)
+
+    dvoxels = cuda.device_array(diag / rstep, dtype=np.float32, stream=stream)
+    e = dvoxels.shape
+    tpb = [4, 4, 4]
+    bpg = generate_grid(e, tpb)
+    zero_voxels[bpg, tpb, stream](dvoxels)
+    cuda.synchronize()
+    get_3d_overlap[bpg, tpb](dvoxels, dq, dpdf,
+                             np.float32(rstep))
+    voxels = dvoxels.copy_to_host()
+    mv = np.min(voxels)
+    subtract_scalar[bpg, tpb, stream](dvoxels, mv)
+    zero_occupied_atoms[bpg, tpb, stream](dvoxels, dq, np.float32(rstep),
+                                          np.float32(rmin))
+    del dvoxels, dq, dpdf
+    return dvoxels.copy_to_host()
 
 
-def gpu_k_space_fq_adp_allocation(n, sv, mem):
-    return int(math.floor(
-        float(.8 * mem - 4 * sv * n - 4 * sv - 24 * n) / (20 * (sv + 1))))
+def atomic_voxel_overlap_removal(q, pdf, rmax, rmin, rstep, k_cov,
+                                 k_per_thread):
+    from pyiid.experiments.elasticscatter.atomics import pad_pdf
+    from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
+        (get_d_array, get_r_array, get_atomic_overlap, reshape_atomic_overlap
 
+    )
+    # generate grids for the GPU
+    elements_per_dim_1 = [k_per_thread]
+    tpb_k = [32]
+    bpg_k = generate_grid(elements_per_dim_1, tpb_k)
 
-def gpu_k_space_grad_fq_allocation(n, sv, mem):
-    return int(math.floor(
-        float(.8 * mem - 16 * sv * n - 12 * n) / (16 * (2 * sv + 1))))
+    # generate GPU streams
+    stream = cuda.stream()
+    stream2 = cuda.stream()
 
+    # calculate kernels
+    dq = cuda.to_device(q, stream=stream)
+    dd = cuda.device_array((k_per_thread, 3), dtype=np.float32, stream=stream)
+    dr = cuda.device_array(k_per_thread, dtype=np.float32, stream=stream)
 
-def gpu_k_space_grad_fq_adp_allocation(n, sv, mem):
-    return int(math.floor(
-        float(.8 * mem - 16 * sv * n - 24 * n) / (4 * (12 * sv + 5))))
+    get_d_array[bpg_k, tpb_k, stream](dd, dq, k_cov)
+    get_r_array[bpg_k, tpb_k, stream](dr, dd)
+    stream = cuda.stream()
+    stream2 = cuda.stream()
+
+    pdf = pad_pdf(pdf, rmin, rmax, rstep).astype(np.float32)
+    dpdf = cuda.to_device(pdf, stream=stream2)
+
+    dvoxels = cuda.to_device(np.zeros(len(q), np.float32), stream)
+    cuda.synchronize()
+    get_atomic_overlap[bpg_k, tpb_k, stream](dvoxels, dr, dpdf,
+                                             np.float32(rstep))
+    reshape_atomic_overlap[bpg_k, tpb_k, stream](stuff)
+    del dvoxels, dq, dpdf, dr, dd
+    return dvoxels.copy_to_host()

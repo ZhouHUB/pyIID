@@ -37,7 +37,7 @@ def leapfrog(atoms, step, center=True):
 
 
 class Ensemble(Optimizer):
-    def __init__(self, atoms, restart, logfile, trajectory, seed=None,
+    def __init__(self, atoms, restart=None, logfile=None, trajectory=None, seed=None,
                  verbose=False):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory)
         atoms.get_forces()
@@ -49,6 +49,7 @@ class Ensemble(Optimizer):
         self.starting_atoms = dc(atoms)
         self.traj = [dc(atoms)]
         self.pe = []
+        self.metadata = {}
 
     def check_eq(self, eq_steps, tol):
         ret = np.cumsum(self.pe, dtype=float)
@@ -64,7 +65,10 @@ class Ensemble(Optimizer):
             if self.verbose:
                 print 'iteration number', i
             self.step()
-        return self.traj
+        return self.traj, self.metadata
 
     def step(self):
+        pass
+
+    def estimate_simulation_duration(self, atoms, iterations):
         pass

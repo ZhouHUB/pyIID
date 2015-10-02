@@ -7,7 +7,7 @@ from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
 from pyiid.sim import leapfrog
 from pyiid.sim import Ensemble
 from ase.units import kB
-
+from time import time
 __author__ = 'christopher'
 Emax = 200
 
@@ -42,6 +42,9 @@ def find_step_size(input_atoms, thermal_nrg):
         step_size *= 2 ** a
         print 'trying step size', step_size
         atoms_prime = leapfrog(atoms, step_size)
+        if step_size < 1e-7 or step_size > 1e7:
+            step_size = 1.
+            break
     print 'optimal step size', step_size
     return step_size
 
@@ -125,8 +128,7 @@ class NUTSCanonicalEnsemble(Ensemble):
     def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
                  temperature=100, escape_level=13, accept_target=.65,
                  seed=None, verbose=False):
-        Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed)
-        self.verbose = verbose
+        Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed, verbose)
         self.accept_target = accept_target
         self.temp = temperature
         self.thermal_nrg = self.temp * kB
@@ -137,14 +139,15 @@ class NUTSCanonicalEnsemble(Ensemble):
         self.gamma = 0.05
         self.t0 = 10
         # self.k = .75
-        self.samples_total = 0
+        self.metadata['samples_total'] = 0
+        self.metadata['accepted_samples'] = 0
         self.escape_level = escape_level
         self.m = 0
 
     def step(self):
         new_configurations = []
         if self.verbose:
-            print 'time step size', self.step_size / fs, 'fs'
+            print '\ttime step size', self.step_size / fs, 'fs'
         # sample r0
         MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg,
                                      force_temp=True)
@@ -177,6 +180,7 @@ class NUTSCanonicalEnsemble(Ensemble):
             if s_prime == 1 and self.random_state.uniform() < min(
                     1, n_prime * 1. / n):
                 self.traj += [atoms_prime]
+                self.metadata['accepted_samples'] += 1
                 new_configurations.extend([atoms_prime])
                 atoms_prime.get_forces()
                 atoms_prime.get_potential_energy()
@@ -189,15 +193,15 @@ class NUTSCanonicalEnsemble(Ensemble):
                     span.dot(pos_atoms.get_velocities().flatten()) >= 0)
             j += 1
             if self.verbose:
-                print 'depth', j, 'samples', 2 ** j
-            self.samples_total += 2 ** j
+                print '\t \tdepth', j, 'samples', 2 ** j
+            self.metadata['samples_total'] += 2 ** j
             # Prevent run away sampling, EXPERIMENTAL
             # If we have generated s**self.escape_level samples,
             # then we are moving too slowly and should start a new iter
             # hopefully with a larger step size
             if j >= self.escape_level:
                 if self.verbose:
-                    print 'jmax emergency escape at {}'.format(j)
+                    print '\t \t \tjmax emergency escape at {}'.format(j)
                 s = 0
         w = 1. / (self.m + self.t0)
         self.sim_hbar = (1 - w) * self.sim_hbar + w * \
@@ -211,3 +215,19 @@ class NUTSCanonicalEnsemble(Ensemble):
             return new_configurations
         else:
             return None
+
+    def estimate_simulation_duration(self, atoms, iterations):
+        t0 = time()
+        f = atoms.get_forces() * 2
+        tf = time() - t0
+        t2 = time()
+        e = atoms.get_potential_energy() * 2
+        te = time() - t2
+
+        time_one_step = tf * 2 + te
+        total_time = 0.
+        # for i in xrange(iterations):
+        #     j = np.random.randint(1, self.escape_level)
+        #     total_time += time_one_step * 2 ** j
+        total_time = iterations * time_one_step * 2 ** self.escape_level
+        return total_time

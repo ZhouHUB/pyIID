@@ -19,6 +19,7 @@ def test_scatter_fq():
     for v in test_data:
         yield check_scatter_fq, v
 
+
 def test_scatter_grad_fq():
     for v in test_data:
         yield check_scatter_grad_fq, v

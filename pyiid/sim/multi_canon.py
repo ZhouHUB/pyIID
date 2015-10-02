@@ -3,15 +3,16 @@ import numpy as np
 from copy import deepcopy as dc
 import importlib
 from pyiid.sim import Ensemble
-
+import math
 __author__ = 'christopher'
 
 
 class MultiCanonicalSimulation(Ensemble):
     def __init__(self, atoms, ensemble_list,
-                 logfile=None, trajectory=None, ensemble_prob=None,
-                 seed=None, verbose=False):
-        Ensemble.__init__(self, atoms, logfile, trajectory, seed, verbose)
+                 restart=None, logfile=None, trajectory=None,
+                 ensemble_prob=None, seed=None, verbose=False):
+        Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed=seed,
+                          verbose=verbose)
         self.ensembles = []
 
         # build the ensemble and init
@@ -22,6 +23,9 @@ class MultiCanonicalSimulation(Ensemble):
             self.prob = ensemble_prob
         else:
             self.prob = None
+        self.metadata = {}
+        for ensemble in self.ensembles:
+            self.metadata[ensemble.__class__.__name__] = ensemble.metadata
 
     def step(self):
         j = np.random.choice(np.arange(len(self.ensembles)), p=self.prob)
@@ -31,3 +35,10 @@ class MultiCanonicalSimulation(Ensemble):
             for i in range(len(self.ensembles)):
                 if i != j:
                     self.ensembles[i].traj.extend(new_configs)
+
+    def estimate_simulation_duration(self, atoms, iterations):
+        total_time = 0.
+        for ensemble, p in zip(self.ensembles, self.prob):
+            total_time += ensemble.estimate_simulation_duration(
+                atoms, int(math.ceil(iterations * p)))
+        return total_time

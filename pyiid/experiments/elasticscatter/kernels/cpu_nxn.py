@@ -1,16 +1,20 @@
 import math
 from numba import *
 import mkl
+import os
 
 __author__ = 'christopher'
 
+cache = True
+if bool(os.getenv('NUMBA_DISABLE_JIT')):
+    cache = False
 processor_target = 'cpu'
 
 
 # F(sv) test_kernels ----------------------------------------------------------
 
 @jit(void(f4[:, :, :], f4[:, :]), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_d_array(d, q):
     """
     Generate the NxNx3 array which holds the coordinate pair distances
@@ -29,7 +33,7 @@ def get_d_array(d, q):
 
 
 @jit(void(f4[:, :], f4[:, :, :]), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_r_array(r, d):
     """
     Generate the Nx3 array which holds the pair distances
@@ -50,7 +54,7 @@ def get_r_array(r, d):
 
 
 @jit(void(f4[:, :, :], f4[:, :]), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_normalization_array(norm_array, scatter_array):
     """
     Generate the sv dependant normalization factors for the F(sv) array
@@ -72,7 +76,7 @@ def get_normalization_array(norm_array, scatter_array):
 
 
 @jit(void(f4[:, :], f4[:, :], f4[:, :], f4[:, :, :]),
-     target=processor_target, nopython=True, cache=True)
+     target=processor_target, nopython=True, cache=cache)
 def get_sigma_from_adp(sigma, adps, r, d):
     for i in xrange(i4(len(sigma))):
         for j in xrange(i4(len(sigma))):
@@ -84,7 +88,7 @@ def get_sigma_from_adp(sigma, adps, r, d):
 
 
 @jit(void(f4[:, :, :], f4[:, :], f4), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_omega(omega, r, qbin):
     """
     Generate F(sv), not normalized, via the Debye sum
@@ -111,7 +115,7 @@ def get_omega(omega, r, qbin):
 
 
 @jit(void(f4[:, :, :], f4[:, :], f4), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_tau(dw_factor, sigma, qbin):
     n, _, qmax_bin = dw_factor.shape
     for qx in xrange(i4(qmax_bin)):
@@ -123,7 +127,7 @@ def get_tau(dw_factor, sigma, qbin):
 
 
 @jit(void(f4[:], f4[:, :, :], f4[:, :, :]), target=processor_target,
-     nopython=True, cache=True)
+     nopython=True, cache=cache)
 def get_fq(fq, omega, norm):
     n, _, qmax_bin = omega.shape
     for qx in xrange(i4(qmax_bin)):
@@ -133,7 +137,7 @@ def get_fq(fq, omega, norm):
 
 
 @jit(void(f4[:, :, :], f4[:, :, :], f4[:, :, :], f4[:, :, :]),
-     target=processor_target, nopython=True, cache=True)
+     target=processor_target, nopython=True, cache=cache)
 def get_adp_fq(fq, omega, tau, norm):
     n, _, qmax_bin = omega.shape
     for qx in xrange(i4(qmax_bin)):
@@ -143,7 +147,7 @@ def get_adp_fq(fq, omega, tau, norm):
 
 
 @jit(void(f4[:, :, :], f4[:, :, :]), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_fq_inplace(omega, norm):
     n, _, qmax_bin = omega.shape
     for qx in xrange(i4(qmax_bin)):
@@ -156,7 +160,7 @@ def get_fq_inplace(omega, norm):
 
 
 @jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :], f4[:, :, :], f4),
-     target=processor_target, nopython=True, cache=True)
+     target=processor_target, nopython=True, cache=cache)
 def get_grad_omega(grad_omega, omega, r, d, qbin):
     n, _, _, qmax_bin = grad_omega.shape
     for qx in xrange(i4(qmax_bin)):
@@ -172,7 +176,7 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
 
 
 @jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :], f4[:, :, :], f4[:, :],
-          f4[:, :, ], f4), target=processor_target, nopython=True, cache=True)
+          f4[:, :, ], f4), target=processor_target, nopython=True, cache=cache)
 def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin):
     n, _, _, qmax_bin = grad_tau.shape
     for qx in xrange(i4(qmax_bin)):
@@ -189,7 +193,7 @@ def get_grad_tau(grad_tau, tau, r, d, sigma, adps, qbin):
 
 
 @jit(void(f4[:, :, :, :], f4[:, :, :, :], f4[:, :, :]),
-     target=processor_target, nopython=True, cache=True)
+     target=processor_target, nopython=True, cache=cache)
 def get_grad_fq(grad, grad_omega, norm):
     """
     Generate the gradient F(sv) for an atomic configuration
@@ -219,7 +223,7 @@ def get_grad_fq(grad, grad_omega, norm):
 
 @jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :, :], f4[:, :, :, :],
           f4[:, :, :, :], f4[:, :, :]),
-     target=processor_target, nopython=True, cache=True)
+     target=processor_target, nopython=True, cache=cache)
 def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
     """
     Generate the gradient F(sv) for an atomic configuration
@@ -251,7 +255,7 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
 
 
 @jit(void(f4[:, :, :, :], f4[:, :, :]), target=processor_target, nopython=True,
-     cache=True)
+     cache=cache)
 def get_grad_fq_inplace(grad_omega, norm):
     """
     Generate the gradient F(sv) for an atomic configuration
@@ -276,3 +280,90 @@ def get_grad_fq_inplace(grad_omega, norm):
                 if i != j:
                     for qx in xrange(i4(qmax_bin)):
                         grad_omega[i, j, w, qx] *= norm[i, j, qx]
+
+
+@jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :], f4[:, :], f4[:, :, :], f4),
+     target=processor_target, nopython=True, cache=cache)
+def get_dtau_dadp(dtau_dadp, tau, sigma, r, d, qbin):
+    n, _, _, qmax_bin = dtau_dadp.shape
+    for qx in xrange(i4(qmax_bin)):
+        sv = qx * qbin
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                if i != j:
+                    tmp = f4(-1.) * sigma[i, j] * sv * sv * tau[i, j, qx] / r[
+                        i, j]
+                    for w in xrange(i4(3)):
+                        dtau_dadp[i, j, w, qx] = tmp * d[i, j, w]
+
+
+@jit(void(f4[:, :, :, :], f4[:, :, :], f4[:, :, :]),
+     target=processor_target, nopython=True, cache=cache)
+def get_dfq_dadp_inplace(dtau_dadp, omega, norm):
+    n, _, _, qmax_bin = dtau_dadp.shape
+    for qx in xrange(i4(qmax_bin)):
+        for i in xrange(i4(n)):
+            for j in xrange(i4(n)):
+                for w in xrange(i4(3)):
+                    dtau_dadp[i, j, w, qx] *= norm[i, j, qx] * omega[i, j, qx]
+
+
+@jit(target=processor_target, nopython=True, cache=cache)
+def lerp(t, a, b):
+    x = (f4(1) - t) * a
+    y = b * t
+    return x + y
+
+
+@jit(void(f4[:, :, :], f4[:, :], f4[:], f4),
+     target=processor_target, nopython=True, cache=cache)
+def get_3d_overlap(voxels, q, pdf, rstep):
+    n, _ = q.shape
+    im, jm, km = voxels.shape
+    for i in xrange(im):
+        for j in xrange(jm):
+            for k in xrange(km):
+                tmp = f4(0.)
+                ai = (f4(i) + f4(.5)) * rstep
+                bj = (f4(j) + f4(.5)) * rstep
+                ck = (f4(k) + f4(.5)) * rstep
+                for l in xrange(n):
+                    a = ai - q[l, 0]
+                    b = bj - q[l, 1]
+                    c = ck - q[l, 2]
+                    d = a * a + b * b + c * c
+                    r = math.sqrt(d)
+                    tmp += lerp((r / rstep - math.floor(r / rstep)),
+                                pdf[i4(math.floor(r / rstep))],
+                                pdf[i4(math.ceil(r / rstep))])
+                voxels[i, j, k] += tmp
+
+
+@jit(void(f4[:, :, :], f4[:, :], f4, f4),
+     target=processor_target, nopython=True, cache=cache)
+def zero_occupied_atoms(voxels, q, rstep, rmin):
+    n, _ = q.shape
+    im, jm, km = voxels.shape
+    for i in xrange(im):
+        for j in xrange(jm):
+            for k in xrange(km):
+                for l in xrange(n):
+                    a = (f4(i) + f4(.5)) * rstep - q[l, 0]
+                    b = (f4(j) + f4(.5)) * rstep - q[l, 1]
+                    c = (f4(k) + f4(.5)) * rstep - q[l, 2]
+                    d = a * a + b * b + c * c
+                    r = math.sqrt(d)
+                    if r <= rmin:
+                        voxels[i, j, k] = f4(0.)
+
+
+@jit(void(f4[:, :], f4[:, :], f4[:], f4),
+     target=processor_target, nopython=True, cache=cache)
+def get_atomic_overlap(voxels, r, pdf, rstep):
+    im, jm = r.shape
+    for i in xrange(im):
+        for j in xrange(jm):
+            rk = r[i, j]
+            voxels[i, j] += lerp(rk / rstep - math.floor(rk / rstep),
+                                 pdf[i4(math.floor(rk / rstep))],
+                                 pdf[i4(math.ceil(rk / rstep))])

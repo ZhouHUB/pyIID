@@ -469,3 +469,115 @@ def get_grad_fq_inplace(grad_omega, norm):
     a = norm[k, qx]
     for w in xrange(i4(3)):
         grad_omega[k, w, qx] *= a
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4[:], f4[:, :], f4])
+def get_dtau_dadp(dtau_dadp, tau, sigma, r, d, qbin):
+    kmax, _, qmax_bin = dtau_dadp.shape
+    k, qx = cuda.grid(2)
+    sv = qx * qbin
+    tmp = f4(-1.) * sigma[k] * sv * sv * tau[k, qx] / r[k]
+    for w in xrange(i4(3)):
+        dtau_dadp[k, w, qx] = tmp * d[k, w]
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:, :]])
+def get_dfq_dadp_inplace(dtau_dadp, omega, norm):
+    kmax, _, qmax_bin = dtau_dadp.shape
+    k, qx = cuda.grid(2)
+    for w in xrange(i4(3)):
+        dtau_dadp[k, w, qx] *= norm[k, qx] * omega[k, qx]
+
+
+@cuda.jit(device=True)
+def lerp(t, a, b):
+    x = (f4(1) - t) * a
+    y = b * t
+    return x + y
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:], f4])
+def get_3d_overlap(voxels, q, pdf, rstep):
+    n, _ = q.shape
+    im, jm, km = voxels.shape
+    i, j, k = cuda.grid(3)
+    if i >= im or j >= jm or k >= km:
+        return
+    tmp = f4(0.)
+    ai = (f4(i) + f4(.5)) * rstep
+    bj = (f4(j) + f4(.5)) * rstep
+    ck = (f4(k) + f4(.5)) * rstep
+    for l in xrange(n):
+        a = ai - q[l, 0]
+        b = bj - q[l, 1]
+        c = ck - q[l, 2]
+        d = a * a + b * b + c * c
+        r = math.sqrt(d)
+        tmp += lerp((r / rstep - math.floor(r / rstep)),
+                         pdf[i4(math.floor(r / rstep))],
+                         pdf[i4(math.ceil(r / rstep))])
+    voxels[i, j, k] += tmp
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4, f4])
+def zero_occupied_atoms(voxels, q, rstep, rmin):
+    n, _ = q.shape
+    im, jm, km = voxels.shape
+    i, j, k = cuda.grid(3)
+    if i >= im or j >= jm or k >= km:
+        return
+    for l in xrange(n):
+        a = (f4(i) + f4(.5)) * rstep - q[l, 0]
+        b = (f4(j) + f4(.5)) * rstep - q[l, 1]
+        c = (f4(k) + f4(.5)) * rstep - q[l, 2]
+        d = a * a + b * b + c * c
+        r = math.sqrt(d)
+        if r <= rmin:
+            voxels[i, j, k] = f4(0.)
+
+
+@cuda.jit(argtypes=[f4[:, :, :]])
+def zero_voxels(voxels):
+    """
+    Zero out a 3D array on the GPU
+
+    Parameters
+    ----------
+    A: Mx3xQ array
+    """
+    im, jm, km = voxels.shape
+    i, j, k = cuda.grid(3)
+    if i >= im or j >= jm or k >= km:
+        return
+    voxels[i, j, k] = f4(0.)
+
+
+@cuda.jit(argtypes=[f4[:, :, :], f4])
+def subtract_scalar(voxels, scalar):
+    im, jm, km = voxels.shape
+    i, j, k = cuda.grid(3)
+    if i >= im or j >= jm or k >= km:
+        return
+    voxels[i, j, k] -= scalar
+
+
+@cuda.jit(argtypes=[f4[:], f4[:], f4[:], f4])
+def get_atomic_overlap(voxels, r, pdf, rstep):
+    k = cuda.grid(1)
+    if k >= len(voxels):
+        return
+    rk = r[k]
+    voxels[k] += lerp(rk / rstep - math.floor(rk / rstep),
+        pdf[i4(math.floor(rk / rstep))],
+        pdf[i4(math.ceil(rk / rstep))])
+
+
+@cuda.jit(argtypes=[f4[:], f4[:], i4])
+def reshape_atomic_overlap(newv, voxels, k_cov):
+    k = cuda.grid(1)
+    if k >= len(voxels):
+        return
+    i, j = cuda_k_to_ij(i4(k + k_cov))
+    for tz in range(3):
+        a = voxels[k]
+        cuda.atomic.add(newv, j, a)
+        cuda.atomic.add(newv, i, a)
