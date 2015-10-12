@@ -287,22 +287,28 @@ class ElasticScatter(object):
     # TODO: this approach is very memory intensive, need a sparce way
     def get_total_3d_overlap(self, atoms, pdf=None, sparse=True):
         # cute decomposition of voxel problem returns voxels with min=0.
-        if pdf is not None:
+        if pdf is None:
             pdf = self.get_pdf(atoms)
         voxels = self.wrap_voxel_insert(atoms, pdf, self.exp['rmin'], self.exp['rstep'])
+        # voxels = np.log(voxels)
         voxels = voxels.astype(np.float64)
         # Normalize voxels
         sv = np.sum(voxels)
         assert sv != 0.0
+        assert np.min(voxels) == 0.0
         voxels /= sv
         return voxels
 
-    def get_atomic_3d_overlap(self, atoms):
-        pdf = self.get_pdf(atoms)
+    def get_atomic_3d_overlap(self, atoms, pdf=None):
+        if pdf is None:
+            pdf = self.get_pdf(atoms)
         # cute decomposition of voxel problem returns voxels with min=0.
         voxels = self.wrap_voxel_remove(atoms, pdf, self.exp['rmin'], self.exp['rstep'])
+        # voxels = np.log(voxels)
         voxels = voxels.astype(np.float64)
         # Normalize voxels
+        if np.all(voxels == 0.0):
+            voxels = np.ones(voxels.shape)
         sv = np.sum(voxels)
         voxels /= sv
         return voxels

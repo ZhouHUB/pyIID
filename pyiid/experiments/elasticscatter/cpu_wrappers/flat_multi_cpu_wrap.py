@@ -62,6 +62,8 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     # setup variables of interest
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
+    if k_max == 0:
+        return np.zeros((n, 3, qmax_bin)).astype(np.float32)
     if adps is None:
         allocation = k_space_grad_fq_allocation
     else:
@@ -70,7 +72,9 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     ans = cpu_multiprocessing(atomic_grad_fq, allocation, master_task,
                               (n, qmax_bin))
     # sum the answers
+    # print ans
     grad_p = np.sum(ans, axis=0)
+    # print grad_p.shape
     norm = np.empty((k_max, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array, 0)
     na = np.mean(norm, axis=0) * n
@@ -100,11 +104,13 @@ def wrap_fq_dadp(atoms, qbin=.1, sum_type='fq'):
     del q, n, qmax_bin, scatter_array, k_max, ans
     return grad_p
 
+
 def cpu_multiprocessing(atomic_function, allocation,
                         master_task, constants):
+    # print atomic_function, allocation, master_task, constants
     n, qmax_bin = constants
     k_max = int((n ** 2 - n) / 2.)
-
+# TODO: what if n is 1 kmax = 0???
     # break up problem
     pool_size = cpu_count()
     if pool_size <= 0:
@@ -112,17 +118,22 @@ def cpu_multiprocessing(atomic_function, allocation,
     p = Pool(pool_size, maxtasksperchild=1)
     tasks = []
     k_cov = 0
+    # print k_max
     while k_cov < k_max:
+        # print type(allocation)
         m = allocation(n, qmax_bin, float(
             psutil.virtual_memory().available) / pool_size)
         if m > k_max - k_cov:
             m = k_max - k_cov
+        # print m, k_cov
         sub_task = tuple(master_task + [m, k_cov])
         tasks.append(sub_task)
         k_cov += m
     # multiprocessing map problem
+    # print k_cov
     ans = p.map(atomic_function, tasks)
     p.close()
+    # print ans
     return ans
 
 

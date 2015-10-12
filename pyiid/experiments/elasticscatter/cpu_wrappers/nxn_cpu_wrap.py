@@ -3,6 +3,7 @@ import numpy as np
 from pyiid.experiments.elasticscatter.kernels.cpu_nxn import *
 from ..kernels.cpu_flat import get_normalization_array as flat_norm
 from pyiid.experiments.elasticscatter.atomics import pad_pdf
+
 __author__ = 'christopher'
 
 
@@ -220,7 +221,7 @@ def wrap_fq_dadp(atoms, qbin=.1, sum_type='fq'):
     tau = np.zeros((n, n, qmax_bin), np.float32)
     get_tau(tau, sigma, qbin)
 
-    dtau_dadp= np.zeros((n, n, 3, qmax_bin), np.float32)
+    dtau_dadp = np.zeros((n, n, 3, qmax_bin), np.float32)
     get_dtau_dadp(dtau_dadp, tau, sigma, r, d, qbin)
 
     get_dfq_dadp_inplace(dtau_dadp, omega, norm)
@@ -255,12 +256,23 @@ def wrap_voxel_insert(atoms, pdf, rmin, rstep):
     voxels = np.zeros(diag / rstep, dtype=np.float32)
     get_3d_overlap(voxels, q, pdf, rstep)
 
+    voxels = 1/(1+ np.exp(-1. * (voxels - np.mean(voxels) /np.std(voxels))))
     # zero min voxels
-    voxels -= np.min(voxels)
+    # a = np.max(pdf) * .1
+    # voxels[np.where(voxels < a)] = 0.0
+    # voxels[np.where(voxels >= a)] = 1.
+    # voxels = np.exp(voxels)
+    # voxels -= np.min(voxels)
+    # print np.max(voxels), np.mean(voxels)
+    # voxels[np.where(voxels < voxels.mean())] = 0.0
+    # voxels = voxels ** .5
+    # voxels = np.log(voxels + 1e-10)
+    # voxels -= np.min(voxels)
 
     # zero out voxels we can't see
     zero_occupied_atoms(voxels, q, rstep, rmin)
     return voxels
+
 
 def wrap_voxel_remove(atoms, pdf, rmin, rstep):
     q = atoms.get_positions().astype(np.float32)
@@ -277,9 +289,10 @@ def wrap_voxel_remove(atoms, pdf, rmin, rstep):
     # Get pair distance array
     r = np.zeros((n, n), np.float32)
     get_r_array(r, d)
-    voxels = np.zeros(diag / rstep, dtype=np.float32)
+    voxels = np.zeros((n, n), dtype=np.float32)
     # get per atom overlap
-    get_atomic_overlap(voxels, r, pdf, rstep)
-    voxels = np.sum(voxels)
+    get_atomic_overlap(voxels, r, pdf, np.float32(rstep))
+    voxels = np.sum(voxels, 0)
     voxels -= np.min(voxels)
+    # voxels = np.log(voxels + 1e-3)
     return voxels

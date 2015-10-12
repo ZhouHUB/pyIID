@@ -10,7 +10,7 @@ from pyiid.sim import Ensemble
 __author__ = 'christopher'
 
 
-def add_atom(atoms, chem_potentials, beta, scatter=None):
+def add_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
     atoms.center()
     # make the proposed system
     atoms_prime = dc(atoms)
@@ -19,12 +19,13 @@ def add_atom(atoms, chem_potentials, beta, scatter=None):
     if scatter is None:
         new_position = np.random.uniform(0, np.max(atoms.get_cell(), 0))
     else:
-        voxels = scatter.get_total_3d_overlap(atoms)
+        voxels = scatter.get_total_3d_overlap(atoms, target_pdf)
         # choose weighted position in voxels
         qvr = np.random.choice(voxels.size, p=voxels.ravel())
         qv = np.asarray(np.unravel_index(qvr, voxels.shape))
+        print np.max(voxels), np.mean(voxels), voxels[tuple(qv)]
         # put attom at center of voxel
-        new_position = (qv + .5) * s.exp['rstep']
+        new_position = (qv + .5) * scatter.exp['rstep']
     new_atom = Atom(new_symbol, np.asarray(new_position))
 
     # append new atom to system
@@ -34,15 +35,17 @@ def add_atom(atoms, chem_potentials, beta, scatter=None):
     delta_energy = atoms_prime.get_total_energy() - atoms.get_total_energy()
     # get chemical potential
     mu = chem_potentials[new_symbol]
+    print atoms_prime.get_total_energy(), atoms.get_total_energy()
+    print delta_energy, np.exp(min([0, -1. * beta * delta_energy + beta * mu]))
     # calculate acceptance
-    if np.random.random((1,)) < np.exp(
+    if np.random.random() < np.exp(
             min([0, -1. * beta * delta_energy + beta * mu])):
         return atoms_prime
     else:
         return None
 
 
-def del_atom(atoms, chem_potentials, beta, scatter=None):
+def del_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
     if len(atoms) == 1:
         return None
     atoms.center()
@@ -51,9 +54,12 @@ def del_atom(atoms, chem_potentials, beta, scatter=None):
     if scatter is None:
         del_atom_index = np.random.choice(range(len(atoms)))
     else:
-        intensities = scatter.get_atomic_3d_overlap(atoms)
+        intensities = scatter.get_atomic_3d_overlap(atoms, target_pdf)
         prob = 1 - intensities
-        del_atom_index = np.random.choice(range(len(atoms)), p=prob)
+        n = len(atoms)
+        if prob.sum() != 1.0:
+            prob /= prob.sum()
+        del_atom_index = np.random.choice(np.arange(n), p=prob)
     del_symbol = atoms_prime[del_atom_index].symbol
 
     # append new atom to system
@@ -62,11 +68,12 @@ def del_atom(atoms, chem_potentials, beta, scatter=None):
     # get new energy
     delta_energy = atoms_prime.get_total_energy() - atoms.get_total_energy()
     # get chemical potential
+    print delta_energy
     mu = chem_potentials[del_symbol]
     # calculate acceptance
     if np.random.random() < np.exp(
             min([0, -1. * beta * delta_energy - beta * mu
-                 ])):
+                 ])) and not np.isnan(delta_energy):
         return atoms_prime
     else:
         return None
@@ -88,24 +95,28 @@ class GrandCanonicalEnsemble(Ensemble):
 
     def __init__(self, atoms, chemical_potentials, temperature=100,
                  restart=None, logfile=None, trajectory=None, seed=None,
-                 verbose=False):
+                 verbose=False, scatter=None, target_pdf=None):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed,
                           verbose)
         self.beta = 1. / (temperature * kB)
         self.chem_pot = chemical_potentials
         self.metadata = {'rejected_additions': 0, 'accepted_removals': 0,
                          'accepted_additions': 0, 'rejected_removals': 0}
+        self.scatter=scatter
+        self.target_pdf=target_pdf
 
     def step(self):
         if self.random_state.uniform() >= .5:
-            mv = 'add'
-            new_atoms = del_atom(self.traj[-1], self.chem_pot, self.beta)
-        else:
             mv = 'remove'
-            new_atoms = add_atom(self.traj[-1], self.chem_pot, self.beta)
+            new_atoms = del_atom(self.traj[-1], self.chem_pot, self.beta,
+                                 self.scatter, self.target_pdf)
+        else:
+            mv = 'add'
+            new_atoms = add_atom(self.traj[-1], self.chem_pot, self.beta,
+                                 self.scatter, self.target_pdf)
         if new_atoms is not None:
             if self.verbose:
-                print '\t' + mv + ' atom accepted'
+                print '\t' + mv + ' atom accepted', len(new_atoms)
 
             if mv == 'add':
                 self.metadata['accepted_additions'] += 1
@@ -116,7 +127,7 @@ class GrandCanonicalEnsemble(Ensemble):
             return [new_atoms]
         else:
             if self.verbose:
-                print '\t' + mv + ' atom rejected'
+                print '\t' + mv + ' atom rejected', len(self.traj[-1])
 
             if mv == 'add':
                 self.metadata['rejected_additions'] += 1

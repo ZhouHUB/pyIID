@@ -29,6 +29,8 @@ class MultiCanonicalSimulation(Ensemble):
 
     def step(self):
         j = np.random.choice(np.arange(len(self.ensembles)), p=self.prob)
+        if self.verbose:
+            print self.ensembles[j].__class__.__name__
         new_configs = self.ensembles[j].step()
         if new_configs:
             self.traj.extend(new_configs)
