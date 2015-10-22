@@ -24,9 +24,11 @@ install:
   - cd ..
   - python setup.py install
   - pip install coveralls
+#  - pip install coveralls-python
 
 script:
-  - python run_tests.py -s -d #--processes=2 --process-timeout=599
+#  - python run_tests.py -s -d #--processes=2 --process-timeout=599
+  - python tests/test_master/test_master_kernel.py
 
 #after_success:
 #  coveralls
