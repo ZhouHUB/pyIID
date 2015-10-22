@@ -51,4 +51,5 @@ def test_get_chi_sq2():
 if __name__ == '__main__':
     import nose
 
-    nose.runmodule(argv=['-s', '--with-doctest', '--with-coverage'], exit=False)
+    nose.runmodule(argv=['-s', '--with-doctest', '--with-coverage',
+                         '--cover-html'], exit=False)
