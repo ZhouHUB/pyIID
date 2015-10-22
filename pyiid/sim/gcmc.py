@@ -11,7 +11,7 @@ __author__ = 'christopher'
 
 
 def add_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
-    atoms.center()
+    # atoms.center()
     # make the proposed system
     atoms_prime = dc(atoms)
     # make new atom
@@ -23,7 +23,7 @@ def add_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
         # choose weighted position in voxels
         qvr = np.random.choice(voxels.size, p=voxels.ravel())
         qv = np.asarray(np.unravel_index(qvr, voxels.shape))
-        print np.max(voxels), np.mean(voxels), voxels[tuple(qv)]
+        # print np.max(voxels), np.mean(voxels), voxels[tuple(qv)]
         # put attom at center of voxel
         new_position = (qv + .5) * scatter.exp['rstep']
     new_atom = Atom(new_symbol, np.asarray(new_position))
@@ -32,11 +32,12 @@ def add_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
     atoms_prime.append(new_atom)
 
     # get new energy
-    delta_energy = atoms_prime.get_total_energy() - atoms.get_total_energy()
+    delta_energy = atoms_prime.get_potential_energy() - atoms.get_potential_energy()
     # get chemical potential
     mu = chem_potentials[new_symbol]
-    print atoms_prime.get_total_energy(), atoms.get_total_energy()
-    print delta_energy, np.exp(min([0, -1. * beta * delta_energy + beta * mu]))
+    # return atoms_prime
+    # print atoms_prime.get_potential_energy(), atoms.get_potential_energy()
+    # print delta_energy, np.exp(min([0, -1. * beta * delta_energy + beta * mu]))
     # calculate acceptance
     if np.random.random() < np.exp(
             min([0, -1. * beta * delta_energy + beta * mu])):
@@ -48,7 +49,7 @@ def add_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
 def del_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
     if len(atoms) == 1:
         return None
-    atoms.center()
+    # atoms.center()
     # make the proposed system
     atoms_prime = dc(atoms)
     if scatter is None:
@@ -66,9 +67,9 @@ def del_atom(atoms, chem_potentials, beta, scatter=None, target_pdf=None):
     del atoms_prime[del_atom_index]
 
     # get new energy
-    delta_energy = atoms_prime.get_total_energy() - atoms.get_total_energy()
+    delta_energy = atoms_prime.get_potential_energy() - atoms.get_potential_energy()
     # get chemical potential
-    print delta_energy
+    # print delta_energy
     mu = chem_potentials[del_symbol]
     # calculate acceptance
     if np.random.random() < np.exp(

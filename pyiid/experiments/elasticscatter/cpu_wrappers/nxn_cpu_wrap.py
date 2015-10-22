@@ -256,18 +256,38 @@ def wrap_voxel_insert(atoms, pdf, rmin, rstep):
     voxels = np.zeros(diag / rstep, dtype=np.float32)
     get_3d_overlap(voxels, q, pdf, rstep)
 
-    voxels = 1/(1+ np.exp(-1. * (voxels - np.mean(voxels) /np.std(voxels))))
-    # zero min voxels
-    # a = np.max(pdf) * .1
-    # voxels[np.where(voxels < a)] = 0.0
+    # weight voxels
+    # vsort = np.argsort(voxels.ravel())
+    # b = int(voxels.size * .01)
+    # mask = voxels < voxels[np.unravel_index(vsort[-b], voxels.shape)]
+    # mask = voxels <= 0.0
+    # voxels[mask.astype(bool)] = 0.0
+
+    # voxels -= np.min(voxels)
+    # voxels = 1 / (1 + np.exp(-1. * (voxels - np.mean(voxels)) / np.std(voxels) / .1))
+    # voxels = 1 / (1 + np.exp(-1. * (voxels - np.mean(voxels)) / np.std(voxels) / .2))
+    # voxels = 1 / (1 + np.exp(-1. * (voxels - np.mean(voxels)) / np.std(voxels) / .5))
+
+    # voxels[mask.astype(bool)] = 0.0
+
+    # a = np.max(voxels) * .1
+    voxels[np.where(voxels < 0.0)] = 0.0
     # voxels[np.where(voxels >= a)] = 1.
+
     # voxels = np.exp(voxels)
+
     # voxels -= np.min(voxels)
-    # print np.max(voxels), np.mean(voxels)
-    # voxels[np.where(voxels < voxels.mean())] = 0.0
-    # voxels = voxels ** .5
-    # voxels = np.log(voxels + 1e-10)
-    # voxels -= np.min(voxels)
+    # voxels = np.log(voxels)
+    # voxels = np.nan_to_num(voxels)
+    # voxels[np.where(voxels < 1./voxels.size)] = 0.0
+    # voxels[np.where(voxels < np.median(voxels))] = 0.0
+
+    # z = np.max(pdf) * .8
+    # mask = voxels < z
+    # voxels[mask.astype(bool)] = 0.0
+
+    # zero min voxels
+    voxels -= np.min(voxels)
 
     # zero out voxels we can't see
     zero_occupied_atoms(voxels, q, rstep, rmin)
