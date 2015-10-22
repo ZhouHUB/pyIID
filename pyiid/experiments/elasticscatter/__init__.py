@@ -52,7 +52,7 @@ def check_cudafft():
         print 'no cudafft'
     return tf
 
-
+# TODO: maybe add gradients as saved data?
 class ElasticScatter(object):
     """
     Scatter contains all the methods associated with producing theoretical
@@ -296,6 +296,7 @@ class ElasticScatter(object):
         else:
             fq = self.fq(atoms, self.exp['qbin'])
             self.fq_result = fq
+            self.atoms = atoms
             return fq
 
     def get_pdf(self, atoms):
@@ -312,20 +313,24 @@ class ElasticScatter(object):
             The PDF
         """
         self.check_scatter(atoms)
-        if self.check_state(atoms) == [] and self.fq_result is not None:
-            return self.fq_result
+        if self.check_state(atoms) == [] and self.pdf_result is not None:
+            return self.pdf_result
+        elif self.check_state(atoms) == [] and self.fq_result is not None:
+            fq = self.fq_result
         else:
             fq = self.fq(atoms, self.pdf_qbin, 'PDF')
-            r = self.get_r()
-            pdf0 = get_pdf_at_qmin(
-                fq,
-                self.exp['rstep'],
-                self.pdf_qbin,
-                r,
-                self.exp['qmin']
-            )
-
-            return pdf0
+            self.fq_result = fq
+        r = self.get_r()
+        pdf0 = get_pdf_at_qmin(
+            fq,
+            self.exp['rstep'],
+            self.pdf_qbin,
+            r,
+            self.exp['qmin']
+        )
+        self.pdf_result = pdf0
+        self.atoms = atoms
+        return pdf0
 
     def get_sq(self, atoms):
         """
@@ -407,7 +412,9 @@ class ElasticScatter(object):
             The gradient of the reduced structure factor
         """
         self.check_scatter(atoms)
-        return self.grad(atoms, self.exp['qbin'])
+        g = self.grad(atoms, self.exp['qbin'])
+        self.atoms = atoms
+        return g
 
     def get_grad_pdf(self, atoms):
         """
@@ -431,6 +438,7 @@ class ElasticScatter(object):
         pdf_grad = self.grad_pdf(fq_grad, self.exp['rstep'], self.pdf_qbin,
                                  rgrid,
                                  self.exp['qmin'])
+        self.atoms = atoms
         return pdf_grad
 
     def get_scatter_vector(self):
