@@ -52,8 +52,6 @@ def check_cudafft():
     return tf
 
 
-# TODO: store PDF and F(Q) for atoms, check if need to recalculate,
-# which should prevent double calculation
 class ElasticScatter(object):
     """
     Scatter contains all the methods associated with producing theoretical
@@ -79,6 +77,7 @@ class ElasticScatter(object):
     def __init__(self, exp_dict=None):
         self.atoms = None # keep a copy of the atoms to prevent replication
         self.fq_result = None
+        self.pdf_result = None
         # Currently supported processor architectures, in order of most
         # advanced to least
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
@@ -198,6 +197,7 @@ class ElasticScatter(object):
             self.processor = processor
             return True
 
+    # TODO: may not need this, merged into check_state
     def check_scatter(self, atoms):
         """
         Check if the scatter vectors associated with the atoms need to be
@@ -264,7 +264,14 @@ class ElasticScatter(object):
             if not equal(self.atoms.get_initial_charges(),
                          atoms.get_initial_charges(), tol):
                 system_changes.append('charges')
-
+            if self.scatter_needs_update is True \
+                or 'exp' not in atoms.info.keys() \
+                or atoms.info['exp'] != self.exp \
+                or atoms.info['scatter_atoms'] != len(atoms) \
+                or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
+                or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
+                wrap_atoms(atoms, self.exp)
+                system_changes.append('exp')
         return system_changes
 
     def get_fq(self, atoms):
@@ -284,7 +291,9 @@ class ElasticScatter(object):
         if self.check_state(atoms) == [] and self.fq_result is not None:
             return self.fq_result
         else:
-            return self.fq(atoms, self.exp['qbin'])
+            fq = self.fq(atoms, self.exp['qbin'])
+            self.fq_result = fq
+            return fq
 
     def get_pdf(self, atoms):
         """
@@ -300,17 +309,20 @@ class ElasticScatter(object):
             The PDF
         """
         self.check_scatter(atoms)
-        fq = self.fq(atoms, self.pdf_qbin, 'PDF')
-        r = self.get_r()
-        pdf0 = get_pdf_at_qmin(
-            fq,
-            self.exp['rstep'],
-            self.pdf_qbin,
-            r,
-            self.exp['qmin']
-        )
+        if self.check_state(atoms) == [] and self.fq_result is not None:
+            return self.fq_result
+        else:
+            fq = self.fq(atoms, self.pdf_qbin, 'PDF')
+            r = self.get_r()
+            pdf0 = get_pdf_at_qmin(
+                fq,
+                self.exp['rstep'],
+                self.pdf_qbin,
+                r,
+                self.exp['qmin']
+            )
 
-        return pdf0
+            return pdf0
 
     def get_sq(self, atoms):
         """
