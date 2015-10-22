@@ -22,7 +22,8 @@ from ase.calculators.calculator import equal
 
 __author__ = 'christopher'
 
-all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms']
+all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
+               'exp']
 
 def check_mpi():
     # Test if MPI GPU is viable
@@ -271,7 +272,9 @@ class ElasticScatter(object):
                 or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
                 or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
                 wrap_atoms(atoms, self.exp)
+                self.scatter_needs_update = False
                 system_changes.append('exp')
+
         return system_changes
 
     def get_fq(self, atoms):

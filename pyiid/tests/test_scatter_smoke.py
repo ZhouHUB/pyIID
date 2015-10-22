@@ -1,10 +1,11 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
+from time import time
 
 __author__ = 'christopher'
 
 test_data = tuple(product(test_atoms, test_exp, proc_alg_pairs))
-
+'''
 def test_gen_scatter_smoke_fq():
     for v in test_data:
         yield check_scatter_fq, v
@@ -31,7 +32,12 @@ def test_gen_scatter_smoke_pdf():
 def test_gen_scatter_smoke_grad_pdf():
     for v in test_data:
         yield check_scatter_grad_pdf, v
+'''
 
+def test_gen_scatter_smoke_repeat_fq():
+    for v in test_data:
+        yield check_scatter_repeat_fq, v
+# ----------------------------------------------------------------------------
 def check_scatter_fq(value):
     """
     Smoke test for FQ
@@ -155,6 +161,35 @@ def check_scatter_grad_pdf(value):
     assert ans is not None
     # Check that all the values are not zero
     assert np.any(ans)
+    del atoms, exp, proc, alg, scat, ans
+    return
+
+def check_scatter_repeat_fq(value):
+    atoms, exp = value[0:2]
+    proc, alg = value[-1]
+
+    scat = ElasticScatter(exp_dict=exp)
+    scat.set_processor(proc, alg)
+
+    # Test a set of different sized ensembles
+    t0 = time()
+    ans = scat.get_fq(atoms)
+    t1 = time()
+    dt1 = t1 - t0
+
+    # this should take less time since we already calculated it
+    t2 = time()
+    ans = scat.get_fq(atoms)
+    t3 = time()
+    dt3 = t3 - t2
+    # Check that Scatter gave back something
+    assert ans is not None
+
+    # Check that all the values are not zero
+    assert np.any(ans)
+    if not dt3 <= dt1:
+        print dt3, dt1
+    assert dt3 <= dt1
     del atoms, exp, proc, alg, scat, ans
     return
 
