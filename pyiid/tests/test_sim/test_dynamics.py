@@ -49,7 +49,8 @@ def check_dynamics(value):
     min_pe = np.min(pe_list)
     print min_pe, start_pe, len(traj)
     print pe_list
-    assert min_pe < start_pe
+    if start_pe != 0.0:
+        assert min_pe < start_pe
 
 
 if __name__ == '__main__':

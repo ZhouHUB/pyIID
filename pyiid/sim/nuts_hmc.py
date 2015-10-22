@@ -127,6 +127,7 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
 class NUTSCanonicalEnsemble(Ensemble):
     def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
                  temperature=100, escape_level=13, accept_target=.65,
+                 momentum=None,
                  seed=None, verbose=False):
         Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed, verbose)
         self.accept_target = accept_target
@@ -143,16 +144,19 @@ class NUTSCanonicalEnsemble(Ensemble):
         self.metadata['accepted_samples'] = 0
         self.escape_level = escape_level
         self.m = 0
+        self.momentum = momentum
 
     def step(self):
         new_configurations = []
         if self.verbose:
             print '\ttime step size', self.step_size / fs, 'fs'
         # sample r0
-        MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg,
-                                     force_temp=True)
-        # self.traj[-1].set_momenta(self.random_state.normal(0, 1, (
-        #     len(self.traj[-1]), 3)))
+        if self.momentum is None:
+            MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg,
+                                         force_temp=True)
+        else:
+            self.traj[-1].set_momenta(self.random_state.normal(0, 1, (
+                len(self.traj[-1]), 3)))
         # re-sample u, note we work in post exponential units:
         # [0, exp(-H(atoms0)] <= exp(-H(atoms1) >>> [0, 1] <= exp(-deltaH)
         u = self.random_state.uniform(0, 1)

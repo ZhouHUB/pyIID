@@ -12,10 +12,6 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq as cpu_wrap_fq
-from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
-    wrap_voxel_insert as cpu_wrap_voxel_insert
-from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
-    wrap_voxel_remove as cpu_wrap_voxel_remove
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
 from ase.calculators.calculator import equal
@@ -102,8 +98,6 @@ class ElasticScatter(object):
         self.fq = cpu_wrap_fq
         self.grad = cpu_wrap_fq_grad
         self.grad_pdf = cpu_grad_pdf
-        self.wrap_voxel_insert = cpu_wrap_voxel_insert
-        self.wrap_voxel_remove = cpu_wrap_voxel_remove
         self.processor = 'CPU'
         self.alg = 'nxn'
 

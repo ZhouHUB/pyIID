@@ -46,7 +46,7 @@ def check_nuts(value):
 
     # traj, _, _, _ = nuts(ideal_atoms, .65, 3, 1., escape_level=4)
     nuts = NUTSCanonicalEnsemble(ideal_atoms, escape_level=4)
-    traj = nuts.run(5)
+    traj, metadata = nuts.run(5)
 
     pe_list = []
     for atoms in traj:
@@ -54,10 +54,11 @@ def check_nuts(value):
     min_pe = np.min(pe_list)
     print len(traj)
     print min_pe, start_pe
-    if not min_pe < start_pe:
-        view(traj)
     del traj
-    assert min_pe < start_pe
+    if start_pe != 0.0:
+        if not min_pe < start_pe:
+            view(traj)
+        assert min_pe < start_pe
 
 
 if __name__ == '__main__':
@@ -66,6 +67,6 @@ if __name__ == '__main__':
     nose.runmodule(argv=['--with-doctest',
                          # '--nocapture',
                          '-v',
-                         # '-x'
+                         '-x'
                          ],
                    exit=False)
