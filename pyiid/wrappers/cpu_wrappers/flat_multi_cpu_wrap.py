@@ -4,7 +4,8 @@ import numpy as np
 import psutil
 
 from pyiid.kernels.cpu_flat import *
-from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import atoms_pdf_gpu_fq, atoms_per_gpu_grad_fq
+from pyiid.wrappers.gpu_wrappers.k_atomic_gpu import (atoms_pdf_gpu_fq,
+                                                      atoms_per_gpu_grad_fq)
 __author__ = 'christopher'
 
 

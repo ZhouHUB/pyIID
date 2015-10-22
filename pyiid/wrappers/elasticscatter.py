@@ -3,7 +3,6 @@ The main class in this module `ElasticScatter` holds the experimental details,
 and processor information needed to calculate the elastic powder scattering
 from a collection of atoms.
 """
-__author__ = 'christopher'
 import math
 
 from numba import cuda
@@ -14,6 +13,8 @@ from pyiid.kernels.master_kernel import get_pdf_at_qmin, get_scatter_array
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import wrap_fq as cpu_wrap_fq
 from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
+
+__author__ = 'christopher'
 
 
 def check_mpi():
@@ -411,8 +412,8 @@ def wrap_atoms(atoms, exp_dict=None):
     get_scatter_array(set_scatter_array, e_num, qbin)
     scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
     for i in range(len(e_set)):
-        scatter_array[
-        np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
+        scatter_array[np.where(atoms.numbers == e_list[i])[0], :] = \
+            set_scatter_array[i, :]
     if 'PDF scatter' in atoms.arrays.keys():
         del atoms.arrays['PDF scatter']
     atoms.set_array('PDF scatter', scatter_array)

@@ -106,7 +106,6 @@ def get_grad_fq(grad, fq, r, d, norm, qbin):
             # Q = float32(qbin * qx)
             Q = float32(qbin) * float32(qx)
             rk = r[k]
-            # A = (norm[k, qx] * Q * math.cos(Q * r[k]) - fq[k, qx]) / float32(r[k] ** 2)
             A = (norm[k, qx] * Q * math.cos(Q * rk) - fq[k, qx]) / float32(
                 rk ** 2)
             for w in range(3):

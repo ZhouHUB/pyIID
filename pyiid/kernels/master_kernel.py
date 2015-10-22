@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import math
 from numba import *
 import mkl
@@ -7,7 +6,10 @@ import xraylib
 import matplotlib.pyplot as plt
 from numpy.testing import assert_allclose
 
+__author__ = 'christopher'
+
 targ = 'cpu'
+
 
 # F(Q) test_kernels -----------------------------------------------------------
 @jit(target=targ)
@@ -146,7 +148,8 @@ def fft_gr_to_fq(g, rstep, rmin):
     f: Nd array
         The reduced structure factor
     """
-    if g is None: return g
+    if g is None:
+        return g
     padrmin = int(round(rmin / rstep))
     npad1 = padrmin + len(g)
 
@@ -267,6 +270,7 @@ def get_chi_sq(gobs, gcalc):
     return np.sum((gobs - scale * gcalc) ** 2
                   # /gobs
                   ).real, scale
+
 
 # Gradient test_kernels -------------------------------------------------------
 from multiprocessing import Pool, cpu_count

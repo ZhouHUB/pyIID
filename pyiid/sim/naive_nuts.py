@@ -1,8 +1,9 @@
-__author__ = 'christopher'
-print 'No longer supported'
 import numpy as np
 from copy import deepcopy as dc
 from pyiid.sim import leapfrog
+
+__author__ = 'christopher'
+print 'No longer supported'
 
 delta_max = 500
 
@@ -40,10 +41,11 @@ def nuts(atoms, e, M, wtraj=None):
                 if sp == 1:
                     C += Cp
                 datoms = pos_atoms.positions - neg_atoms.positions
-                s = sp * (np.dot(datoms.flatten(),
-                                 neg_atoms.get_momenta().flatten()) >= 0) * (
-                        np.dot(datoms.flatten(),
-                               pos_atoms.get_momenta().flatten()) >= 0)
+                s = sp * \
+                    (np.dot(datoms.flatten(),
+                            neg_atoms.get_momenta().flatten()) >= 0) * \
+                    (np.dot(datoms.flatten(),
+                            pos_atoms.get_momenta().flatten()) >= 0)
                 j += 1
             print m, len(C)
             C_list.append(C)
@@ -85,10 +87,10 @@ def buildtree(input_atoms, u, v, j, e):
         else:
             _, pos_atoms, Cpp, spp = buildtree(pos_atoms, u, v, j - 1, e)
         datoms = pos_atoms.positions - neg_atoms.positions
-        sp = sp * spp * (
-            np.dot(datoms.flatten(),
-                   neg_atoms.get_momenta().flatten()) >= 0) * (
-                 np.dot(datoms.flatten(),
-                        pos_atoms.get_momenta().flatten()) >= 0)
+        sp = sp * spp * \
+             (np.dot(datoms.flatten(),
+                     neg_atoms.get_momenta().flatten()) >= 0) * \
+             (np.dot(datoms.flatten(),
+                     pos_atoms.get_momenta().flatten()) >= 0)
         Cp += Cpp
         return neg_atoms, pos_atoms, Cp, sp
