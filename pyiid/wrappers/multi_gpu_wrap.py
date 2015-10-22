@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import numpy as np
 
 from numba import cuda
@@ -8,6 +7,7 @@ from pyiid.kernels.serial_kernel import get_pdf_at_qmin, grad_pdf, get_rw, \
 # from multiprocessing import Process, Queue
 from threading import Thread
 from Queue import Queue
+__author__ = 'christopher'
 
 
 def sub_fq(gpu, q, scatter_array, fq_q, norm_q, qmax_bin, qbin, m, n_cov):

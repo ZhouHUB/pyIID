@@ -1,8 +1,8 @@
-__author__ = 'christopher'
 import math
 from pyiid.wrappers import generate_grid
 import numpy as np
 from numba import cuda
+__author__ = 'christopher'
 
 
 def atoms_per_gpu_grad_fq(n, qmax_bin, mem):

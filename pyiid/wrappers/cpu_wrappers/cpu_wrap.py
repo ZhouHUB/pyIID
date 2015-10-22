@@ -1,6 +1,6 @@
-__author__ = 'christopher'
 from pyiid.kernels.cpu_nxn import *
 import numpy as np
+__author__ = 'christopher'
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):

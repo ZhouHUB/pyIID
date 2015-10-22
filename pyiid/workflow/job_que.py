@@ -1,8 +1,8 @@
-__author__ = 'christopher'
 from time import sleep
 from simdb.search import find_simulation_document
 from pyiid.workflow.simulation import run_simulation
 import traceback
+__author__ = 'christopher'
 
 i = 0
 print 'Start job queue'

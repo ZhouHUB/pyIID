@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from numba import *
 import math
 from gpu_flat import cuda_k_to_ij
+__author__ = 'christopher'
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], i4])
 def get_normalization_array(norm_array, scat, offset):

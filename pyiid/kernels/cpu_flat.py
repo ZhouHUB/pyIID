@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from numba import *
 
 from pyiid.kernels import *
+__author__ = 'christopher'
 
 processor_target = 'cpu'
 

@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import sys
 import inspect
 from threading import Thread
@@ -9,6 +8,7 @@ import pyiid.wrappers.mpi.mpi_gpu_avail as mpi_gpu_avail
 import pyiid.wrappers.mpi.mpi_fq_worker as mpi_fq_worker
 import pyiid.wrappers.mpi.mpi_grad_worker as mpi_grad_worker
 from pyiid.wrappers.gpu_wrappers.multi_gpu_wrap import sub_fq
+__author__ = 'christopher'
 
 
 def gpu_avail(n_nodes):

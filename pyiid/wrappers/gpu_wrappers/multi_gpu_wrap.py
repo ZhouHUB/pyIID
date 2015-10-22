@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 from threading import Thread
 
 import numpy as np
@@ -6,6 +5,7 @@ import numpy as np
 from pyiid.wrappers import *
 from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
     atoms_per_gpu_grad_fq
+__author__ = 'christopher'
 
 print 'Warning: this module is no longer fully supported/test, and may not be' \
       'complete or robust. Please use the flat_gpu_wrap module'

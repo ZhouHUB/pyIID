@@ -1,6 +1,6 @@
-__author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
+__author__ = 'christopher'
 
 
 class Spring(Calculator):

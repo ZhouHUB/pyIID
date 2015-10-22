@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 import numpy as np
 from copy import deepcopy as dc
+__author__ = 'christopher'
 
 
 class MultiCalc(Calculator):
