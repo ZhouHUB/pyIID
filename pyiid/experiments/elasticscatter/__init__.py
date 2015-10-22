@@ -18,9 +18,11 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_voxel_remove as cpu_wrap_voxel_remove
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
+from ase.calculators.calculator import equal
 
 __author__ = 'christopher'
 
+all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms']
 
 def check_mpi():
     # Test if MPI GPU is viable
@@ -75,6 +77,8 @@ class ElasticScatter(object):
     """
 
     def __init__(self, exp_dict=None):
+        self.atoms = None # keep a copy of the atoms to prevent replication
+        self.fq_result = None
         # Currently supported processor architectures, in order of most
         # advanced to least
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
@@ -240,6 +244,29 @@ class ElasticScatter(object):
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
+    def check_state(self, atoms, tol=1e-15):
+        """Check for system changes since last calculation."""
+        if self.atoms is None:
+            system_changes = all_changes
+        else:
+            system_changes = []
+            if not equal(self.atoms.positions, atoms.positions, tol):
+                system_changes.append('positions')
+            if not equal(self.atoms.numbers, atoms.numbers):
+                system_changes.append('numbers')
+            if not equal(self.atoms.cell, atoms.cell, tol):
+                system_changes.append('cell')
+            if not equal(self.atoms.pbc, atoms.pbc):
+                system_changes.append('pbc')
+            if not equal(self.atoms.get_initial_magnetic_moments(),
+                         atoms.get_initial_magnetic_moments(), tol):
+                system_changes.append('magmoms')
+            if not equal(self.atoms.get_initial_charges(),
+                         atoms.get_initial_charges(), tol):
+                system_changes.append('charges')
+
+        return system_changes
+
     def get_fq(self, atoms):
         """
         Calculate the reduced structure factor F(Q)
@@ -253,10 +280,11 @@ class ElasticScatter(object):
         1darray:
             The reduced structure factor
         """
-        if hasattr(atoms, 'adp') or hasattr(atoms, 'adps'):
-            print 'ADPs'
         self.check_scatter(atoms)
-        return self.fq(atoms, self.exp['qbin'])
+        if self.check_state(atoms) == [] and self.fq_result is not None:
+            return self.fq_result
+        else:
+            return self.fq(atoms, self.exp['qbin'])
 
     def get_pdf(self, atoms):
         """
@@ -283,35 +311,6 @@ class ElasticScatter(object):
         )
 
         return pdf0
-
-    # TODO: this approach is very memory intensive, need a sparce way
-    def get_total_3d_overlap(self, atoms, pdf=None, sparse=True):
-        # cute decomposition of voxel problem returns voxels with min=0.
-        if pdf is None:
-            pdf = self.get_pdf(atoms)
-        voxels = self.wrap_voxel_insert(atoms, pdf, self.exp['rmin'], self.exp['rstep'])
-        # voxels = np.log(voxels)
-        voxels = voxels.astype(np.float64)
-        # Normalize voxels
-        sv = np.sum(voxels)
-        assert sv != 0.0
-        assert np.min(voxels) == 0.0
-        voxels /= sv
-        return voxels
-
-    def get_atomic_3d_overlap(self, atoms, pdf=None):
-        if pdf is None:
-            pdf = self.get_pdf(atoms)
-        # cute decomposition of voxel problem returns voxels with min=0.
-        voxels = self.wrap_voxel_remove(atoms, pdf, self.exp['rmin'], self.exp['rstep'])
-        # voxels = np.log(voxels)
-        voxels = voxels.astype(np.float64)
-        # Normalize voxels
-        if np.all(voxels == 0.0):
-            voxels = np.ones(voxels.shape)
-        sv = np.sum(voxels)
-        voxels /= sv
-        return voxels
 
     def get_sq(self, atoms):
         """
