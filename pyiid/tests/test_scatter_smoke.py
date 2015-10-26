@@ -117,7 +117,6 @@ def check_scatter_grad_fq(value):
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
     ans = scat.get_grad_fq(atoms)
-    assert scat.check_state(atoms) == []
     # Check that Scatter gave back something
     assert ans is not None
     # Check that all the values are not zero
@@ -140,7 +139,6 @@ def check_scatter_grad_pdf(value):
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
     ans = scat.get_grad_pdf(atoms)
-    assert scat.check_state(atoms) == []
     # Check that Scatter gave back something
     assert ans is not None
     # Check that all the values are not zero
@@ -160,8 +158,9 @@ tests = [
 test_data = tuple(product(
     tests,
     test_atoms,
-    test_exp,
-    proc_alg_pairs))
+    proc_alg_pairs,
+    test_exp
+))
 
 def test_meta():
     for v in test_data:
@@ -201,8 +200,8 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        '-v'
-        # '-x',
+        '-v',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

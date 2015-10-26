@@ -8,7 +8,6 @@ __author__ = 'christopher'
 def check_meta(value):
     value[0](value[1:])
 
-# FIXME: There is something weird happening with the state of scat here!
 def check_nrg(value):
     """
     Check for PDF energy against known value
@@ -83,7 +82,7 @@ def check_forces(value):
         forces, com, dist
 
 tests = [
-    # check_nrg,
+    check_nrg,
     check_forces
 ]
 test_experiment_types = ['FQ', 'PDF']

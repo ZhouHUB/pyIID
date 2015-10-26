@@ -407,7 +407,6 @@ class ElasticScatter(object):
         """
         self.check_scatter(atoms)
         g = self.grad(atoms, self.exp['qbin'])
-        self.atoms = atoms
         return g
 
     def get_grad_pdf(self, atoms):
@@ -432,7 +431,6 @@ class ElasticScatter(object):
         pdf_grad = self.grad_pdf(fq_grad, self.exp['rstep'], self.pdf_qbin,
                                  rgrid,
                                  self.exp['qmin'])
-        self.atoms = atoms
         return pdf_grad
 
     def get_scatter_vector(self):

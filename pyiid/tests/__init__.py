@@ -213,7 +213,7 @@ else:
     ns = [
         10, 100,
         # 400,
-        # 1000
+        1000
     ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'nxn'),

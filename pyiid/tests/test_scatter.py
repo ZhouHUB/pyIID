@@ -8,45 +8,10 @@ __author__ = 'christopher'
 rtol = 5e-4
 atol = 5e-5
 
-test_data = list(product(test_atoms, test_exp, comparison_pro_alg_pairs))
-# remove the ultra slow nxn 1000 atom tests
-# for f in test_data:
-#     if len(f[0]) > 200 and ('CPU', 'nxn') in f[3]:
-#         test_data.remove(f)
-# Test Generators
-
-def test_scatter_fq():
-    for v in test_data:
-        yield check_scatter_fq, v
-
-
-def test_scatter_grad_fq():
-    for v in test_data:
-        yield check_scatter_grad_fq, v
-
-
-# Tests which derive from F(Q) and Grad F(Q)
-def test_scatter_pdf():
-    for v in test_data:
-        yield check_scatter_pdf, v
-
-
-def test_scatter_grad_pdf():
-    for v in test_data:
-        yield check_scatter_grad_pdf, v
-
-
-def test_scatter_sq():
-    for v in test_data:
-        yield check_scatter_sq, v
-
-
-def test_scatter_iq():
-    for v in test_data:
-        yield check_scatter_iq, v
-
-
 # Actual Tests
+def check_meta(value):
+    value[0](value[1:])
+
 def check_scatter_fq(value):
     """
     Check two processor, algorithm pairs against each other for FQ calculation
@@ -201,6 +166,58 @@ def check_scatter_grad_pdf(value):
     stats_check(ans1, ans2, rtol, atol)
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
+tests = [
+    check_scatter_fq,
+    check_scatter_sq,
+    check_scatter_iq,
+    check_scatter_pdf,
+    check_scatter_grad_fq,
+    check_scatter_grad_pdf
+]
+
+test_data = list(product(
+    tests,
+    test_atoms, test_exp, comparison_pro_alg_pairs))
+# remove the ultra slow nxn 1000 atom tests
+# for f in test_data:
+#     if len(f[1]) > 200 and ('CPU', 'nxn') in f[4]:
+#         test_data.remove(f)
+
+def test_meta():
+    for v in test_data:
+            yield check_meta, v
+
+'''
+def test_scatter_fq():
+    for v in test_data:
+        yield check_scatter_fq, v
+
+
+def test_scatter_grad_fq():
+    for v in test_data:
+        yield check_scatter_grad_fq, v
+
+
+# Tests which derive from F(Q) and Grad F(Q)
+def test_scatter_pdf():
+    for v in test_data:
+        yield check_scatter_pdf, v
+
+
+def test_scatter_grad_pdf():
+    for v in test_data:
+        yield check_scatter_grad_pdf, v
+
+
+def test_scatter_sq():
+    for v in test_data:
+        yield check_scatter_sq, v
+
+
+def test_scatter_iq():
+    for v in test_data:
+        yield check_scatter_iq, v
+'''
 
 if __name__ == '__main__':
     import nose

@@ -3,18 +3,9 @@ from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.calc_1d import Calc1D
 
 __author__ = 'christopher'
-test_experiment_types = ['FQ', 'PDF']
-test_data = tuple(product(test_double_atoms, test_exp, test_potentials,
-                          comparison_pro_alg_pairs, test_experiment_types))
 
-def test_nrg():
-    for v in test_data:
-        yield check_nrg, v
-
-
-def test_forces():
-    for v in test_data:
-        yield check_forces, v
+def check_meta(value):
+    value[0](value[1:])
 
 
 def check_nrg(value):
@@ -100,6 +91,28 @@ def check_forces(value):
                     atol=atol
                     )
 
+tests = [
+    check_nrg,
+    check_forces
+]
+test_experiment_types = ['FQ', 'PDF']
+test_data = tuple(product(tests,
+                          test_double_atoms, test_exp, test_potentials,
+                          comparison_pro_alg_pairs, test_experiment_types))
+
+def test_meta():
+    for v in test_data:
+            yield check_meta, v
+'''
+def test_nrg():
+    for v in test_data:
+        yield check_nrg, v
+
+
+def test_forces():
+    for v in test_data:
+        yield check_forces, v
+'''
 
 if __name__ == '__main__':
     import nose
@@ -108,7 +121,7 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        # '-v'
+        '-v'
         # '-x'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
