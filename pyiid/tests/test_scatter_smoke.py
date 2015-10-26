@@ -158,8 +158,8 @@ tests = [
 test_data = tuple(product(
     tests,
     test_atoms,
+    test_exp,
     proc_alg_pairs,
-    test_exp
 ))
 
 def test_meta():
