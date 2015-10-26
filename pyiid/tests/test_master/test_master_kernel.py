@@ -1,8 +1,8 @@
-__author__ = 'christopher'
 import numpy as np
 from numpy.testing import assert_allclose
 from pyiid.kernels.master_kernel import get_scatter_array, get_rw, get_chi_sq
 import os
+__author__ = 'christopher'
 
 
 def test_get_scatter_array():
@@ -51,4 +51,5 @@ def test_get_chi_sq2():
 if __name__ == '__main__':
     import nose
 
-    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)
+    nose.runmodule(argv=['-s', '--with-doctest', '--with-coverage',
+                         '--cover-html'], exit=False)

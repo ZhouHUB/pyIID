@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 from threading import Thread
 
 import numpy as np
@@ -6,9 +5,10 @@ import numpy as np
 from pyiid.wrappers import *
 from pyiid.wrappers.gpu_wrappers.nxn_atomic_gpu import atoms_per_gpu_fq, \
     atoms_per_gpu_grad_fq
+__author__ = 'christopher'
 
-print 'Warning: this module is no longer fully supported/test, and may not be' \
-      'complete or robust. Please use the flat_gpu_wrap module'
+print 'Warning: this module is no longer fully supported/test, ' \
+      'and may not be complete or robust. Please use the flat_gpu_wrap module'
 
 
 def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
@@ -21,8 +21,8 @@ def sub_fq(gpu, q, scatter_array, fq_q, qbin, m, n_cov):
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
-    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(atoms,
-                                                                         sum_type)
+    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(
+        atoms, sum_type)
     # starting buffers
     fq_q = []
     n_cov = 0
@@ -73,8 +73,8 @@ def sub_grad(gpu, q, scatter_array, grad_q, qbin, m, n_cov, index_list):
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
-    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(atoms,
-                                                                         sum_type)
+    q, n, qmax_bin, scatter_array, sort_gpus, sort_gmem = setup_gpu_calc(
+        atoms, sum_type)
 
     grad_q = []
     index_list = []

@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import ase.io as aseio
 from ase.io.trajectory import PickleTrajectory
 import matplotlib.pyplot as plt
@@ -15,6 +14,7 @@ from simdb.readers.pdfgetx3_gr import load_gr_file
 from simdb.search import *
 from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
     GetLayerNumbers
+__author__ = 'christopher'
 
 
 def sim_unpack(sim):

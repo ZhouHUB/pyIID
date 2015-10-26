@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.fqcalc import FQCalc
+__author__ = 'christopher'
 
 test_data = tuple(product(test_double_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs))

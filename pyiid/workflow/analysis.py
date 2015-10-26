@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 import ase.io as aseio
 from ase.io.trajectory import PickleTrajectory
 import matplotlib.pyplot as plt
@@ -20,6 +19,7 @@ from asap3.analysis.particle import FullNeighborList, CoordinationNumbers, \
 from inspect import isgenerator
 from pyiid.kernels.cpu_nxn import get_d_array, get_r_array
 from copy import deepcopy as dc
+__author__ = 'christopher'
 
 font = {'family': 'normal',
         # 'weight' : 'bold',

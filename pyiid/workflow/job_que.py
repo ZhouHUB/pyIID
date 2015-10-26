@@ -1,8 +1,8 @@
-__author__ = 'christopher'
 from time import sleep
 from simdb.search import find_simulation_document
 from pyiid.workflow.simulation import run_simulation
 import traceback
+__author__ = 'christopher'
 
 i = 0
 print 'Start job queue'
@@ -12,7 +12,8 @@ while True:
                                          # error=False
                                          ))
     if len(sims) == 0:
-        # we didn't find anything, implying that there were no more un-run simulations
+        # we didn't find anything,
+        # implying that there were no more un-run simulations
         if i >= 30:
             print 'Idle for too long, exiting'
             exit()
@@ -21,8 +22,8 @@ while True:
 
     else:
         i = 0
-        print 'Found {0} simulation enteries which have not been ran or flagged' \
-              ' to be skipped'.format(len(sims))
+        print 'Found {0} simulation enteries which ' \
+              'have not been ran or flagged to be skipped'.format(len(sims))
         # run the simulations in the order they were added.
         for sim in reversed(sims):
             print 'start simulation number ', sim.id

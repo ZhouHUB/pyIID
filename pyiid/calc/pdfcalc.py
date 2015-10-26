@@ -1,10 +1,10 @@
 from pyiid.calc import wrap_rw, wrap_chi_sq, wrap_grad_rw, wrap_grad_chi_sq
-
-__author__ = 'christopher'
 from ase.calculators.calculator import Calculator
 from pyiid.wrappers.elasticscatter import ElasticScatter
 import math
 import numpy as np
+
+__author__ = 'christopher'
 
 
 class PDFCalc(Calculator):

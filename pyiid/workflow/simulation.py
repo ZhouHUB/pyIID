@@ -1,4 +1,3 @@
-__author__ = 'christopher'
 from ase.io.trajectory import PickleTrajectory
 
 from pyiid.sim.nuts_hmc import nuts
@@ -9,6 +8,7 @@ from simdb.handlers import FileLocation
 
 from filestore.retrieve import handler_context
 import filestore.commands as fsc
+__author__ = 'christopher'
 
 
 def run_simulation(sim):

@@ -1,7 +1,7 @@
-__author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.wrappers.elasticscatter import ElasticScatter
 from pyiid.calc.fqcalc import FQCalc
+__author__ = 'christopher'
 
 test_data = tuple(
     product(test_atom_squares, test_exp, test_potentials, proc_alg_pairs))
@@ -64,7 +64,8 @@ def check_forces(value):
         dist = atoms2[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
         assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
-    del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, forces, com, dist
+    del atoms1, atoms2, proc, alg, p, thresh, scat, gobs, calc, forces, com, \
+        dist
 
 
 if __name__ == '__main__':

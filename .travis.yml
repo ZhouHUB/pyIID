@@ -1,5 +1,5 @@
 language: python
-
+sudo: false
 python:
   - 2.7
 
@@ -23,12 +23,12 @@ install:
   - python setup.py install
   - cd ..
   - python setup.py install
-  - pip install coveralls
+#  - pip install coveralls
+  - pip install python-coveralls
 
 script:
   - python run_tests.py -s -d #--processes=2 --process-timeout=599
+#  - python pyiid/tests/test_master/test_master_kernel.py
 
-#after_success:
-#  coveralls
 after_script:
   coveralls

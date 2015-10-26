@@ -1,5 +1,5 @@
-__author__ = 'christopher'
 from pyiid.sim import leapfrog
+__author__ = 'christopher'
 
 
 def classical_dynamics(atoms, stepsize, n_steps):

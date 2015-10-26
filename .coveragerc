@@ -1,5 +1,5 @@
 [run]
-source=scikit-xray
+source=pyiid
 [report]
 omit =
     */python?.?/*

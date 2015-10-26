@@ -1,10 +1,10 @@
-__author__ = 'christopher'
 from pyiid.tests import *
 from pyiid.sim import leapfrog
 from pyiid.tests import setup_atomic_square
 from pyiid.calc.spring_calc import Spring
 import numpy as np
 from numpy.testing import assert_allclose
+__author__ = 'christopher'
 
 test_data = test_atom_squares
 

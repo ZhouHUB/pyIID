@@ -1,9 +1,11 @@
-__author__ = 'christopher'
 import math
 from numba import *
 import mkl
 
+__author__ = 'christopher'
+
 processor_target = 'cpu'
+
 
 # F(Q) test_kernels -----------------------------------------------------------
 

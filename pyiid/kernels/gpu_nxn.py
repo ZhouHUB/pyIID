@@ -1,9 +1,9 @@
-__author__ = 'christopher'
 from numba import *
 from numbapro import cuda
 import mkl
 import math
 import numpy as np
+__author__ = 'christopher'
 
 # F(Q) kernels ---------------------------------------------------------------
 

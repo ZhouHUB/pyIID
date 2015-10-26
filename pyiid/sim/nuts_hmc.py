@@ -32,8 +32,8 @@ def find_step_size(input_atoms):
         -1 * atoms_prime.get_total_energy() + atoms.get_total_energy()
     ) > 0.5) - 1
 
-    while (np.exp(-1 * atoms_prime.get_total_energy()
-                      + atoms.get_total_energy())) ** a > 2 ** -a:
+    while (np.exp(-1 * atoms_prime.get_total_energy() +
+                      atoms.get_total_energy())) ** a > 2 ** -a:
         print 'initial step size', a
         step_size *= 2 ** a
         atoms_prime = leapfrog(atoms, step_size)
@@ -41,7 +41,8 @@ def find_step_size(input_atoms):
     return step_size
 
 
-def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None, escape_level=13):
+def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None,
+         escape_level=13):
     """
     No U-Turn Sampling in the Canonical Ensemble, generating minima on the
     atoms' potential energy surface
@@ -104,14 +105,14 @@ def nuts(atoms, accept_target, iterations, p_scale=1, wtraj=None, escape_level=1
             while s == 1:
                 v = np.random.choice([-1, 1])
                 if v == -1:
-                    neg_atoms, _, atoms_prime, n_prime, s_prime, a, na = buildtree(
-                        neg_atoms, u, v, j, e, e0)
+                    neg_atoms, _, atoms_prime, n_prime, s_prime, a, na = \
+                        buildtree(neg_atoms, u, v, j, e, e0)
                 else:
-                    _, pos_atoms, atoms_prime, n_prime, s_prime, a, na = buildtree(
-                        pos_atoms, u, v, j, e, e0)
+                    _, pos_atoms, atoms_prime, n_prime, s_prime, a, na = \
+                        buildtree(pos_atoms, u, v, j, e, e0)
 
-                if s_prime == 1 and np.random.uniform() < min(1,
-                                                              n_prime * 1. / n):
+                if s_prime == 1 and np.random.uniform() < \
+                        min(1, n_prime * 1. / n):
                     traj += [atoms_prime]
                     if wtraj is not None:
                         atoms_prime.get_forces()
@@ -193,24 +194,25 @@ def buildtree(input_atoms, u, v, j, e, e0):
         # s_prime = int(u <= np.exp(Emax-atoms_prime.get_total_energy()))
         n_prime = int(u <= exp1)
         s_prime = int(u < exp2)
-        return atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime, min(1,
-                                                                            np.exp(
-                                                                                -atoms_prime.get_total_energy() + input_atoms.get_total_energy())), 1
+        return atoms_prime, atoms_prime, atoms_prime, n_prime, s_prime, \
+               min(1, np.exp(-atoms_prime.get_total_energy() +
+                             input_atoms.get_total_energy())), 1
     else:
-        neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, na_prime = buildtree(
-            input_atoms, u, v, j - 1, e, e0)
+        neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, \
+        na_prime = buildtree(input_atoms, u, v, j - 1, e, e0)
         if s_prime == 1:
             if v == -1:
-                neg_atoms, _, atoms_prime_prime, n_prime_prime, s_prime_prime, app, napp = buildtree(
+                neg_atoms, _, atoms_prime_prime, n_prime_prime, \
+                s_prime_prime, app, napp = buildtree(
                     neg_atoms, u, v, j - 1, e, e0)
             else:
-                _, pos_atoms, atoms_prime_prime, n_prime_prime, s_prime_prime, app, napp = buildtree(
-                    pos_atoms, u, v, j - 1, e,
-                    # atoms0,
-                    e0)
+                _, pos_atoms, atoms_prime_prime, n_prime_prime, \
+                s_prime_prime, app, napp = buildtree(pos_atoms, u, v, j - 1, e,
+                                                     # atoms0,
+                                                     e0)
 
-            if np.random.uniform() < float(
-                            n_prime_prime / (max(n_prime + n_prime_prime, 1))):
+            if np.random.uniform() < \
+                    float(n_prime_prime / (max(n_prime + n_prime_prime, 1))):
                 atoms_prime = atoms_prime_prime
 
             a_prime = a_prime + app
@@ -218,8 +220,9 @@ def buildtree(input_atoms, u, v, j, e, e0):
 
             datoms = pos_atoms.positions - neg_atoms.positions
             span = datoms.flatten()
-            s_prime = s_prime_prime * (
-                span.dot(neg_atoms.get_velocities().flatten()) >= 0) * (
-                          span.dot(pos_atoms.get_velocities().flatten()) >= 0)
+            s_prime = s_prime_prime * \
+                      (span.dot(neg_atoms.get_velocities().flatten()) >= 0) * \
+                      (span.dot(pos_atoms.get_velocities().flatten()) >= 0)
             n_prime = n_prime + n_prime_prime
-        return neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, na_prime
+        return neg_atoms, pos_atoms, atoms_prime, n_prime, s_prime, a_prime, \
+               na_prime
