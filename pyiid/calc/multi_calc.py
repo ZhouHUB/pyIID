@@ -3,6 +3,8 @@ import numpy as np
 from copy import deepcopy as dc
 __author__ = 'christopher'
 
+__author__ = 'christopher'
+
 
 class MultiCalc(Calculator):
     """
@@ -67,8 +69,6 @@ class MultiCalc(Calculator):
             energy_list.append(atoms.get_potential_energy())
 
         energy = sum(energy_list)
-        self.energy_free = energy
-        self.energy_zero = energy
         self.results['energy'] = energy
 
     def calculate_forces(self, atoms):

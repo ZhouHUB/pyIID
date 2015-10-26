@@ -1,33 +1,16 @@
 from pyiid.tests import *
-from pyiid.wrappers.elasticscatter import ElasticScatter
+from pyiid.experiments.elasticscatter import ElasticScatter
+
 __author__ = 'christopher'
 
-test_data = tuple(product(test_atoms, test_exp, test_potentials,
-                          comparison_pro_alg_pairs))
+# rtol = 4e-4
+# atol = 4e-4
+rtol = 5e-4
+atol = 5e-5
 
-def test_gen_scatter_smoke_fq():
-    for v in test_data:
-        yield check_scatter_fq, v
-
-def test_gen_scatter_smoke_pdf():
-    for v in test_data:
-        yield check_scatter_pdf, v
-
-def test_gen_scatter_smoke_sq():
-    for v in test_data:
-        yield check_scatter_sq, v
-
-def test_gen_scatter_smoke_iq():
-    for v in test_data:
-        yield check_scatter_iq, v
-
-def test_gen_scatter_smoke_grad_fq():
-    for v in test_data:
-        yield check_scatter_grad_fq, v
-
-def test_gen_scatter_smoke_grad_pdf():
-    for v in test_data:
-        yield check_scatter_grad_pdf, v
+# Actual Tests
+def check_meta(value):
+    value[0](value[1:])
 
 def check_scatter_fq(value):
     """
@@ -37,7 +20,6 @@ def check_scatter_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -51,86 +33,10 @@ def check_scatter_fq(value):
     ans2 = scat.get_fq(atoms)
 
     # test
-    print stats_check(ans1, ans2)
-    # print np.max(np.abs(ans1 - ans2)), np.mean(
-    #     np.abs(ans1 - ans2)), np.std(np.abs(ans1 - ans2))
-    assert_allclose(ans1, ans2, atol=atol)
+    if not stats_check(ans1, ans2, rtol, atol):
+        print value
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
     # assert False
-
-
-def check_scatter_sq(value):
-    """
-    Check two processor, algorithm pairs against each other for SQ calculation
-    :param value:
-    :return:
-    """
-    # set everything up
-    atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
-    scat = ElasticScatter(exp_dict=exp)
-    proc1, alg1 = value[-1][0]
-    proc2, alg2 = value[-1][1]
-
-    # run algorithm 1
-    scat.set_processor(proc1, alg1)
-    ans1 = scat.get_sq(atoms)
-
-    # run algorithm 2
-    scat.set_processor(proc2, alg2)
-    ans2 = scat.get_sq(atoms)
-
-    # test
-    assert_allclose(ans1, ans2, rtol=1e-3, atol=atol)
-
-
-def check_scatter_iq(value):
-    """
-    Check two processor, algorithm pairs against each other for IQ calculation
-    :param value:
-    :return:
-    """
-    # set everything up
-    atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
-    scat = ElasticScatter(exp_dict=exp)
-    proc1, alg1 = value[-1][0]
-    proc2, alg2 = value[-1][1]
-
-    # run algorithm 1
-    scat.set_processor(proc1, alg1)
-    ans1 = scat.get_iq(atoms)
-
-    # run algorithm 2
-    scat.set_processor(proc2, alg2)
-    ans2 = scat.get_iq(atoms)
-
-    # test
-    assert_allclose(ans1, ans2, rtol=1e-3, atol=atol)
-
-
-def check_scatter_pdf(value):
-    """
-    Check two processor, algorithm pairs against each other for PDF calculation
-    :param value:
-    :return:
-    """
-    # set everything up
-    atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
-    scat = ElasticScatter(exp_dict=exp)
-    proc1, alg1 = value[-1][0]
-    proc2, alg2 = value[-1][1]
-
-    # run algorithm 1
-    scat.set_processor(proc1, alg1)
-    ans1 = scat.get_pdf(atoms)
-
-    # run algorithm 2
-    scat.set_processor(proc2, alg2)
-    ans2 = scat.get_pdf(atoms)
-
-    # test
-    assert_allclose(ans1, ans2, atol=atol)
 
 
 def check_scatter_grad_fq(value):
@@ -142,7 +48,6 @@ def check_scatter_grad_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -156,8 +61,84 @@ def check_scatter_grad_fq(value):
     ans2 = scat.get_grad_fq(atoms)
 
     # test
-    print stats_check(ans1, ans2)
-    assert_allclose(ans1, ans2, atol=atol)
+    if not stats_check(ans1, ans2, rtol, atol):
+        print value
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+
+
+def check_scatter_sq(value):
+    """
+    Check two processor, algorithm pairs against each other for SQ calculation
+    :param value:
+    :return:
+    """
+    # set everything up
+    atoms, exp = value[:2]
+    scat = ElasticScatter(exp_dict=exp)
+    proc1, alg1 = value[-1][0]
+    proc2, alg2 = value[-1][1]
+
+    # run algorithm 1
+    scat.set_processor(proc1, alg1)
+    ans1 = scat.get_sq(atoms)
+
+    # run algorithm 2
+    scat.set_processor(proc2, alg2)
+    ans2 = scat.get_sq(atoms)
+
+    # test
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+
+
+def check_scatter_iq(value):
+    """
+    Check two processor, algorithm pairs against each other for IQ calculation
+    :param value:
+    :return:
+    """
+    # set everything up
+    atoms, exp = value[:2]
+    scat = ElasticScatter(exp_dict=exp)
+    proc1, alg1 = value[-1][0]
+    proc2, alg2 = value[-1][1]
+
+    # run algorithm 1
+    scat.set_processor(proc1, alg1)
+    ans1 = scat.get_iq(atoms)
+
+    # run algorithm 2
+    scat.set_processor(proc2, alg2)
+    ans2 = scat.get_iq(atoms)
+
+    # test
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+
+
+def check_scatter_pdf(value):
+    """
+    Check two processor, algorithm pairs against each other for PDF calculation
+    :param value:
+    :return:
+    """
+    # set everything up
+    atoms, exp = value[:2]
+    scat = ElasticScatter(exp_dict=exp)
+    proc1, alg1 = value[-1][0]
+    proc2, alg2 = value[-1][1]
+
+    # run algorithm 1
+    scat.set_processor(proc1, alg1)
+    ans1 = scat.get_pdf(atoms)
+
+    # run algorithm 2
+    scat.set_processor(proc2, alg2)
+    ans2 = scat.get_pdf(atoms)
+
+    # test
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_grad_pdf(value):
@@ -169,7 +150,6 @@ def check_scatter_grad_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    atol = 6e-6 * len(atoms)
     scat = ElasticScatter(exp_dict=exp)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
@@ -183,16 +163,71 @@ def check_scatter_grad_pdf(value):
     ans2 = scat.get_grad_pdf(atoms)
 
     # test
-    assert_allclose(ans1, ans2, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+
+tests = [
+    check_scatter_fq,
+    check_scatter_sq,
+    check_scatter_iq,
+    check_scatter_pdf,
+    check_scatter_grad_fq,
+    check_scatter_grad_pdf
+]
+
+test_data = list(product(
+    tests,
+    test_atoms, test_exp, comparison_pro_alg_pairs))
+# remove the ultra slow nxn 1000 atom tests
+# for f in test_data:
+#     if len(f[1]) > 200 and ('CPU', 'nxn') in f[4]:
+#         test_data.remove(f)
+
+def test_meta():
+    for v in test_data:
+            yield check_meta, v
+
+'''
+def test_scatter_fq():
+    for v in test_data:
+        yield check_scatter_fq, v
+
+
+def test_scatter_grad_fq():
+    for v in test_data:
+        yield check_scatter_grad_fq, v
+
+
+# Tests which derive from F(Q) and Grad F(Q)
+def test_scatter_pdf():
+    for v in test_data:
+        yield check_scatter_pdf, v
+
+
+def test_scatter_grad_pdf():
+    for v in test_data:
+        yield check_scatter_grad_pdf, v
+
+
+def test_scatter_sq():
+    for v in test_data:
+        yield check_scatter_sq, v
+
+
+def test_scatter_iq():
+    for v in test_data:
+        yield check_scatter_iq, v
+'''
 
 if __name__ == '__main__':
     import nose
 
     nose.runmodule(argv=[
-        # '-s',
+        '-s',
         '--with-doctest',
         # '--nocapture',
-        # '-v'
+        '-v',
+        # '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

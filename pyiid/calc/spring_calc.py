@@ -1,5 +1,8 @@
 from ase.calculators.calculator import Calculator
 import numpy as np
+from pyiid.experiments.elasticscatter.kernels.cpu_nxn import get_d_array, \
+    get_r_array
+
 __author__ = 'christopher'
 
 
@@ -14,21 +17,15 @@ class Spring(Calculator):
 
         Calculator.__init__(self, restart, ignore_bad_restart_file,
                             label, atoms, **kwargs)
-
-        from pyiid.wrappers.cpu_wrappers.cpu_wrap import spring_nrg as nrg
-        from pyiid.wrappers.cpu_wrappers.cpu_wrap import spring_force as force
+        self.nrg_func = spring_nrg
+        self.f_func = spring_force
         if sp_type == 'com':
-            from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
-                com_spring_nrg as nrg
-            from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
-                com_spring_force as force
+            self.nrg_func = com_spring_nrg
+            self.f_func = com_spring_force
         if sp_type == 'att':
-            from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
-                att_spring_nrg as nrg
-            from pyiid.wrappers.cpu_wrappers.cpu_wrap import \
-                att_spring_force as force
-        self.nrg_func = nrg
-        self.f_func = force
+            self.nrg_func = att_spring_nrg
+            self.f_func = att_spring_force
+
         self.sp_type = sp_type
         self.k = k
         self.rt = rt
@@ -73,9 +70,6 @@ class Spring(Calculator):
         :return:
         """
         energy = self.nrg_func(atoms, self.k, self.rt)
-
-        self.energy_free = energy
-        self.energy_zero = energy
         self.results['energy'] = energy
 
     def calculate_forces(self, atoms):
@@ -84,3 +78,125 @@ class Spring(Calculator):
         forces = self.f_func(atoms, self.k, self.rt)
 
         self.results['forces'] = forces
+
+
+def spring_nrg(atoms, k, rt):
+    q = atoms.get_positions().astype(np.float32)
+    n = len(atoms)
+    d = np.zeros((n, n, 3), dtype=np.float32)
+    get_d_array(d, q)
+    r = np.zeros((n, n), dtype=np.float32)
+    get_r_array(r, d)
+
+    thresh = np.less(r, rt)
+    for i in range(len(thresh)):
+        thresh[i, i] = False
+
+    mag = np.zeros(r.shape)
+    mag[thresh] = k * (r[thresh] - rt)
+
+    energy = np.sum(mag[thresh] / 2. * (r[thresh] - rt))
+    return energy
+
+
+def spring_force(atoms, k, rt):
+    q = atoms.get_positions().astype(np.float32)
+    n = len(atoms)
+    d = np.zeros((n, n, 3), dtype=np.float32)
+    get_d_array(d, q)
+    r = np.zeros((n, n), dtype=np.float32)
+    get_r_array(r, d)
+
+    thresh = np.less(r, rt)
+
+    for i in range(len(thresh)):
+        thresh[i, i] = False
+
+    mag = np.zeros(r.shape)
+    mag[thresh] = k * (r[thresh] - rt)
+
+    direction = np.zeros((n, n, 3))
+    old_settings = np.seterr(all='ignore')
+    for tz in range(3):
+        direction[thresh, tz] = d[thresh, tz] / r[thresh] * mag[thresh]
+    np.seterr(**old_settings)
+    direction[np.isnan(direction)] = 0.0
+    direction = np.sum(direction, axis=1)
+    return direction
+
+
+def com_spring_nrg(atoms, k, rt):
+    com = atoms.get_center_of_mass()
+    q = atoms.get_positions().astype(np.float32)
+    disp = q - com
+    dist = np.sqrt(np.sum(disp ** 2, axis=1))
+    thresh = np.greater(dist, rt)
+    mag = np.zeros(len(atoms))
+
+    mag[thresh] = k * (dist[thresh] - rt)
+    energy = np.sum(mag[thresh] / 2. * (dist[thresh] - rt))
+    return energy
+
+
+def com_spring_force(atoms, k, rt):
+    com = atoms.get_center_of_mass()
+    q = atoms.get_positions().astype(np.float32)
+    disp = q - com
+    dist = np.sqrt(np.sum(disp ** 2, axis=1))
+    thresh = np.greater(dist, rt)
+    mag = np.zeros(len(atoms))
+
+    mag[thresh] = k * (dist[thresh] - rt)
+
+    direction = np.zeros(q.shape)
+    old_settings = np.seterr(all='ignore')
+    for tz in range(3):
+        direction[thresh, tz] = disp[thresh, tz] / dist[thresh] * mag[thresh]
+    np.seterr(**old_settings)
+
+    return direction * -1.
+
+
+def att_spring_nrg(atoms, k, rt):
+    q = atoms.get_positions().astype(np.float32)
+    n = len(atoms)
+    d = np.zeros((n, n, 3), dtype=np.float32)
+    get_d_array(d, q)
+    r = np.zeros((n, n), dtype=np.float32)
+    get_r_array(r, d)
+
+    thresh = np.greater(r, rt)
+    for i in range(len(thresh)):
+        thresh[i, i] = False
+
+    mag = np.zeros(r.shape)
+    mag[thresh] = k * (r[thresh] - rt)
+
+    energy = np.sum(mag[thresh] / 2. * (r[thresh] - rt))
+    return energy
+
+
+def att_spring_force(atoms, k, rt):
+    q = atoms.get_positions().astype(np.float32)
+    n = len(atoms)
+    d = np.zeros((n, n, 3), dtype=np.float32)
+    get_d_array(d, q)
+    r = np.zeros((n, n), dtype=np.float32)
+    get_r_array(r, d)
+
+    thresh = np.greater(r, rt)
+
+    for i in range(len(thresh)):
+        thresh[i, i] = False
+
+    mag = np.zeros(r.shape)
+    mag[thresh] = k * (r[thresh] - rt)
+
+    direction = np.zeros((n, n, 3))
+    old_settings = np.seterr(all='ignore')
+    for tz in range(3):
+        direction[thresh, tz] = d[thresh, tz] / r[thresh] * mag[thresh]
+    np.seterr(**old_settings)
+    direction[np.isnan(direction)] = 0.0
+    direction = np.sum(direction, axis=1)
+    return direction

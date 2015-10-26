@@ -2,7 +2,8 @@ import numpy as np
 from copy import deepcopy as dc
 
 __author__ = 'christopher'
-
+print 'This system is officially depreciated and is here for history ' \
+      'mostly, please use the nuts_hmc module'
 
 def leapfrog(atoms, step):
     """
@@ -60,7 +61,7 @@ def simulate_dynamics(atoms, stepsize, n_steps):
         atoms.get_velocities() + 0.5 * stepsize * atoms.get_forces())
 
 
-def mh_accept(initial_energy, next_energy, T=1):
+def mh_accept(initial_energy, next_energy, temp=1):
     """
     Decide whether to accept or reject the new configuration
 
@@ -77,7 +78,7 @@ def mh_accept(initial_energy, next_energy, T=1):
         Whether to accept the new configuration
     """
     diff = initial_energy - next_energy
-    canon_part_prob = np.exp(diff * T)
+    canon_part_prob = np.exp(diff * temp)
 
     rand = np.random.random((1,))
 
@@ -87,7 +88,7 @@ def mh_accept(initial_energy, next_energy, T=1):
     return rand < canon_part_prob
 
 
-def hmc_move(atoms, stepsize, n_steps, T):
+def hmc_move(atoms, stepsize, n_steps, temp):
     """
     Move atoms and check if they are accepted, returning the new 
     configuration if accepted, the old if not
@@ -112,7 +113,7 @@ def hmc_move(atoms, stepsize, n_steps, T):
 
     simulate_dynamics(prop, stepsize, n_steps)
 
-    accept = mh_accept(atoms.get_total_energy(), prop.get_total_energy(), T)
+    accept = mh_accept(atoms.get_total_energy(), prop.get_total_energy(), temp)
 
     if accept == 1:
         return True, prop
@@ -122,7 +123,7 @@ def hmc_move(atoms, stepsize, n_steps, T):
 
 def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
             avg_acceptance_rate, target_acceptance_rate, stepsize_inc,
-            stepsize_dec, stepsize_min, stepsize_max, T=1, wtraj=None):
+            stepsize_dec, stepsize_min, stepsize_max, temp=1, wtraj=None):
     """
     Wrapper for running Hamiltonian (Hybrid) Monte Carlo refinements,
     using a dynamic step size refinement, based on whether moves are
@@ -169,7 +170,7 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
     i = 0
     try:
         while i < iterations:
-            accept, atoms = hmc_move(atoms, stepsize, n_steps, T)
+            accept, atoms = hmc_move(atoms, stepsize, n_steps, temp)
             # print i, accept, atoms.get_potential_energy(), stepsize
             # print '--------------------------------'
             if accept is True:

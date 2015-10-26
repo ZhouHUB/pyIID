@@ -1,5 +1,7 @@
 import numpy as np
-from pyiid.kernels.master_kernel import get_rw, get_chi_sq, get_grad_rw, \
+
+from pyiid.experiments.elasticscatter.kernels.master_kernel import get_rw, \
+    get_chi_sq, get_grad_rw, \
     get_grad_chi_sq
 
 __author__ = 'christopher'
@@ -15,7 +17,7 @@ def wrap_rw(gcalc, gobs):
     atoms: ase.Atoms
         The atomic configuration
     gobs: 1darray
-        The observed atomic pair distributuion function
+        The observed atomic pair distribution function
     qmax: float
         The maximum scatter vector value
     qmin: float
@@ -108,7 +110,7 @@ def wrap_grad_rw(grad_gcalc, gcalc, gobs):
     """
     rw, scale = wrap_rw(gcalc, gobs)
     grad_rw = np.zeros((len(grad_gcalc), 3))
-    get_grad_rw(grad_rw, grad_gcalc, gcalc, gobs, rw, scale, weight=None)
+    get_grad_rw(grad_rw, grad_gcalc, gcalc, gobs, rw, scale)
     return grad_rw
 
 

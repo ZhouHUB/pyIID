@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
-from pyiid.kernels.master_kernel import get_scatter_array, get_rw, get_chi_sq
-import os
+from pyiid.experiments.elasticscatter.kernels.master_kernel import \
+    get_scatter_array, get_rw, get_chi_sq
 __author__ = 'christopher'
 
 
@@ -51,5 +51,4 @@ def test_get_chi_sq2():
 if __name__ == '__main__':
     import nose
 
-    nose.runmodule(argv=['-s', '--with-doctest', '--with-coverage',
-                         '--cover-html'], exit=False)
+    nose.runmodule(argv=['-s', '--with-doctest'], exit=False)

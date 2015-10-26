@@ -1,64 +1,17 @@
 import numpy as np
-# from diffpy.Structure.structure import Structure
-# from diffpy.Structure.atom import Atom as dAtom
+import math
+import time
+import datetime
+from itertools import combinations
+from copy import deepcopy as dc
 from ase.atoms import Atoms as AAtoms
 import ase.io as aseio
 from asap3.analysis.particle import FullNeighborList, CoordinationNumbers
-from itertools import combinations
-
-import math
-# import tkFileDialog
-from copy import deepcopy as dc
-import time
-import datetime
 from pyiid.asa import calculate_asa
 __author__ = 'christopher'
 
 
-'''
-def convert_atoms_to_stru(atoms):
-    """
-    Convert between ASE and Diffpy structural objects
-
-    Parameters:
-    -----------
-    atoms: ase.Atoms object
-
-    Return:
-    diffpy.Structure object:
-    """
-    diffpy_atoms = []
-    symbols = atoms.get_chemical_symbols()
-    q = atoms.get_positions()
-    tags = atoms.get_tags()
-    for symbol, xyz, tag, in zip(symbols, q, tags):
-        d_atom = dAtom(symbol, xyz=xyz,
-                       label=tag, occupancy=1)
-        diffpy_atoms.append(d_atom)
-    stru = Structure(diffpy_atoms)
-    return stru
-
-
-def update_stru(new_atoms, stru):
-    aatomq = new_atoms.get_positions()
-    datomq = np.reshape([datom.xyz for datom in stru], (len(new_atoms), 3))
-    # aatome = new_atoms.get_chemical_symbols()
-    # datome = np.array([datom.element for datom in stru])
-    changedq = np.in1d(aatomq, datomq).reshape((len(new_atoms), 3))
-
-    changed_array = np.sum(changedq, 1) != 3
-    stru[changed_array].xyz = new_atoms[changed_array].get_positions()
-    # for i in len(changed_array):
-    #     if changed_array[i] == True:
-    #         stru[i]._set_xyz_cartn(new_atoms[i].position)
-    # changed_list = []
-    # for i in len(new_atoms):
-    #     if np.sum(changedq[i, :]) != 3:
-    #         changed_list.append(i)
-    # for j in changed_list:
-    #     stru[j]._set_xyz_cartn(new_atoms[j].position)
-    return stru
-'''
+__author__ = 'christopher'
 
 
 def convert_stru_to_atoms(stru):
@@ -69,9 +22,6 @@ def convert_stru_to_atoms(stru):
         symbols.append(d_atom.element)
         xyz.append(d_atom.xyz)
         tags.append(d_atom.label)
-    # print symbols
-    # print np.array(xyz)
-    # print tags
     atoms = AAtoms(symbols, np.array(xyz), tags=tags)
     return atoms
 
@@ -142,30 +92,6 @@ def get_angle_list(atoms, cutoff, element=None, tag=None):
                 break
             angles.append(np.rad2deg(atoms.get_angle([a[0], i, a[1]])))
     return np.nan_to_num(np.asarray(angles))
-
-
-def time_est(atoms, HD_iter, HMC_iter):
-    """
-    Estimate the amount of time to complete a simulation
-    :param atoms:
-    :param HD_iter:
-    :param HMC_iter:
-    :return:
-    """
-    s = time.time()
-    nrg = atoms.get_potential_energy()
-    f = time.time()
-    nrg_t = f - s
-    s = time.time()
-    force = atoms.get_forces()
-    f = time.time()
-    ft = f - s
-    total = HD_iter * ft * HMC_iter + nrg_t * HMC_iter
-    print str(datetime.timedelta(seconds=math.ceil(total)))
-    print 'finished by' + \
-          str(datetime.datetime.today() +
-              datetime.timedelta(seconds=math.ceil(total)))
-    return total
 
 
 def get_coord_list(atoms, cutoff, element=None, tag=None):
