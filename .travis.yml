@@ -23,8 +23,8 @@ install:
   - python setup.py install
   - cd ..
   - python setup.py install
-  - pip install coveralls
-  - pip install coveralls-python
+#  - pip install coveralls
+  - pip install python-coveralls
 
 script:
   - python run_tests.py -s -d #--processes=2 --process-timeout=599
