@@ -13,7 +13,8 @@ def test_consistency():
         outs[i % len(test_atoms)].append(fq)
     for j in range(len(test_atoms)):
         for a, b in permutations(outs[j], 2):
-            assert_allclose(a, b)
+            stats_check(a, b, rtol=2e-7, atol=1e-7)
+            assert_allclose(a, b, rtol=2e-7, atol=1e-7)
 
 
 @known_fail_if(not srfit)
@@ -41,8 +42,9 @@ if __name__ == '__main__':
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',
-        '--nocapture',
-        # '-v'
+        # '--nocapture',
+        '-v',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)
