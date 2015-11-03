@@ -27,9 +27,10 @@ benchmarks = [
     ('Multi-GPU', 'flat')
 ]
 colors=['b', 'r']
-sizes = range(10, 55, 5)
+sizes = range(10, 80, 5)
 print sizes
 for proc, alg in benchmarks:
+    print proc, alg
     number_of_atoms = []
     scat.set_processor(proc, alg)
     type_list.append((proc, alg))
@@ -52,7 +53,7 @@ for proc, alg in benchmarks:
             nrg_l.append(f-s)
 
             s = time.time()
-            force = atoms.get_forces()
+            # force = atoms.get_forces()
             # scat.get_grad_fq(atoms)
             f = time.time()
             f_l.append(f-s)
