@@ -18,8 +18,6 @@ from ase.calculators.calculator import equal
 
 __author__ = 'christopher'
 
-all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
-               'exp']
 
 def check_mpi():
     # Test if MPI GPU is viable
@@ -48,6 +46,7 @@ def check_cudafft():
         print 'no cudafft'
     return tf
 
+
 # TODO: maybe add gradients as saved data?
 class ElasticScatter(object):
     """
@@ -72,9 +71,6 @@ class ElasticScatter(object):
     """
 
     def __init__(self, exp_dict=None):
-        self.atoms = None # keep a copy of the atoms to prevent replication
-        self.fq_result = None
-        self.pdf_result = None
         # Currently supported processor architectures, in order of most
         # advanced to least
         self.avail_pro = ['MPI-GPU', 'Multi-GPU', 'CPU']
@@ -192,26 +188,6 @@ class ElasticScatter(object):
             self.processor = processor
             return True
 
-    # TODO: may not need this, merged into check_state
-    def check_scatter(self, atoms):
-        """
-        Check if the scatter vectors associated with the atoms need to be
-        updated.
-
-        Parameters
-        ----------
-        atoms: ase.Atoms object
-            The atoms to be checked
-        """
-        if self.scatter_needs_update is True \
-                or 'exp' not in atoms.info.keys() \
-                or atoms.info['exp'] != self.exp \
-                or atoms.info['scatter_atoms'] != len(atoms) \
-                or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
-                or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
-            wrap_atoms(atoms, self.exp)
-            self.scatter_needs_update = False
-
     def update_experiment(self, exp_dict):
         """
         Change the scattering experiment parameters.
@@ -239,37 +215,16 @@ class ElasticScatter(object):
                                  self.exp['qmax'])
         self.scatter_needs_update = True
 
-    def check_state(self, atoms, tol=1e-15):
-        """Check for system changes since last calculation."""
-        if self.atoms is None:
-            system_changes = all_changes
-        else:
-            system_changes = []
-            if not equal(self.atoms.positions, atoms.positions, tol):
-                system_changes.append('positions')
-            if not equal(self.atoms.numbers, atoms.numbers):
-                system_changes.append('numbers')
-            if not equal(self.atoms.cell, atoms.cell, tol):
-                system_changes.append('cell')
-            if not equal(self.atoms.pbc, atoms.pbc):
-                system_changes.append('pbc')
-            if not equal(self.atoms.get_initial_magnetic_moments(),
-                         atoms.get_initial_magnetic_moments(), tol):
-                system_changes.append('magmoms')
-            if not equal(self.atoms.get_initial_charges(),
-                         atoms.get_initial_charges(), tol):
-                system_changes.append('charges')
-            if self.scatter_needs_update is True \
-                or 'exp' not in atoms.info.keys() \
+    def check_state(self, atoms):
+        if 'exp' not in atoms.info.keys() \
                 or atoms.info['exp'] != self.exp \
-                or atoms.info['scatter_atoms'] != len(atoms) \
+                or len(atoms.arrays['F(Q) scatter']) != len(atoms) \
+                or len(atoms.arrays['PDF scatter']) != len(atoms) \
                 or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
                 or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
-                wrap_atoms(atoms, self.exp)
-                self.scatter_needs_update = False
-                system_changes.append('exp')
-
-        return system_changes
+            return True
+        else:
+            return False
 
     def get_fq(self, atoms):
         """
@@ -284,14 +239,10 @@ class ElasticScatter(object):
         1darray:
             The reduced structure factor
         """
-        self.check_scatter(atoms)
-        if self.check_state(atoms) == [] and self.fq_result is not None:
-            return self.fq_result
-        else:
-            fq = self.fq(atoms, self.exp['qbin'])
-            self.fq_result = fq
-            self.atoms = atoms
-            return fq
+        if self.check_state(atoms):
+            wrap_atoms(atoms, self.exp)
+        fq = self.fq(atoms, self.exp['qbin'])
+        return fq
 
     def get_pdf(self, atoms):
         """
@@ -306,14 +257,10 @@ class ElasticScatter(object):
         1darray:
             The PDF
         """
-        self.check_scatter(atoms)
-        if self.check_state(atoms) == [] and self.pdf_result is not None:
-            return self.pdf_result
-        elif self.check_state(atoms) == [] and self.fq_result is not None:
-            fq = self.fq_result
-        else:
-            fq = self.fq(atoms, self.pdf_qbin, 'PDF')
-            self.fq_result = fq
+        if self.check_state(atoms):
+            wrap_atoms(atoms, self.exp)
+        fq = self.fq(atoms, self.pdf_qbin, 'PDF')
+        self.fq_result = fq
         r = self.get_r()
         pdf0 = get_pdf_at_qmin(
             fq,
@@ -322,8 +269,6 @@ class ElasticScatter(object):
             r,
             self.exp['qmin']
         )
-        self.pdf_result = pdf0
-        self.atoms = atoms
         return pdf0
 
     def get_sq(self, atoms):
@@ -405,7 +350,8 @@ class ElasticScatter(object):
         3darray:
             The gradient of the reduced structure factor
         """
-        self.check_scatter(atoms)
+        if self.check_state(atoms):
+            wrap_atoms(atoms, self.exp)
         g = self.grad(atoms, self.exp['qbin'])
         return g
 
@@ -422,7 +368,8 @@ class ElasticScatter(object):
         3darray:
             The gradient of the PDF
         """
-        self.check_scatter(atoms)
+        if self.check_state(atoms):
+            wrap_atoms(atoms, self.exp)
         fq_grad = self.grad(atoms, self.pdf_qbin, 'PDF')
         qmin_bin = int(self.exp['qmin'] / self.pdf_qbin)
         fq_grad[:, :, :qmin_bin] = 0.
