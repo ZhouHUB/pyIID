@@ -22,7 +22,6 @@ if __name__ == '__main__':
     rt = 1e-5
     at = 2e-2
     import matplotlib.pyplot as plt
-    from pyiid.adp import ADP
 
     # atoms = setup_atomic_square()[0]
     # atoms.adps = ADP(atoms, adps=np.random.random((len(atoms), 3)))
