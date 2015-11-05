@@ -22,14 +22,7 @@ def setup_gpu_calc(atoms, sum_type):
     qmax_bin = scatter_array.shape[1]
     sort_gpus, sort_gmem = get_gpus_mem()
 
-    if hasattr(atoms, 'adp'):
-        return (q, atoms.adps.get_position().astype(np.float32), n, qmax_bin,
-                scatter_array, sort_gpus, sort_gmem)
-    elif hasattr(atoms, 'adps'):
-        return (q, atoms.adps.get_position().astype(np.float32), n, qmax_bin,
-                scatter_array, sort_gpus, sort_gmem)
-    else:
-        return q, None, n, qmax_bin, scatter_array, sort_gpus, sort_gmem
+    return q, None, n, qmax_bin, scatter_array, sort_gpus, sort_gmem
 
 
 def subs_fq(fq, q, adps, scatter_array, qbin, gpu, k_cov, k_per_thread):
@@ -149,10 +142,7 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     """
     q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
         atoms, sum_type)
-    if adps is None:
-        allocation = gpu_k_space_fq_allocation
-    else:
-        allocation = gpu_k_space_fq_adp_allocation
+    allocation = gpu_k_space_fq_allocation
 
     fq = np.zeros(qmax_bin, np.float32)
     master_task = [fq, q, adps, scatter_array, qbin]
@@ -191,10 +181,7 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     """
     q, adps, n, qmax_bin, scatter_array, gpus, mem_list = setup_gpu_calc(
         atoms, sum_type)
-    if adps is None:
-        allocation = gpu_k_space_grad_fq_allocation
-    else:
-        allocation = gpu_k_space_grad_fq_adp_allocation
+    allocation = gpu_k_space_grad_fq_allocation
 
     grad_p = np.zeros((n, 3, qmax_bin))
     master_task = [grad_p, q, adps, scatter_array, qbin]

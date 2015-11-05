@@ -16,7 +16,6 @@ from pyiid.testing.decorators import *
 
 from pyiid.experiments.elasticscatter import wrap_atoms
 from pyiid.calc.spring_calc import Spring
-from pyiid.adp import ADP
 
 srfit = False
 try:
@@ -208,7 +207,26 @@ if os.getenv('TRAVIS'):
         # Use a slightly bigger test set, since we are using the JIT
         ns = [10, 100, 400]
         num_exp = 3
+elif os.getenv('SHORT_TEST'):
+    ns = [
+        10,
+        100,
+        # 400,
+        # 1000
+    ]
+    num_exp = 1
+    proc_alg_pairs = [('CPU', 'nxn'),
+                      ('CPU', 'flat'),
+                      ('CPU', 'flat-serial'),
+                      ('Multi-GPU', 'flat'),
+                      ]
+    comparison_pro_alg_pairs = [
+        # (('CPU', 'nxn'), ('CPU', 'flat-serial')),
+        # (('CPU', 'flat-serial'), ('CPU', 'flat')),
+        (('CPU', 'nxn'), ('CPU', 'flat')),
+        (('CPU', 'flat'), ('Multi-GPU', 'flat')),
 
+    ]
 else:
     ns = [
         10, 100,
@@ -228,17 +246,7 @@ else:
         (('CPU', 'flat'), ('Multi-GPU', 'flat')),
 
     ]
-    # comparison_pro_alg_pairs = list(combinations(proc_alg_pairs, 2))
 
 test_exp.extend([generate_experiment() for i in range(num_exp)])
 test_atoms = [setup_atoms(int(n)) for n in ns]
 test_double_atoms = [setup_double_atoms(int(n)) for n in ns]
-
-test_atoms_adp = []
-for atoms in test_atoms:
-    adps = ADP(atoms, np.random.normal(0, .1, atoms.positions.shape))
-    new_atoms = dc(atoms)
-    new_atoms.adps = adps
-    test_atoms_adp.append(new_atoms)
-test_atoms.extend(test_atoms_adp)
-# test_atoms = test_atoms_adp
