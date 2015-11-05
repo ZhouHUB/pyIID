@@ -23,12 +23,12 @@ def test_fq_against_srfit():
     srfit_calc.qmax = s.exp['qmax']
     srfit_calc.qstep = s.exp['qbin']
     srfit_calc(stru)
-    assert_allclose(s.get_scatter_vector(), srfit_calc.qgrid)
+    stats_check(s.get_scatter_vector(), srfit_calc.qgrid)
     ans1 = s.get_fq(atoms)
     ans2 = srfit_calc.fq
     stats_check(ans1, ans2, rtol=1e-4, atol=5e-6)
     del srfit_calc
-    assert_allclose(ans1, ans2, rtol=1e-4, atol=5e-6)
+    stats_check(ans1, ans2, rtol=1e-4, atol=5e-6)
 
 
 if __name__ == '__main__':

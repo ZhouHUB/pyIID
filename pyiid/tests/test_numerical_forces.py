@@ -42,8 +42,7 @@ def check_n_forces(value):
     ideal_atoms.set_calculator(calc)
     ans1 = ideal_atoms.get_forces()
     ans2 = calc.calculate_numerical_forces(ideal_atoms, d=5e-5)
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans2, ans1,
+    stats_check(ans2, ans1,
                     rtol=rtol,
                     atol=atol
                     )

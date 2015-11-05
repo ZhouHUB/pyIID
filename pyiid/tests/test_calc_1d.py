@@ -43,8 +43,7 @@ def check_nrg(value):
                   potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_potential_energy()
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans2, ans1, rtol, atol)
+    stats_check(ans2, ans1, rtol, atol)
 
 
 def check_forces(value):
@@ -85,8 +84,7 @@ def check_forces(value):
                   potential=p)
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_forces()
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans2, ans1,
+    stats_check(ans2, ans1,
                     rtol=rtol,
                     atol=atol
                     )
@@ -103,16 +101,6 @@ test_data = tuple(product(tests,
 def test_meta():
     for v in test_data:
             yield check_meta, v
-'''
-def test_nrg():
-    for v in test_data:
-        yield check_nrg, v
-
-
-def test_forces():
-    for v in test_data:
-        yield check_forces, v
-'''
 
 if __name__ == '__main__':
     import nose

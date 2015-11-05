@@ -14,7 +14,6 @@ def test_consistency():
     for j in range(len(test_atoms)):
         for a, b in permutations(outs[j], 2):
             stats_check(a, b, rtol=2e-7, atol=1e-7)
-            assert_allclose(a, b, rtol=2e-7, atol=1e-7)
 
 
 @known_fail_if(not srfit)
@@ -28,12 +27,12 @@ def test_consistency2():
         srfit_calc.qmax = s.exp['qmax']
         srfit_calc.qstep = s.exp['qbin']
         srfit_calc(stru)
-        assert_allclose(s.get_scatter_vector(), srfit_calc.qgrid)
+        stats_check(s.get_scatter_vector(), srfit_calc.qgrid)
         fq = srfit_calc.fq
         outs[i % len(test_atoms)].append(fq)
     for j in range(len(test_atoms)):
         for a, b in permutations(outs[j], 2):
-            assert_allclose(a, b)
+            stats_check(a, b)
 
 
 if __name__ == '__main__':
