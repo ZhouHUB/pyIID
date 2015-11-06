@@ -40,7 +40,7 @@ def check_grad_spring(value):
         print i, dist, forces[i], np.cross(dist, forces[i])
         # make certain the forces are not zero automatically
         assert np.any(forces[i])
-        assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
+        stats_check(np.cross(dist, forces[i]), np.zeros(3))
 
 
 if __name__ == '__main__':

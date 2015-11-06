@@ -40,7 +40,7 @@ def check_grad_spring(value):
     for i in range(len(atoms2)):
         dist = atoms2[i].position - com
         # print i, dist, forces[i], np.cross(dist, forces[i])
-        assert_allclose(np.cross(dist, forces[i]), np.zeros(3))
+        stats_check(np.cross(dist, forces[i]), np.zeros(3))
 
 
 if __name__ == '__main__':

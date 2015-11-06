@@ -33,10 +33,7 @@ def check_scatter_fq(value):
     ans2 = scat.get_fq(atoms)
 
     # test
-    if not stats_check(ans1, ans2, rtol, atol):
-        print value
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
-    # assert False
+    stats_check(ans1, ans2, rtol, atol)
 
 
 def check_scatter_grad_fq(value):
@@ -61,9 +58,7 @@ def check_scatter_grad_fq(value):
     ans2 = scat.get_grad_fq(atoms)
 
     # test
-    if not stats_check(ans1, ans2, rtol, atol):
-        print value
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
 
 
 def check_scatter_sq(value):
@@ -87,8 +82,7 @@ def check_scatter_sq(value):
     ans2 = scat.get_sq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_iq(value):
@@ -112,8 +106,7 @@ def check_scatter_iq(value):
     ans2 = scat.get_iq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_pdf(value):
@@ -137,8 +130,7 @@ def check_scatter_pdf(value):
     ans2 = scat.get_pdf(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol=rtol, atol=atol)
 
 
 def check_scatter_grad_pdf(value):
@@ -163,8 +155,7 @@ def check_scatter_grad_pdf(value):
     ans2 = scat.get_grad_pdf(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
-    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol=rtol, atol=atol)
 
 tests = [
     check_scatter_fq,
@@ -186,38 +177,6 @@ test_data = list(product(
 def test_meta():
     for v in test_data:
             yield check_meta, v
-
-'''
-def test_scatter_fq():
-    for v in test_data:
-        yield check_scatter_fq, v
-
-
-def test_scatter_grad_fq():
-    for v in test_data:
-        yield check_scatter_grad_fq, v
-
-
-# Tests which derive from F(Q) and Grad F(Q)
-def test_scatter_pdf():
-    for v in test_data:
-        yield check_scatter_pdf, v
-
-
-def test_scatter_grad_pdf():
-    for v in test_data:
-        yield check_scatter_grad_pdf, v
-
-
-def test_scatter_sq():
-    for v in test_data:
-        yield check_scatter_sq, v
-
-
-def test_scatter_iq():
-    for v in test_data:
-        yield check_scatter_iq, v
-'''
 
 if __name__ == '__main__':
     import nose

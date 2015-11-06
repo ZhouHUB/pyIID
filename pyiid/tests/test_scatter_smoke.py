@@ -158,32 +158,6 @@ def test_meta():
     for v in test_data:
             yield check_meta, v
 
-'''
-def test_gen_scatter_smoke_fq():
-    for v in test_data:
-        yield check_scatter_fq, v
-
-def test_gen_scatter_smoke_grad_fq():
-    for v in test_data:
-        yield check_scatter_grad_fq, v
-
-def test_gen_scatter_smoke_sq():
-    for v in test_data:
-        yield check_scatter_sq, v
-
-def test_gen_scatter_smoke_iq():
-    for v in test_data:
-        yield check_scatter_iq, v
-
-def test_gen_scatter_smoke_pdf():
-    for v in test_data:
-        yield check_scatter_pdf, v
-
-def test_gen_scatter_smoke_grad_pdf():
-    for v in test_data:
-        yield check_scatter_grad_pdf, v
-'''
-
 if __name__ == '__main__':
     import nose
     print len(test_data)

@@ -31,7 +31,7 @@ def check_leapfrog_no_momentum(value):
     calc = Spring(rt=1, k=100)
     atoms.set_calculator(calc)
     atoms2 = leapfrog(atoms, 1, False)
-    assert_allclose(atoms.positions, atoms2.positions)
+    stats_check(atoms.positions, atoms2.positions)
 
 
 def check_leapfrog_momentum(value):
@@ -43,7 +43,7 @@ def check_leapfrog_momentum(value):
     atoms.set_momenta(np.ones((len(atoms), 3)))
     atoms.set_calculator(calc)
     atoms2 = leapfrog(atoms, 1, False)
-    assert_allclose(atoms.positions, atoms2.positions - atoms.get_velocities())
+    stats_check(atoms.positions, atoms2.positions - atoms.get_velocities())
 
 
 def check_leapfrog_reversibility(value):
@@ -56,7 +56,7 @@ def check_leapfrog_reversibility(value):
     atoms.set_calculator(calc)
     atoms2 = leapfrog(atoms, 1, False)
     atoms3 = leapfrog(atoms2, -1, False)
-    assert_allclose(atoms.positions, atoms3.positions)
+    stats_check(atoms.positions, atoms3.positions)
 
 
 if __name__ == '__main__':
