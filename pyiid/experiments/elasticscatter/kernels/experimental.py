@@ -45,19 +45,19 @@ def get_normalization_array(norm_array, scat, offset):
 # D[k, q] = A*B - F(Q)
 # E[k, w, q] = D * C
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4])
-def get_grad_fq_a(A, norm, qbin):
+def get_grad_fq_a(a, norm, qbin):
     k, qx = cuda.grid(2)
-    if k >= len(A) or qx >= A.shape[1]:
+    if k >= len(a) or qx >= a.shape[1]:
         return
-    A[k, qx] = norm[k, qx] * float32(qx * qbin)
+    a[k, qx] = norm[k, qx] * float32(qx * qbin)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:], f4])
-def get_grad_fq_b(B, r, qbin):
+def get_grad_fq_b(b, r, qbin):
     k, qx = cuda.grid(2)
-    if k >= len(B) or qx >= B.shape[1]:
+    if k >= len(b) or qx >= b.shape[1]:
         return
-    B[k, qx] = math.cos(float32(qx * qbin) * r[k])
+    b[k, qx] = math.cos(float32(qx * qbin) * r[k])
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
@@ -71,22 +71,22 @@ def get_grad_fq_c(r, d):
 
 # @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :], f4[:, :]])
 @cuda.jit(argtypes=[f4[:, :], f4[:, :], f4[:, :]])
-def get_grad_fq_d(A, B, fq):
+def get_grad_fq_d(a, b, fq):
     k, qx = cuda.grid(2)
-    if k >= len(A) or qx >= A.shape[1]:
+    if k >= len(a) or qx >= a.shape[1]:
         return
-    # D[k, qx] = A[k, qx] * B[k, qx] - fq[k, qx]
-    A[k, qx] *= B[k, qx]
-    A[k, qx] -= fq[k, qx]
+    # D[k, qx] = a[k, qx] * b[k, qx] - fq[k, qx]
+    a[k, qx] *= b[k, qx]
+    a[k, qx] -= fq[k, qx]
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :], f4[:, :]])
-def get_grad_fq_e(E, D, C):
+def get_grad_fq_e(e, d, c):
     k, qx = cuda.grid(2)
-    if k >= len(E) or qx >= E.shape[2]:
+    if k >= len(e) or qx >= e.shape[2]:
         return
     for w in range(3):
-        E[k, w, qx] = D[k, qx] * C[k, w]
+        e[k, w, qx] = d[k, qx] * c[k, w]
 
 
 @cuda.jit(argtypes=[f4[:, :, :], f4[:, :, :], i4])

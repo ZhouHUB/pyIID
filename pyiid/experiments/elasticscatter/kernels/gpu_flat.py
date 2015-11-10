@@ -167,19 +167,19 @@ def get_grad_fq(grad, grad_omega, norm):
 
 
 @cuda.jit(argtypes=[f4[:, :, :]])
-def zero3d(A):
+def zero3d(a):
     """
     Zero out a 3D array on the GPU
     
     Parameters
     ----------
-    A: Mx3xQ array
+    a: Mx3xQ array
     """
     i, qx = cuda.grid(2)
-    if i >= A.shape[0] or qx >= A.shape[2]:
+    if i >= a.shape[0] or qx >= a.shape[2]:
         return
     for tz in range(3):
-        A[i, tz, qx] = float32(0.)
+        a[i, tz, qx] = float32(0.)
 
 
 @cuda.jit(argtypes=[f4[:], f4[:, :]])
@@ -219,7 +219,7 @@ def experimental_sum_fq(g_odata, g_idata, n):
     bd = cuda.blockDim.x
     bid = cuda.blockIdx.x
     i = bid * bd * 2 + tid
-    gridSize = bd * 2 * cuda.gridDim.x
+    gridsize = bd * 2 * cuda.gridDim.x
 
     sdata[tid] = 0.
     while i < n:
@@ -227,7 +227,7 @@ def experimental_sum_fq(g_odata, g_idata, n):
             sdata[tid] += g_idata[i, qx]
         else:
             sdata[tid] += g_idata[i, qx] + g_idata[i + bd, qx]
-        i += gridSize
+        i += gridsize
     cuda.syncthreads()
 
     if bd >= 512:
@@ -272,11 +272,11 @@ def d2_to_d1_cleanup_kernel(out_data, in_data):
 
 
 @cuda.jit(argtypes=[f4[:, :]])
-def d2_zero(A):
+def d2_zero(a):
     i, j = cuda.grid(2)
-    if i >= A.shape[0] or j >= A.shape[1]:
+    if i >= a.shape[0] or j >= a.shape[1]:
         return
-    A[i, j] = f4(0.)
+    a[i, j] = f4(0.)
 
 
 @cuda.jit(argtypes=[f4[:, :], f4[:, :]])
