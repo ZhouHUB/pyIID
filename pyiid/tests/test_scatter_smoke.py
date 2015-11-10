@@ -13,6 +13,11 @@ def check_meta(value):
 def check_scatter_fq(value):
     """
     Smoke test for FQ
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms, exp = value[0:2]
     proc, alg = value[-1]

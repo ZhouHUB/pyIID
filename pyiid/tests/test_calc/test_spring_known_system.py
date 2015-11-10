@@ -19,6 +19,11 @@ def test_gen_grad_spring():
 def check_spring(value):
     """
     Test spring for atomic square
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms1, _ = value[0]
     calc = Spring(**value[1])
@@ -29,6 +34,11 @@ def check_spring(value):
 def check_grad_spring(value):
     """
     Test gradient of spring for atomic square
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms1, _ = setup_atomic_square()
     calc = Spring(**value[1])

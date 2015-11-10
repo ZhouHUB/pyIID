@@ -17,6 +17,11 @@ def check_dynamics(value):
     """
     Test classical dynamics simulation, symplectic dynamics are look the same
     forward as reversed
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     ideal_atoms, _ = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))

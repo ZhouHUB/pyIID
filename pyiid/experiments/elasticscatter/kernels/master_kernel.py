@@ -19,7 +19,7 @@ def get_scatter_array(scatter_array, numbers, qbin):
     Generate the scattering array, which holds all the Q dependant scatter
     factors
 
-    Parameters:
+    Parameters
     ---------
     scatter_array: NxQ array
         Holds the scatter factors
@@ -44,7 +44,6 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
 
     Parameters
     -----------
-    :param qmin:
     fpad: 1d array
         The reduced structure function, padded with zeros to qmin
     rstep: float
@@ -53,8 +52,9 @@ def get_pdf_at_qmin(fpad, rstep, qstep, rgrid, qmin):
         The step size in inverse space
     rgrid: 1d array
         The real space r values
-    rmax: float
-        The maximum r value
+    qmin: float
+        The minimum Q value
+
 
     Returns
     -------
@@ -136,11 +136,12 @@ def fft_gr_to_fq(g, rstep, rmin):
 
     Parameters
     ----------
-    :param rmin:
     g: Nd array
         The PDF
-    rbin: float
+    rstep: float
         The size of the distance bins
+    rmin: float
+        Minimum r value
 
     Returns
     -------
@@ -247,8 +248,6 @@ def get_chi_sq(gobs, gcalc):
         The observed PDF
     gcalc: Nd array
         The model PDF
-    weight: Nd array, optional
-        The weight for the PDF
 
     Returns
     -------
@@ -312,8 +311,6 @@ def get_grad_rw(grad_rw, grad_pdf, gcalc, gobs, rw, scale):
         The current Rw value
     scale: float
         The current scale
-    weight: nd array, optional
-        The PDF weights
 
     Notes
     -----
@@ -359,7 +356,6 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
 
     Parameters
     ------------
-    :param scale:
     grad_rw: Nx3 array
         Holds the gradient
     grad_pdf: Nx3xR array
@@ -368,12 +364,8 @@ def get_grad_chi_sq(grad_rw, grad_pdf, gcalc, gobs, scale):
         The calculated PDF
     gobs: Nd array
         The observed PDF
-    rw: float
-        The current Rw value
     scale: float
         The current scale
-    weight: nd array, optional
-        The PDF weights
     """
     n = len(grad_pdf)
     for tx in range(n):

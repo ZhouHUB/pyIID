@@ -12,12 +12,14 @@ def get_normalization_array(norm_array, scat, offset):
     """
     Generate the Q dependant normalization factors for the F(Q) array
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     norm_array: NxNx3 array
         Normalization array
-    scatter_array: NxM array
+    scat: NxM array
         The scatter factor array
+    offset: int
+        The number of previously calculated atom pairs
     """
     # snorm = cuda.shared.array((1, 64), f4)
     snormi = cuda.shared.array((1, 64), f4)

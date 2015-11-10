@@ -33,12 +33,12 @@ if srfit:
         """
         Convert between ASE and Diffpy structural objects
 
-        Parameters:
+        Parameters
         -----------
         atoms: ase.Atoms object
-
-        Return:
-        diffpy.Structure object:
+        Returns
+        -------
+            diffpy.Structure object:
         """
         diffpy_atoms = []
         symbols = atoms.get_chemical_symbols()
@@ -76,6 +76,11 @@ if srfit:
 def setup_atoms(n):
     """
     Generate a configuration of n gold atoms with random positions
+
+    Parameters
+    ----------
+    n: int
+        Number of atoms in configuration
     """
     q = np.random.random((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
@@ -85,6 +90,11 @@ def setup_atoms(n):
 def setup_double_atoms(n):
     """
     Generate two configuration of n gold atoms with random positions
+
+    Parameters
+    ----------
+    n: int
+        Number of atoms in configuration
     """
     q = np.random.random((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
@@ -244,6 +254,7 @@ else:
         (('CPU', 'flat-serial'), ('CPU', 'flat')),
         (('CPU', 'nxn'), ('CPU', 'flat')),
         (('CPU', 'flat'), ('Multi-GPU', 'flat')),
+        (('CPU', 'nxn'), ('Multi-GPU', 'flat'))
 
     ]
 

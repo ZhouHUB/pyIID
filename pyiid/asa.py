@@ -22,6 +22,14 @@ def generate_sphere_points(n):
     """
   Returns list of coordinates on a sphere using the Golden-
   Section Spiral algorithm.
+
+    Parameters
+    ----------
+    n: int
+        Number of points
+    Returns
+    -------
+        sphere point coordinates
   """
     points = np.zeros((n, 3))
     inc = math.pi * (3 - math.sqrt(5))
@@ -39,6 +47,19 @@ def calculate_asa(atoms, probe, cutoff=None, tag=1, n_sphere_point=960):
   Returns the accessible-surface areas of the atoms, by rolling a
   ball with probe radius over the atoms with their radius
   defined.
+
+    Parameters
+    ----------
+    atoms: ase.atoms object
+        The atomic configuration
+    probe: float
+        The size of the probe molecule
+    cutoff: float
+        The bond length cutoff
+    tag: int
+        The number to tag the surface atoms with
+    n_sphere_point: int
+        Number of points per sphere
   """
     if cutoff is None:
         elements = list(set(atoms.numbers))

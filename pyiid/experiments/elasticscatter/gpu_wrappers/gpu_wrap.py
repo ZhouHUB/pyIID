@@ -97,7 +97,6 @@ def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
         Number of atoms being processed in this thread
     n_cov: int
         Number of atoms previously covered
-    Returns
     """
     input_shape = [gpadcfft.shape[-1]]
     with gpu:
@@ -214,6 +213,9 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
     qmin: float
         The minimum Q in the experiment in A**-1
     Returns
+    -------
+    ndarray
+        The gradient of the PDF
     """
     # Number of atoms
     n = len(grad_fq)

@@ -57,11 +57,11 @@ def get_normalization_array(norm, scat, offset):
     """
     Generate the sv dependant normalization factors for the F(sv) array
 
-    Parameters:
+    Parameters
     -----------
-    norm_array: kxQ array
+    norm: kxQ array
         Normalization array
-    scatter_array: NxQ array
+    scat: NxQ array
         The scatter factor array
     offset: int
         The amount of previously covered pairs
@@ -79,13 +79,11 @@ def get_omega(omega, r, qbin):
     """
     Generate Omega
 
-    Parameters:
+    Parameters
     ---------
     omega: kxQ array
     r: k array
         The pair distance array
-    scatter_array: kxQ array
-        The scatter factor array
     qbin: float
         The qbin size
     """
@@ -136,20 +134,16 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
      target=processor_target, nopython=True, cache=cache)
 def get_grad_fq(grad, grad_omega, norm):
     """
-    Generate the gradient F(sv) for an atomic configuration
+    Generate the gradient F(Q) for an atomic configuration
 
     Parameters
     ------------
-    grad_p: Nx3xQ numpy array
+    grad: Kx3xQ numpy array
         The array which will store the FQ gradient
-    d: NxNx3 array
-        The distance array for the configuration
-    r: NxN array
-        The inter-atomic distances
-    scatter_array: NxQ array
-        The scatter factor array
-    qbin: float
-        The size of the sv bins
+    grad_omega: Kx3xQ numpy array
+        The gradient of omega
+    norm: KxQ array
+        The normalization array
     """
     kmax, _, qmax_bin = grad.shape
     for k in xrange(kmax):
@@ -167,16 +161,8 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
 
     Parameters
     ------------
-    grad_p: Nx3xQ numpy array
+    grad: Nx3xQ numpy array
         The array which will store the FQ gradient
-    d: NxNx3 array
-        The distance array for the configuration
-    r: NxN array
-        The inter-atomic distances
-    scatter_array: NxQ array
-        The scatter factor array
-    qbin: float
-        The size of the sv bins
     """
     kmax, _, qmax_bin = grad.shape
     for k in xrange(kmax):
@@ -191,20 +177,14 @@ def get_adp_grad_fq(grad, omega, tau, grad_omega, grad_tau, norm):
      cache=cache)
 def get_grad_fq_inplace(grad_omega, norm):
     """
-    Generate the gradient F(sv) for an atomic configuration
+    Generate the gradient F(Q) for an atomic configuration
 
     Parameters
     ------------
-    grad_p: Nx3xQ numpy array
-        The array which will store the FQ gradient
-    d: NxNx3 array
-        The distance array for the configuration
-    r: NxN array
-        The inter-atomic distances
-    scatter_array: NxQ array
-        The scatter factor array
-    qbin: float
-        The size of the sv bins
+    grad_omega: Kx3xQ numpy array
+        The gradient of omega
+    norm: KxQ array
+        The normalization array
     """
     kmax, _, qmax_bin = grad_omega.shape
     for k in xrange(kmax):

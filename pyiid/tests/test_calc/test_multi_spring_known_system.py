@@ -21,6 +21,11 @@ def test_gen_grad_spring():
 def check_spring(value):
     """
     Test two known square systems
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms1, atoms2 = value[0]
     calc = MultiCalc(calc_list=[Spring(**value[1]), Spring(**value[1])])
@@ -31,6 +36,11 @@ def check_spring(value):
 def check_grad_spring(value):
     """
     Test two square systems
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms1, atoms2 = value[0]
     calc = MultiCalc(calc_list=[Spring(**value[1]), Spring(**value[1])])

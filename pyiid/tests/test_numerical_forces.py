@@ -16,6 +16,11 @@ def run_gen_dynamics():
 def check_n_forces(value):
     """
     Test numerical vs analytical forces
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     rtol = 1e-6
     atol = 6e-5

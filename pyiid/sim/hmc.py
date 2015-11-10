@@ -71,6 +71,8 @@ def mh_accept(initial_energy, next_energy, temp=1):
         The Hamiltonian of the intial configuration
     next_energy: float
         The Hamiltonian of the proposed configuration
+    temp: float
+        The simulation temperature
 
     Returns
     -------
@@ -95,9 +97,14 @@ def hmc_move(atoms, stepsize, n_steps, temp):
     
     Parameters
     -----------
-    atoms: ase.Atoms 
-    stepsize: 
-    n_steps:
+    atoms: ase.Atoms object
+        The atomic configuration
+    stepsize: float
+        The time step size
+    n_steps: int
+        Number of time steps
+    temp: float
+        Temperature in K
     
     Returns
     --------
@@ -151,8 +158,10 @@ def run_hmc(atoms, iterations, stepsize, n_steps, avg_acceptance_slowness,
         The minimum stepsize
     stepsize_max: float
         The maximum stepsize
-    T: float
+    temp: float
         The simulation temperature
+    wtraj: ase write traj
+        Trajectory to write to
 
     Returns
     -------

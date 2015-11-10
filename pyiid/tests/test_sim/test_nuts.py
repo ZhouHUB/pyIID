@@ -19,6 +19,11 @@ def test_nuts_dynamics():
 def check_nuts(value):
     """
     Test NUTS simulation
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     ideal_atoms, _ = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))

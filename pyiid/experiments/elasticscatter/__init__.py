@@ -113,6 +113,9 @@ class ElasticScatter(object):
         -----------
         processor: ['MPI-GPU', 'Multi-GPU', 'Serial-CPU']
             The processor to use
+        kernel_type: ['nxn', 'flat-serial', 'flat']
+            The type of algorithm to use
+
         Returns
         -------
         bool:

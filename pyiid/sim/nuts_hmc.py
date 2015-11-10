@@ -20,8 +20,9 @@ def find_step_size(input_atoms, thermal_nrg):
     -----------
     input_atoms: ase.Atoms object
         The starting atoms for the simulation
-    rs: numpy.random.RandomState object
-        The random number generator for this simulation
+    thermal_nrg:
+        The thermal energy for the simulation
+
     Returns
     -------
     float:
@@ -55,7 +56,6 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
 
     Parameters
     -----------
-    :param beta:
     input_atoms: ase.Atoms object
         The atoms for the tree
     u: float
@@ -73,6 +73,8 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
         The random state object used to generate the random numbers.  Use of a
         unified random number generator with a known seed should help us to
         generate reproducible simulations
+    beta: float
+        Thermodynamic beta, a proxy for thermal energy
     Returns
     -------
     Many things

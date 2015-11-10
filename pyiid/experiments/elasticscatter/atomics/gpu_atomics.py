@@ -50,9 +50,10 @@ def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
 
     Parameters
     ----------
+
     n: int
         Number of atoms
-    sv: int
+    qmax_bin: int
         Size of the scatter vector
     mem: int
         Size of the GPU memory
@@ -102,7 +103,7 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
         The sv resolution of the experiment
     k_cov: int
         The number of atoms pairs previously run, used as an offset
-    k_max: int
+    k_per_thread: int
         The number of atoms pairs to be run in this chunk
 
     Returns
@@ -199,8 +200,8 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
 
 def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
-    Calculate a portion of the gradient of F(sv).  This is the smallest division
-    of the grad F(sv) function.
+    Calculate a portion of the gradient of F(Q).  This is the smallest division
+    of the grad F(Q) function.
 
     Parameters
     ----------
@@ -210,10 +211,10 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
         The atomic scatter factors
     qbin: float
         The sv resolution of the experiment
-    k_max: int
-        The number of atoms pairs to be run in this chunk
     k_cov: int
         The number of atoms pairs previously run, used as an offset
+    k_per_thread: int
+        The number of atoms pairs to be run in this chunk
 
     Returns
     -------

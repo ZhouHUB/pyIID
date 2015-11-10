@@ -54,11 +54,11 @@ def get_normalization_array(norm_array, scat, offset):
     """
     Generate the sv dependant normalization factors for the F(sv) array
 
-    Parameters:
+    Parameters
     -----------
     norm_array: kxQ array
         Normalization array
-    scatter_array: NxQ array
+    scat: NxQ array
         The scatter factor array
     offset: int
         The amount of previously covered pairs
@@ -75,13 +75,11 @@ def get_omega(omega, r, qbin):
     """
     Generate Omega
 
-    Parameters:
+    Parameters
     ---------
     omega: kxQ array
     r: k array
         The pair distance array
-    scatter_array: kxQ array
-        The scatter factor array
     qbin: float
         The qbin size
     """
@@ -98,6 +96,9 @@ def get_omega(omega, r, qbin):
 def get_fq(fq, omega, norm):
     """
     Get the reduced structure factor F(sv) via the Debye Sum
+
+    Parameters
+    ----------
     fq: kxQ array
     omega: kxQ array
         Debye sum
@@ -304,16 +305,10 @@ def get_grad_fq_inplace(grad_omega, norm):
 
     Parameters
     ------------
-    grad_p: Nx3xQ numpy array
+    grad_omega: Kx3xQ numpy array
         The array which will store the FQ gradient
-    d: NxNx3 array
-        The distance array for the configuration
-    r: NxN array
-        The inter-atomic distances
-    scatter_array: NxQ array
-        The scatter factor array
-    qbin: float
-        The size of the sv bins
+    norm: kxQ array
+        The normalization array
     """
     kmax, _, qmax_bin = grad_omega.shape
     k, qx = cuda.grid(2)

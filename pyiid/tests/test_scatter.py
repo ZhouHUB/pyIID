@@ -167,12 +167,12 @@ def check_scatter_grad_pdf(value):
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
 
 tests = [
-    check_scatter_fq,
-    check_scatter_sq,
-    check_scatter_iq,
+    # check_scatter_fq,
+    # check_scatter_sq,
+    # check_scatter_iq,
     check_scatter_pdf,
-    check_scatter_grad_fq,
-    check_scatter_grad_pdf
+    # check_scatter_grad_fq,
+    # check_scatter_grad_pdf
 ]
 
 test_data = list(product(
