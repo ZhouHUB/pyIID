@@ -1,8 +1,6 @@
 import math
-
 import numpy as np
 from numba import *
-
 from pyiid.experiments import generate_grid
 
 __author__ = 'christopher'
@@ -115,16 +113,8 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     qmax_bin = scatter_array.shape[1]
     # load kernels
     from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
-        (
-        get_d_array,
-        get_r_array,
-        get_normalization_array,
-        get_omega,
-        get_fq_inplace,
-        d2_zero,
-        d2_to_d1_cleanup_kernel,
-        experimental_sum_fq
-    )
+        (get_d_array, get_r_array, get_normalization_array, get_omega,
+         get_fq_inplace, d2_zero, d2_to_d1_cleanup_kernel, experimental_sum_fq)
     # generate grids for the GPU
     elements_per_dim_1 = [k_per_thread]
     tpb_k = [32]

@@ -268,7 +268,6 @@ def get_chi_sq(gobs, gcalc):
     return np.sum((gobs - scale * gcalc) ** 2), scale
 
 
-
 # Gradient test_kernels -------------------------------------------------------
 
 

@@ -5,6 +5,7 @@ __author__ = 'christopher'
 print 'This system is officially depreciated and is here for history ' \
       'mostly, please use the nuts_hmc module'
 
+
 def leapfrog(atoms, step):
     """
     Propagate the dynamics of the system via the leapfrog algorithm one step

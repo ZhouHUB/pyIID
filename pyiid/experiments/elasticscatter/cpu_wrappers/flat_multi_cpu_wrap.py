@@ -1,7 +1,5 @@
 from multiprocessing import Pool, cpu_count
-
 import psutil
-
 from pyiid.experiments.elasticscatter.atomics.cpu_atomics import *
 
 __author__ = 'christopher'
@@ -17,7 +15,7 @@ def setup_cpu_calc(atoms, sum_type):
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     n, qmax_bin = scatter_array.shape
     return q.astype(np.float32), None, n, qmax_bin, scatter_array.astype(
-            np.float32)
+        np.float32)
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
@@ -77,7 +75,7 @@ def cpu_multiprocessing(atomic_function, allocation,
     # print atomic_function, allocation, master_task, constants
     n, qmax_bin = constants
     k_max = int((n ** 2 - n) / 2.)
-# TODO: what if n is 1 kmax = 0???
+    # TODO: what if n is 1 kmax = 0???
     # break up problem
     pool_size = cpu_count()
     if pool_size <= 0:

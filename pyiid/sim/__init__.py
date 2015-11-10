@@ -39,7 +39,8 @@ def leapfrog(atoms, step, center=True):
 
 
 class Ensemble(Optimizer):
-    def __init__(self, atoms, restart=None, logfile=None, trajectory=None, seed=None,
+    def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
+                 seed=None,
                  verbose=False):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory)
         atoms.get_forces()
