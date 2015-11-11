@@ -221,7 +221,7 @@ elif os.getenv('SHORT_TEST'):
     ns = [
         10,
         100,
-        400,
+        # 400,
         # 1000
     ]
     num_exp = 1

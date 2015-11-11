@@ -116,8 +116,8 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        '-v'
-        # '-x'
+        '-v',
+        '-x'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)
