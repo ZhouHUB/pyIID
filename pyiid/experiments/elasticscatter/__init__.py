@@ -298,12 +298,6 @@ class ElasticScatter(object):
                 or atoms.info['scatter_atoms'] != len(atoms) \
                 or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
                 or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
-                if self.verbose:
-                    print 'exp check'
-                    print atoms.info['exp'] != self.exp
-                    print atoms.info['scatter_atoms'] != len(atoms)
-                    print True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1)
-                    print True in np.all(atoms.arrays['PDF scatter'] == 0., 1)
                 system_changes.append('exp')
         if self.verbose:
             print 'check_state results:', system_changes
@@ -360,7 +354,7 @@ class ElasticScatter(object):
             if self.verbose:
                 print 'using previous pdf'
             return self.pdf_result
-        elif state and self.fq_result is not None:
+        elif state == [] and self.fq_result is not None:
             if self.verbose:
                 print 'using previous fq'
             fq = self.fq_result
