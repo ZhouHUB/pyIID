@@ -20,7 +20,7 @@ def check_scatter_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -36,6 +36,8 @@ def check_scatter_fq(value):
     if not stats_check(ans1, ans2, rtol, atol):
         print value
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
     # assert False
 
 
@@ -48,7 +50,7 @@ def check_scatter_grad_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -64,6 +66,8 @@ def check_scatter_grad_fq(value):
     if not stats_check(ans1, ans2, rtol, atol):
         print value
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_sq(value):
@@ -74,7 +78,7 @@ def check_scatter_sq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -89,6 +93,8 @@ def check_scatter_sq(value):
     # test
     stats_check(ans1, ans2, rtol, atol)
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_iq(value):
@@ -99,7 +105,7 @@ def check_scatter_iq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -114,6 +120,8 @@ def check_scatter_iq(value):
     # test
     stats_check(ans1, ans2, rtol, atol)
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_pdf(value):
@@ -124,7 +132,7 @@ def check_scatter_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -139,6 +147,8 @@ def check_scatter_pdf(value):
     # test
     stats_check(ans1, ans2, rtol, atol)
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_grad_pdf(value):
@@ -150,7 +160,7 @@ def check_scatter_grad_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -165,6 +175,8 @@ def check_scatter_grad_pdf(value):
     # test
     stats_check(ans1, ans2, rtol, atol)
     assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 tests = [
     check_scatter_fq,
@@ -178,46 +190,11 @@ tests = [
 test_data = list(product(
     tests,
     test_atoms, test_exp, comparison_pro_alg_pairs))
-# remove the ultra slow nxn 1000 atom tests
-# for f in test_data:
-#     if len(f[1]) > 200 and ('CPU', 'nxn') in f[4]:
-#         test_data.remove(f)
 
 def test_meta():
     for v in test_data:
             yield check_meta, v
 
-'''
-def test_scatter_fq():
-    for v in test_data:
-        yield check_scatter_fq, v
-
-
-def test_scatter_grad_fq():
-    for v in test_data:
-        yield check_scatter_grad_fq, v
-
-
-# Tests which derive from F(Q) and Grad F(Q)
-def test_scatter_pdf():
-    for v in test_data:
-        yield check_scatter_pdf, v
-
-
-def test_scatter_grad_pdf():
-    for v in test_data:
-        yield check_scatter_grad_pdf, v
-
-
-def test_scatter_sq():
-    for v in test_data:
-        yield check_scatter_sq, v
-
-
-def test_scatter_iq():
-    for v in test_data:
-        yield check_scatter_iq, v
-'''
 
 if __name__ == '__main__':
     import nose
@@ -227,7 +204,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         '-v',
-        # '-x',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

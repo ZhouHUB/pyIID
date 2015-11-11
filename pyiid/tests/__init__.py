@@ -6,7 +6,7 @@ Then we run all nuts_benchmarks against the CPU flat kernels.
 Thus it is imperative that the flat CPU runs with no errors.
 """
 import numpy as np
-from ase.atoms import Atoms
+from ase import Atoms, Atom
 from numpy.testing import assert_allclose
 from itertools import *
 import os
@@ -221,7 +221,7 @@ elif os.getenv('SHORT_TEST'):
     ns = [
         10,
         100,
-        # 400,
+        400,
         # 1000
     ]
     num_exp = 1
@@ -239,11 +239,13 @@ elif os.getenv('SHORT_TEST'):
     ]
 else:
     ns = [
-        10, 100,
-        # 400,
+        10,
+        100,
+        400,
         1000
     ]
-    num_exp = 3
+    # num_exp = 3
+    num_exp = 0
     proc_alg_pairs = [('CPU', 'nxn'),
                       ('CPU', 'flat'),
                       ('CPU', 'flat-serial'),
