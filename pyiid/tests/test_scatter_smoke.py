@@ -22,7 +22,7 @@ def check_scatter_fq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
 
     assert scat.check_state(atoms) != []
@@ -48,7 +48,7 @@ def check_scatter_sq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
@@ -71,7 +71,7 @@ def check_scatter_iq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
@@ -94,7 +94,7 @@ def check_scatter_pdf(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
@@ -117,7 +117,7 @@ def check_scatter_grad_fq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
@@ -139,7 +139,7 @@ def check_scatter_grad_pdf(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []

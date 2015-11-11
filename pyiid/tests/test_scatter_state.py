@@ -10,7 +10,7 @@ def check_add_atom(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
 
     assert scat.check_state(atoms) != []
@@ -40,7 +40,7 @@ def check_del_atom(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
 
     assert scat.check_state(atoms) != []

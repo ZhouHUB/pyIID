@@ -26,7 +26,7 @@ def check_nrg(value):
     proc1, alg1 = value[3][0]
     proc2, alg2 = value[3][1]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
     if value[4] == 'FQ':
@@ -67,7 +67,7 @@ def check_forces(value):
     proc1, alg1 = value[3][0]
     proc2, alg2 = value[3][1]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
     if value[4] == 'FQ':
@@ -108,16 +108,6 @@ test_data = tuple(product(tests,
 def test_meta():
     for v in test_data:
             yield check_meta, v
-'''
-def test_nrg():
-    for v in test_data:
-        yield check_nrg, v
-
-
-def test_forces():
-    for v in test_data:
-        yield check_forces, v
-'''
 
 if __name__ == '__main__':
     import nose

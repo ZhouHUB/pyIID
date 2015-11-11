@@ -20,7 +20,7 @@ def check_nrg(value):
     p, thresh = value[2]
     proc1, alg1 = value[3]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
     if value[4] == 'FQ':
@@ -53,7 +53,7 @@ def check_forces(value):
     p, thresh = value[2]
     proc1, alg1 = value[3]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
 
