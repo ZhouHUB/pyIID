@@ -2,7 +2,7 @@ from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
 
 __author__ = 'christopher'
-
+# TODO: need to add a bunch of tests here.
 def check_meta(value):
     value[0](value[1:])
 

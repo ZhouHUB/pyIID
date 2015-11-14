@@ -131,7 +131,7 @@ def setup_atomic_square():
 
 
 def stats_check(ans1, ans2, rtol=1e-7, atol=0):
-    if np.any(np.abs(ans2 - ans1) >= atol + rtol * np.abs(ans2)):
+    if np.any(np.abs(ans2 - ans1) > atol + rtol * np.abs(ans2)):
         print 'bulk statistics:'
         print 'max', np.max(np.abs(ans2 - ans1)),
         print 'min', np.min(np.abs(ans2 - ans1)),
@@ -142,11 +142,10 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
         if isinstance(ans1, type(np.asarray([1]))):
             print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
                 np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
-            fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
+            fails = np.where(np.abs(ans1 - ans2) > atol + rtol * np.abs(ans2))
 
-            print 'percentage of failed tests', ans1[fails].size / float(
-                ans1.size) * 100., '%'
-            if ans1[fails].size <= 251:
+            print 'percentage of failed tests', ans1[fails].size / float(ans1.size) * 100., '%'
+            if ans1[fails].size <= 251 and False:
                 print '\n allclose failures'
                 print zip(ans1[fails].tolist(), ans2[fails].tolist())
                 print '\n allclose internals'
@@ -155,22 +154,17 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
             else:
                 print 'large number of failed tests'
             print '\n', 'without atol rtol = ', '\n'
-            print np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
-            print np.max(
-                np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))
+            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))
+            print np.max(np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])))
             print 'without rtol atol = ', '\n'
-            print np.abs(ans1[fails] - ans2[fails])
-            print np.max(np.abs(ans1[fails] - ans2[fails]))
+            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]))
+            print np.nan_to_num(np.max(np.abs(ans1[fails] - ans2[fails])))
             print '\n', 'with current atol rtol = ', '\n'
-            print (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
-                ans2[fails])
-            print np.max((np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
-                ans2[fails]))
+            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
+            print np.max(np.nan_to_num((np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])))
             print 'with current rtol atol = ', '\n'
-            print np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(
-                ans2[fails])
-            print np.max(
-                np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails]))
+            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails]))
+            print np.max(np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails])))
         else:
             print np.abs(ans1 - ans2)
             print atol + rtol * np.abs(ans2)
@@ -239,9 +233,9 @@ elif os.getenv('SHORT_TEST'):
     ]
 else:
     ns = [
-        10,
-        100,
-        400,
+        # 10,
+        # 100,
+        # 400,
         1000
     ]
     # num_exp = 3
@@ -253,10 +247,10 @@ else:
                       ]
     comparison_pro_alg_pairs = [
         (('CPU', 'nxn'), ('CPU', 'flat-serial')),
-        (('CPU', 'flat-serial'), ('CPU', 'flat')),
-        (('CPU', 'nxn'), ('CPU', 'flat')),
-        (('CPU', 'flat'), ('Multi-GPU', 'flat')),
-        (('CPU', 'nxn'), ('Multi-GPU', 'flat'))
+        # (('CPU', 'flat-serial'), ('CPU', 'flat')),
+        # (('CPU', 'nxn'), ('CPU', 'flat')),
+        # (('CPU', 'flat'), ('Multi-GPU', 'flat')),
+        # (('CPU', 'nxn'), ('Multi-GPU', 'flat'))
 
     ]
 

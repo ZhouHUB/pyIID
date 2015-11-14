@@ -179,12 +179,12 @@ def check_scatter_grad_pdf(value):
     assert ans1 is not ans2
 
 tests = [
-    check_scatter_fq,
-    check_scatter_sq,
-    check_scatter_iq,
+    # check_scatter_fq,
+    # check_scatter_sq,
+    # check_scatter_iq,
     check_scatter_pdf,
-    check_scatter_grad_fq,
-    check_scatter_grad_pdf
+    # check_scatter_grad_fq,
+    # check_scatter_grad_pdf
 ]
 
 test_data = list(product(
@@ -204,7 +204,7 @@ if __name__ == '__main__':
         '--with-doctest',
         # '--nocapture',
         '-v',
-        '-x',
+        # '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

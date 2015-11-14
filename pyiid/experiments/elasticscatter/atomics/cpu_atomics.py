@@ -75,7 +75,7 @@ def atomic_fq(task):
     fq = np.zeros((k_max, qmax_bin), np.float32)
     get_fq(fq, omega, norm)
     del q, d, scatter_array, norm, r, omega
-    return fq.sum(axis=0)
+    return fq.sum(axis=0, dtype=np.float64)
 
 
 def atomic_grad_fq(task):

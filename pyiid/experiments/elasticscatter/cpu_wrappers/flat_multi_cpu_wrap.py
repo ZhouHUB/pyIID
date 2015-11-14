@@ -35,10 +35,12 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
                               (n, qmax_bin))
 
     # sum the answers
-    final = np.sum(ans, axis=0)
+    final = np.sum(ans, axis=0, dtype=np.float64)
+    final = final.astype(np.float32)
     norm = np.empty((k_max, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array, 0)
-    na = np.mean(norm, axis=0) * n
+    na = np.mean(norm, axis=0, dtype=np.float32) * np.float32(n)
+    # na = np.mean(norm, axis=0, dtype=np.float64) * n
     old_settings = np.seterr(all='ignore')
     final = np.nan_to_num(final / na)
     np.seterr(**old_settings)
