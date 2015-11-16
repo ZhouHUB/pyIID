@@ -1,12 +1,14 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.calc_1d import Calc1D
-
 from pyiid.calc import wrap_grad_rw
+
 __author__ = 'christopher'
+
 
 def check_meta(value):
     value[0](value[1:])
+
 
 def check_nrg(value):
     """
@@ -20,7 +22,7 @@ def check_nrg(value):
     p, thresh = value[2]
     proc1, alg1 = value[3]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
     if value[4] == 'FQ':
@@ -53,7 +55,7 @@ def check_forces(value):
     p, thresh = value[2]
     proc1, alg1 = value[3]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
 
@@ -81,6 +83,7 @@ def check_forces(value):
     del atoms1, atoms2, proc1, alg1, p, thresh, scat, target_data, calc, \
         forces, com, dist
 
+
 tests = [
     check_nrg,
     check_forces
@@ -89,24 +92,13 @@ test_experiment_types = ['FQ', 'PDF']
 
 test_data = tuple(
     product(tests,
-        test_atom_squares, test_exp, test_potentials, proc_alg_pairs,
+            test_atom_squares, test_exp, test_potentials, proc_alg_pairs,
             test_experiment_types))
 
 
 def test_meta():
     for v in test_data:
-            yield check_meta, v
-'''
-def test_nrg():
-    for v in test_data:
-        yield check_nrg, v
-
-
-def test_forces():
-    for v in test_data:
-        yield check_forces, v
-'''
-
+        yield check_meta, v
 
 if __name__ == '__main__':
     import nose

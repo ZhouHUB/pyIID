@@ -13,15 +13,22 @@ def check_meta(value):
 def check_scatter_fq(value):
     """
     Smoke test for FQ
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
 
+    assert scat.check_state(atoms) != []
     # Test a set of different sized ensembles
     ans = scat.get_fq(atoms)
+    assert scat.check_state(atoms) == []
 
     # Check that Scatter gave back something
     assert ans is not None
@@ -41,10 +48,12 @@ def check_scatter_sq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
+    assert scat.check_state(atoms) != []
     ans = scat.get_sq(atoms)
+    assert scat.check_state(atoms) == []
     # Check that Scatter gave back something
     assert ans is not None
     # Check that all the values are not zero
@@ -62,10 +71,12 @@ def check_scatter_iq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
+    assert scat.check_state(atoms) != []
     ans = scat.get_iq(atoms)
+    assert scat.check_state(atoms) == []
     # Check that Scatter gave back something
     assert ans is not None
     # Check that all the values are not zero
@@ -83,10 +94,12 @@ def check_scatter_pdf(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
+    assert scat.check_state(atoms) != []
     ans = scat.get_pdf(atoms)
+    assert scat.check_state(atoms) == []
     # Check that Scatter gave back something
     assert ans is not None
     # Check that all the values are not zero
@@ -104,7 +117,7 @@ def check_scatter_grad_fq(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
@@ -126,7 +139,7 @@ def check_scatter_grad_pdf(value):
     atoms, exp = value[0:2]
     proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
     assert scat.check_state(atoms) != []
@@ -157,6 +170,7 @@ test_data = tuple(product(
 def test_meta():
     for v in test_data:
             yield check_meta, v
+
 
 if __name__ == '__main__':
     import nose

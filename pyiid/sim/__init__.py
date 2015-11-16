@@ -18,6 +18,8 @@ def leapfrog(atoms, step, center=True):
     step: float
         The step size for the simulation, the new momentum/velocity is step *
         the force
+    center: bool
+        If true, center the atoms in the cell after moving them
 
     Returns
     -------
@@ -37,7 +39,8 @@ def leapfrog(atoms, step, center=True):
 
 
 class Ensemble(Optimizer):
-    def __init__(self, atoms, restart=None, logfile=None, trajectory=None, seed=None,
+    def __init__(self, atoms, restart=None, logfile=None, trajectory=None,
+                 seed=None,
                  verbose=False):
         Optimizer.__init__(self, atoms, restart, logfile, trajectory)
         atoms.get_forces()

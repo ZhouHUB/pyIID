@@ -3,11 +3,11 @@ from ase.units import fs
 import numpy as np
 from numpy.random import RandomState
 from ase.md.velocitydistribution import MaxwellBoltzmannDistribution
-
 from pyiid.sim import leapfrog
 from pyiid.sim import Ensemble
 from ase.units import kB
 from time import time
+
 __author__ = 'christopher'
 Emax = 200
 
@@ -20,8 +20,9 @@ def find_step_size(input_atoms, thermal_nrg):
     -----------
     input_atoms: ase.Atoms object
         The starting atoms for the simulation
-    rs: numpy.random.RandomState object
-        The random number generator for this simulation
+    thermal_nrg:
+        The thermal energy for the simulation
+
     Returns
     -------
     float:
@@ -55,7 +56,6 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
 
     Parameters
     -----------
-    :param beta:
     input_atoms: ase.Atoms object
         The atoms for the tree
     u: float
@@ -73,6 +73,8 @@ def buildtree(input_atoms, u, v, j, e, e0, rs, beta=1):
         The random state object used to generate the random numbers.  Use of a
         unified random number generator with a known seed should help us to
         generate reproducible simulations
+    beta: float
+        Thermodynamic beta, a proxy for thermal energy
     Returns
     -------
     Many things
@@ -129,7 +131,8 @@ class NUTSCanonicalEnsemble(Ensemble):
                  temperature=100, escape_level=13, accept_target=.65,
                  momentum=None,
                  seed=None, verbose=False):
-        Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed, verbose)
+        Ensemble.__init__(self, atoms, restart, logfile, trajectory, seed,
+                          verbose)
         self.accept_target = accept_target
         self.temp = temperature
         self.thermal_nrg = self.temp * kB

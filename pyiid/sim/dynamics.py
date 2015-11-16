@@ -15,10 +15,6 @@ def classical_dynamics(atoms, stepsize, n_steps):
         The step size for the simulation
     n_steps: int
         The number of steps
-    stationary: bool
-        Whether to keep the atoms stationary
-    zero_rotation: bool
-        Whether to prevent configuration rotation
 
     Returns
     -------

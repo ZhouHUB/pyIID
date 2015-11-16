@@ -16,13 +16,18 @@ def run_gen_dynamics():
 def check_n_forces(value):
     """
     Test numerical vs analytical forces
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     rtol = 1e-6
     atol = 6e-5
     ideal_atoms = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
     if isinstance(value[1], str):
-        s = ElasticScatter()
+        s = ElasticScatter(verbose=True)
         if value[1] == 'PDF':
             target_data = s.get_pdf(ideal_atoms)
             exp_func = s.get_pdf

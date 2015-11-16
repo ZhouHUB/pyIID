@@ -4,7 +4,7 @@ from pyiid.testing.noseclasses import KnownFailure
 from numba import cuda
 from nose_exclude import NoseExclude
 import os
-
+import random
 plugins = [KnownFailure, NoseExclude]
 env = {
     "NOSE_WITH_COVERAGE": 1,
@@ -26,4 +26,9 @@ def run():
 
 
 if __name__ == '__main__':
-    run()
+    try:
+        os.environ["PYIID_TEST_SEED"] = str(int(random.random() * 2 ** 32))
+        print 'seed:', os.environ["PYIID_TEST_SEED"]
+        run()
+    finally:
+        os.environ["PYIID_TEST_SEED"] = str(0)

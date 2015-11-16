@@ -11,9 +11,14 @@ def check_meta(value):
 def check_nrg(value):
     """
     Check two processor, algorithm pairs against each other for PDF energy
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     rtol = 4e-6
-    atol = 7e-6
+    atol = 9e-6
     # setup
     atoms1, atoms2 = value[0]
     exp_dict = value[1]
@@ -21,7 +26,7 @@ def check_nrg(value):
     proc1, alg1 = value[3][0]
     proc2, alg2 = value[3][1]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
     if value[4] == 'FQ':
@@ -61,7 +66,7 @@ def check_forces(value):
     proc1, alg1 = value[3][0]
     proc2, alg2 = value[3][1]
 
-    scat = ElasticScatter()
+    scat = ElasticScatter(verbose=True)
     scat.update_experiment(exp_dict)
     scat.set_processor(proc1, alg1)
     if value[4] == 'FQ':
@@ -109,8 +114,8 @@ if __name__ == '__main__':
         # '-s',
         '--with-doctest',
         # '--nocapture',
-        '-v'
-        # '-x'
+        '-v',
+        '-x'
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)
