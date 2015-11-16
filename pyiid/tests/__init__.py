@@ -27,6 +27,13 @@ except:
     pass
 __author__ = 'christopher'
 
+if os.environ.get('PYIID_TEST_SEED') is not None:
+    seed = int(os.environ["PYIID_TEST_SEED"])
+else:
+    seed = int(random.random() * 2 ** 53)
+
+rs = np.random.RandomState(seed)
+
 if srfit:
     def convert_atoms_to_stru(atoms):
         """
@@ -81,7 +88,7 @@ def setup_atoms(n):
     n: int
         Number of atoms in configuration
     """
-    q = np.random.random((n, 3)) * 10
+    q = rs.random_sample((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
     return atoms
 
@@ -95,10 +102,10 @@ def setup_double_atoms(n):
     n: int
         Number of atoms in configuration
     """
-    q = np.random.random((n, 3)) * 10
+    q = rs.random_sample((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
 
-    q2 = np.random.random((n, 3)) * 10
+    q2 = rs.random_sample((n, 3)) * 10
     atoms2 = Atoms('Au' + str(int(n)), q2)
     return atoms, atoms2
 
@@ -112,8 +119,8 @@ def generate_experiment():
     exp_ranges = [(0, 1.5), (19., 25.), (.8, .12), (0., 2.5), (30., 50.),
                   (.005, .015)]
     for n, k in enumerate(exp_keys):
-        exp_dict[k] = np.random.uniform(exp_ranges[n][0], exp_ranges[n][1])
-    exp_dict['sampling'] = random.choice(['full', 'ns'])
+        exp_dict[k] = rs.uniform(exp_ranges[n][0], exp_ranges[n][1])
+    exp_dict['sampling'] = rs.choice(['full', 'ns'])
     return exp_dict
 
 

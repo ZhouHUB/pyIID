@@ -27,7 +27,7 @@ def check_n_forces(value):
     ideal_atoms = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
     if isinstance(value[1], str):
-        s = ElasticScatter()
+        s = ElasticScatter(verbose=True)
         if value[1] == 'PDF':
             target_data = s.get_pdf(ideal_atoms)
             exp_func = s.get_pdf

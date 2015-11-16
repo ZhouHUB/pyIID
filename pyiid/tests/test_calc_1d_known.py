@@ -100,18 +100,6 @@ def test_meta():
     for v in test_data:
         yield check_meta, v
 
-
-'''
-def test_nrg():
-    for v in test_data:
-        yield check_nrg, v
-
-
-def test_forces():
-    for v in test_data:
-        yield check_forces, v
-'''
-
 if __name__ == '__main__':
     import nose
 
