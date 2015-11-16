@@ -20,7 +20,7 @@ def check_scatter_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -33,7 +33,12 @@ def check_scatter_fq(value):
     ans2 = scat.get_fq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
+    if not stats_check(ans1, ans2, rtol, atol):
+        print value
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
+    # assert False
 
 
 def check_scatter_grad_fq(value):
@@ -45,7 +50,7 @@ def check_scatter_grad_fq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -58,7 +63,11 @@ def check_scatter_grad_fq(value):
     ans2 = scat.get_grad_fq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol, atol)
+    if not stats_check(ans1, ans2, rtol, atol):
+        print value
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_sq(value):
@@ -69,7 +78,7 @@ def check_scatter_sq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -82,7 +91,10 @@ def check_scatter_sq(value):
     ans2 = scat.get_sq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_iq(value):
@@ -93,7 +105,7 @@ def check_scatter_iq(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -106,7 +118,10 @@ def check_scatter_iq(value):
     ans2 = scat.get_iq(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_pdf(value):
@@ -117,7 +132,7 @@ def check_scatter_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -130,7 +145,10 @@ def check_scatter_pdf(value):
     ans2 = scat.get_pdf(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 
 def check_scatter_grad_pdf(value):
@@ -142,7 +160,7 @@ def check_scatter_grad_pdf(value):
     """
     # set everything up
     atoms, exp = value[:2]
-    scat = ElasticScatter(exp_dict=exp)
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
     proc1, alg1 = value[-1][0]
     proc2, alg2 = value[-1][1]
 
@@ -155,7 +173,10 @@ def check_scatter_grad_pdf(value):
     ans2 = scat.get_grad_pdf(atoms)
 
     # test
-    stats_check(ans1, ans2, rtol=rtol, atol=atol)
+    stats_check(ans1, ans2, rtol, atol)
+    assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
 
 tests = [
     check_scatter_fq,
@@ -169,14 +190,11 @@ tests = [
 test_data = list(product(
     tests,
     test_atoms, test_exp, comparison_pro_alg_pairs))
-# remove the ultra slow nxn 1000 atom tests
-# for f in test_data:
-#     if len(f[1]) > 200 and ('CPU', 'nxn') in f[4]:
-#         test_data.remove(f)
 
 def test_meta():
     for v in test_data:
             yield check_meta, v
+
 
 if __name__ == '__main__':
     import nose

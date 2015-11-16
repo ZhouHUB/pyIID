@@ -1,7 +1,5 @@
 from multiprocessing import Pool, cpu_count
-
 import psutil
-
 from pyiid.experiments.elasticscatter.atomics.cpu_atomics import *
 
 __author__ = 'christopher'
@@ -17,15 +15,26 @@ def setup_cpu_calc(atoms, sum_type):
         scatter_array = atoms.get_array('PDF scatter').astype(np.float32)
     n, qmax_bin = scatter_array.shape
     return q.astype(np.float32), None, n, qmax_bin, scatter_array.astype(
-            np.float32)
+        np.float32)
 
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     """
-    :param atoms:
-    :param qbin:
-    :param sum_type:
-    :return:
+    Generate the reduced structure function
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The size of the scatter vector increment
+    sum_type: {'fq', 'pdf'}
+        Which scatter array should be used for the calculation
+
+    Returns
+    -------
+    fq:1darray
+        The reduced structure function
     """
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
@@ -37,10 +46,12 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
                               (n, qmax_bin))
 
     # sum the answers
-    final = np.sum(ans, axis=0)
+    final = np.sum(ans, axis=0, dtype=np.float64)
+    final = final.astype(np.float32)
     norm = np.empty((k_max, qmax_bin), np.float32)
     get_normalization_array(norm, scatter_array, 0)
-    na = np.mean(norm, axis=0) * n
+    na = np.mean(norm, axis=0, dtype=np.float32) * np.float32(n)
+    # na = np.mean(norm, axis=0, dtype=np.float64) * n
     old_settings = np.seterr(all='ignore')
     final = np.nan_to_num(final / na)
     np.seterr(**old_settings)
@@ -49,6 +60,24 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
+    """
+    Generate the reduced structure function gradient
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The size of the scatter vector increment
+    sum_type: {'fq', 'pdf'}
+        Which scatter array should be used for the calculation
+
+    Returns
+    -------
+
+    dfq_dq:ndarray
+        The reduced structure function gradient
+    """
     # setup variables of interest
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
@@ -77,7 +106,7 @@ def cpu_multiprocessing(atomic_function, allocation,
     # print atomic_function, allocation, master_task, constants
     n, qmax_bin = constants
     k_max = int((n ** 2 - n) / 2.)
-# TODO: what if n is 1 kmax = 0???
+    # TODO: what if n is 1 kmax = 0???
     # break up problem
     pool_size = cpu_count()
     if pool_size <= 0:

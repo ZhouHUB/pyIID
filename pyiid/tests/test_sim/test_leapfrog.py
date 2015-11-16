@@ -26,6 +26,11 @@ def test_gen_check_leapfrog_reversibility():
 def check_leapfrog_no_momentum(value):
     """
     Test leapfrog with null forces
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms = value[0]
     calc = Spring(rt=1, k=100)
@@ -37,6 +42,11 @@ def check_leapfrog_no_momentum(value):
 def check_leapfrog_momentum(value):
     """
     Test leapfrog with non-trivial momentum
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms = value[0]
     calc = Spring(rt=1, k=100)
@@ -49,6 +59,11 @@ def check_leapfrog_momentum(value):
 def check_leapfrog_reversibility(value):
     """
     Test leapfrog with non-trivial momentum in reverse
+
+    Parameters
+    ----------
+    value: list or tuple
+        The values to use in the tests
     """
     atoms = value[0]
     calc = Spring(rt=1, k=100)

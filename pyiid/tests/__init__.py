@@ -6,14 +6,13 @@ Then we run all nuts_benchmarks against the CPU flat kernels.
 Thus it is imperative that the flat CPU runs with no errors.
 """
 import numpy as np
-from ase.atoms import Atoms
+from ase import Atoms, Atom
 from numpy.testing import assert_allclose
 from itertools import *
 import os
 from copy import deepcopy as dc
 import random
 from pyiid.testing.decorators import *
-
 from pyiid.experiments.elasticscatter import wrap_atoms
 from pyiid.calc.spring_calc import Spring
 
@@ -28,17 +27,24 @@ except:
     pass
 __author__ = 'christopher'
 
+if os.environ.get('PYIID_TEST_SEED') is not None:
+    seed = int(os.environ["PYIID_TEST_SEED"])
+else:
+    seed = int(random.random() * 2 ** 53)
+
+rs = np.random.RandomState(seed)
+
 if srfit:
     def convert_atoms_to_stru(atoms):
         """
         Convert between ASE and Diffpy structural objects
 
-        Parameters:
+        Parameters
         -----------
         atoms: ase.Atoms object
-
-        Return:
-        diffpy.Structure object:
+        Returns
+        -------
+            diffpy.Structure object:
         """
         diffpy_atoms = []
         symbols = atoms.get_chemical_symbols()
@@ -76,8 +82,13 @@ if srfit:
 def setup_atoms(n):
     """
     Generate a configuration of n gold atoms with random positions
+
+    Parameters
+    ----------
+    n: int
+        Number of atoms in configuration
     """
-    q = np.random.random((n, 3)) * 10
+    q = rs.random_sample((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
     return atoms
 
@@ -85,11 +96,16 @@ def setup_atoms(n):
 def setup_double_atoms(n):
     """
     Generate two configuration of n gold atoms with random positions
+
+    Parameters
+    ----------
+    n: int
+        Number of atoms in configuration
     """
-    q = np.random.random((n, 3)) * 10
+    q = rs.random_sample((n, 3)) * 10
     atoms = Atoms('Au' + str(int(n)), q)
 
-    q2 = np.random.random((n, 3)) * 10
+    q2 = rs.random_sample((n, 3)) * 10
     atoms2 = Atoms('Au' + str(int(n)), q2)
     return atoms, atoms2
 
@@ -103,8 +119,8 @@ def generate_experiment():
     exp_ranges = [(0, 1.5), (19., 25.), (.8, .12), (0., 2.5), (30., 50.),
                   (.005, .015)]
     for n, k in enumerate(exp_keys):
-        exp_dict[k] = np.random.uniform(exp_ranges[n][0], exp_ranges[n][1])
-    exp_dict['sampling'] = random.choice(['full', 'ns'])
+        exp_dict[k] = rs.uniform(exp_ranges[n][0], exp_ranges[n][1])
+    exp_dict['sampling'] = rs.choice(['full', 'ns'])
     return exp_dict
 
 
@@ -133,7 +149,7 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
         if isinstance(ans1, type(np.asarray([1]))):
             print 'normalized max', np.max(np.abs(ans2 - ans1)) / ans2[
                 np.unravel_index(np.argmax(np.abs(ans2 - ans1)), ans2.shape)]
-            fails = np.where(np.abs(ans1 - ans2) >= atol + rtol * np.abs(ans2))
+            fails = np.where(np.abs(ans1 - ans2) > atol + rtol * np.abs(ans2))
 
             print 'percentage of failed tests', ans1[fails].size / float(
                 ans1.size) * 100., '%'
@@ -146,48 +162,40 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
             else:
                 print 'large number of failed tests'
 
-            print '\n', 'without atol rtol = ', '\n'
             a = np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])
+            print '\n', 'without atol rtol = ', np.nanmax(a), '\n'
             if ans1[fails].size <= 251:
                 print a
-            print np.nanmax(a)
 
-            print 'without rtol atol = ', '\n'
             a = np.abs(ans1[fails] - ans2[fails])
+            print 'without rtol atol = ', np.nanmax(a), '\n'
             if ans1[fails].size <= 251:
                 print a
-            print np.nanmax(a)
 
-            print '\n', 'with current atol rtol = ', '\n'
-            a = (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
-                    ans2[fails])
+            a = (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
+            print '\n', 'with current atol rtol = ', np.nanmax(a), '\n'
             if ans1[fails].size <= 251:
                 print a
-            print np.nanmax(a)
 
-            print 'with current rtol atol = ', '\n'
-            a = np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(
-                    ans2[fails])
+            a = np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails])
+            print 'with current rtol atol = ', np.nanmax(a), '\n'
             if ans1[fails].size <= 251:
                 print a
-            print np.nanmax(a)
         else:
             print np.abs(ans1 - ans2)
             print atol + rtol * np.abs(ans2)
-            print 'without rtol atol ='
-            print rtol * np.abs(ans2)
+            print 'without rtol atol = ', rtol * np.abs(ans2)
             print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
-            print '\n', 'with current atol rtol = ', '\n'
-            print (np.abs(ans1 - ans2) - atol) / np.abs(ans2)
+            print '\n', 'with current atol rtol = ', (np.abs(
+                ans1 - ans2) - atol) / np.abs(ans2), '\n'
             print np.max((np.abs(ans1 - ans2) - atol) / np.abs(ans2))
-            print 'with current rtol atol = ', '\n'
-            print np.abs(ans1 - ans2) - rtol * np.abs(ans2)
+            print 'with current rtol atol = ', np.abs(
+                ans1 - ans2) - rtol * np.abs(ans2), '\n'
             print np.max(np.abs(ans1 - ans2) - rtol * np.abs(ans2))
-
-        assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
         np.seterr(**old_err_settings)
+        return False
     else:
-        assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+        return True
 
 
 # Setup lists of test variables for combinations
@@ -241,21 +249,23 @@ elif os.getenv('SHORT_TEST'):
     ]
 else:
     ns = [
-        10, 100,
+        10,
+        100,
         # 400,
         1000
     ]
     num_exp = 3
     proc_alg_pairs = [('CPU', 'nxn'),
-                      ('CPU', 'flat'),
                       ('CPU', 'flat-serial'),
+                      ('CPU', 'flat'),
                       ('Multi-GPU', 'flat'),
                       ]
     comparison_pro_alg_pairs = [
-        # (('CPU', 'nxn'), ('CPU', 'flat-serial')),
-        # (('CPU', 'flat-serial'), ('CPU', 'flat')),
-        (('CPU', 'nxn'), ('CPU', 'flat')),
+        (('CPU', 'nxn'), ('CPU', 'flat-serial')),
+        (('CPU', 'flat-serial'), ('CPU', 'flat')),
+        # (('CPU', 'nxn'), ('CPU', 'flat')),
         (('CPU', 'flat'), ('Multi-GPU', 'flat')),
+        # (('CPU', 'nxn'), ('Multi-GPU', 'flat'))
 
     ]
 

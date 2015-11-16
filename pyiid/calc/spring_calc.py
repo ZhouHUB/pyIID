@@ -34,7 +34,8 @@ class Spring(Calculator):
                   system_changes=['positions', 'numbers', 'cell',
                                   'pbc', 'charges', 'magmoms']):
         """Spring Calculator
-
+        Parameters
+        ----------
         atoms: Atoms object
             Contains positions, unit-cell, ...
         properties: list of str
@@ -44,7 +45,7 @@ class Spring(Calculator):
             List of what has changed since last calculation.  Can be
             any combination of these five: 'positions', 'numbers', 'cell',
             'pbc', 'charges' and 'magmoms'.
-            """
+        """
 
         Calculator.calculate(self, atoms, properties, system_changes)
 

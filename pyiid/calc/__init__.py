@@ -13,21 +13,10 @@ def wrap_rw(gcalc, gobs):
 
     Parameters
     -----------
-    :param gcalc:
-    atoms: ase.Atoms
-        The atomic configuration
+    gcalc: 1darray
+        The calculated 1D data
     gobs: 1darray
-        The observed atomic pair distribution function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
+        The observed 1D data
 
     Returns
     -------
@@ -47,20 +36,10 @@ def wrap_chi_sq(gcalc, gobs):
 
     Parameters
     -----------
-    atoms: ase.Atoms
-        The atomic configuration
+    gcalc: 1darray
+        The calculated 1D data
     gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
+        The observed 1D data
 
     Returns
     -------
@@ -69,10 +48,6 @@ def wrap_chi_sq(gcalc, gobs):
         The Rw value in percent
     scale: float
         The scale factor between the observed and calculated PDF
-    pdf0:1darray
-        The atomic pair distributuion function
-    fq:1darray
-        The reduced structure function
     """
     rw, scale = get_chi_sq(gobs, gcalc)
     return rw, scale
@@ -84,29 +59,19 @@ def wrap_grad_rw(grad_gcalc, gcalc, gobs):
 
     Parameters
     -----------
-    :param grad_gcalc:
-    atoms: ase.Atoms
-        The atomic configuration
+    grad_gcalc: ndarray
+        The gradient of the 1D data
+    gcalc: 1darray
+        The calculated 1D data
     gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
+        The observed 1D data
 
     Returns
     -------
 
-    grad_rw: float
+    grad_rw: ndarray
         The gradient of the Rw value with respect to the atomic positions,
         in percent
-
     """
     rw, scale = wrap_rw(gcalc, gobs)
     grad_rw = np.zeros((len(grad_gcalc), 3))
@@ -120,29 +85,19 @@ def wrap_grad_chi_sq(grad_gcalc, gcalc, gobs):
 
     Parameters
     -----------
-    :param gcalc:
-    atoms: ase.Atoms
-        The atomic configuration
+    grad_gcalc: ndarray
+        The gradient of the 1D data
+    gcalc: 1darray
+        The calculated 1D data
     gobs: 1darray
-        The observed atomic pair distributuion function
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
-    qbin: float
-        The size of the scatter vector increment
-    rmax: float
-        Maximum r value
-    rstep: float
-        Size between r values
+        The observed 1D data
 
     Returns
     -------
 
-    grad_chi_sq: float
-        The gradient of the Rw value with respect to the atomic positions,
-        in percent
-
+    grad_chi_sq: ndarray
+        The gradient of the chi squared value with respect to the atomic
+        positions, in percent
     """
     chi_sq, scale = wrap_chi_sq(gcalc, gobs)
     grad_chi_sq = np.zeros((len(grad_gcalc), 3))

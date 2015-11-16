@@ -18,16 +18,13 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     ----------
     atoms: ase.Atoms
         The atomic configuration
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
     qbin: float
         The size of the scatter vector increment
+    sum_type: {'fq', 'pdf'}
+        Which scatter array should be used for the calculation
 
     Returns
     -------
-    
     fq:1darray
         The reduced structure function
     """
@@ -60,8 +57,11 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     fq = omega
     # Normalize fq
     # '''
-    fq = np.sum(fq, 0, dtype=np.float32)
+    # fq = np.sum(fq, axis=0, dtype=np.float32)
+    fq = np.sum(fq, axis=0, dtype=np.float64)
+    fq = fq.astype(np.float32)
     na = np.mean(norm, axis=0, dtype=np.float32) * np.float32(n)
+    # na = np.mean(norm, axis=0, dtype=np.float64) * n
     old_settings = np.seterr(all='ignore')
     fq = np.nan_to_num(fq / na)
     np.seterr(**old_settings)
@@ -77,12 +77,10 @@ def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
     ----------
     atoms: ase.Atoms
         The atomic configuration
-    qmax: float
-        The maximum scatter vector value
-    qmin: float
-        The minimum scatter vector value
     qbin: float
         The size of the scatter vector increment
+    sum_type: {'fq', 'pdf'}
+        Which scatter array should be used for the calculation
 
     Returns
     -------

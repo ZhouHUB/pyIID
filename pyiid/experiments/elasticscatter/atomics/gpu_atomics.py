@@ -1,8 +1,6 @@
 import math
-
 import numpy as np
 from numba import *
-
 from pyiid.experiments import generate_grid
 
 __author__ = 'christopher'
@@ -50,9 +48,10 @@ def atoms_per_gpu_grad_fq(n, qmax_bin, mem):
 
     Parameters
     ----------
+
     n: int
         Number of atoms
-    sv: int
+    qmax_bin: int
         Size of the scatter vector
     mem: int
         Size of the GPU memory
@@ -102,7 +101,7 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
         The sv resolution of the experiment
     k_cov: int
         The number of atoms pairs previously run, used as an offset
-    k_max: int
+    k_per_thread: int
         The number of atoms pairs to be run in this chunk
 
     Returns
@@ -114,16 +113,8 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     qmax_bin = scatter_array.shape[1]
     # load kernels
     from pyiid.experiments.elasticscatter.kernels.gpu_flat import \
-        (
-        get_d_array,
-        get_r_array,
-        get_normalization_array,
-        get_omega,
-        get_fq_inplace,
-        d2_zero,
-        d2_to_d1_cleanup_kernel,
-        experimental_sum_fq
-    )
+        (get_d_array, get_r_array, get_normalization_array, get_omega,
+         get_fq_inplace, d2_zero, d2_to_d1_cleanup_kernel, experimental_sum_fq)
     # generate grids for the GPU
     elements_per_dim_1 = [k_per_thread]
     tpb_k = [32]
@@ -194,13 +185,14 @@ def atomic_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     final = dfinal.copy_to_host(stream=stream2)
     # remove from memory
     del dq, dd, dscat, dr, dnorm, dfq, dfinal, dsum
+    cuda.current_context().trashing.clear()
     return final
 
 
 def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     """
-    Calculate a portion of the gradient of F(sv).  This is the smallest division
-    of the grad F(sv) function.
+    Calculate a portion of the gradient of F(Q).  This is the smallest division
+    of the grad F(Q) function.
 
     Parameters
     ----------
@@ -210,10 +202,10 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
         The atomic scatter factors
     qbin: float
         The sv resolution of the experiment
-    k_max: int
-        The number of atoms pairs to be run in this chunk
     k_cov: int
         The number of atoms pairs previously run, used as an offset
+    k_per_thread: int
+        The number of atoms pairs to be run in this chunk
 
     Returns
     -------
@@ -284,4 +276,5 @@ def atomic_grad_fq(q, adps, scatter_array, qbin, k_cov, k_per_thread):
     experimental_sum_grad_fq1[bpg_kq, tpb_kq, stream2](dnew_grad, dgrad, k_cov)
     rtn = dnew_grad.copy_to_host(stream=stream2)
     del dq, dscat, dd, dr, domega, dnorm, dgrad_omega, dgrad, dnew_grad
+    cuda.current_context().trashing.clear()
     return rtn

@@ -1,58 +1,104 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
-from time import time
 
 __author__ = 'christopher'
+# TODO: need to add a bunch of tests here.
+def check_meta(value):
+    value[0](value[1:])
 
-def test_exp():
-    atoms = setup_atoms(int(10))
-    exp1 = generate_experiment()
-    exp2 = generate_experiment()
+def check_add_atom(value):
+    atoms, exp = value[0:2]
+    proc, alg = value[-1]
 
-    scat = ElasticScatter(exp_dict=exp1)
-    assert scat.check_state(atoms)
-    fq = scat.get_fq(atoms)
-    gfq = scat.get_grad_fq(atoms)
-    assert not scat.check_state(atoms)
-    assert fq is not None
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
+    scat.set_processor(proc, alg)
 
-    ff = atoms.arrays['F(Q) scatter']
+    assert scat.check_state(atoms) != []
+    # Test a set of different sized ensembles
+    ans1 = scat.get_fq(atoms)
+    assert scat.check_state(atoms) == []
+    # Check that Scatter gave back something
+    assert ans1 is not None
+    assert np.any(ans1)
 
-    scat.update_experiment(exp_dict=exp2)
-    fq2 = scat.get_fq(atoms)
-    gfq2 = scat.get_grad_fq(atoms)
-    ff2 = atoms.arrays['F(Q) scatter']
+    atoms2 = atoms + Atom('Au', [0, 0, 0])
+    assert scat.check_state(atoms2) != []
+    ans2 = scat.get_fq(atoms2)
+    assert scat.check_state(atoms2) == []
+    # Check that Scatter gave back something
+    assert ans2 is not None
+    assert np.any(ans2)
 
-    if ff.shape == ff2.shape:
-        assert not np.allclose(ff, ff2)
-    if fq.shape == fq2.shape:
-        assert not np.allclose(fq, fq2)
-    if gfq.shape == gfq2.shape:
-        assert not np.allclose(gfq, gfq2)
+    assert not np.allclose(ans1, ans2)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
+    # Check that all the values are not zero
+    del atoms, exp, proc, alg, scat, ans1
+    return
+
+def check_del_atom(value):
+    atoms, exp = value[0:2]
+    proc, alg = value[-1]
+
+    scat = ElasticScatter(exp_dict=exp, verbose=True)
+    scat.set_processor(proc, alg)
+
+    assert scat.check_state(atoms) != []
+    # Test a set of different sized ensembles
+    ans1 = scat.get_fq(atoms)
+    assert scat.check_state(atoms) == []
+    # Check that Scatter gave back something
+    assert ans1 is not None
+    assert np.any(ans1)
+
+    atoms2 = dc(atoms)
+    del atoms2[np.random.choice(len(atoms2))]
+    assert scat.check_state(atoms2) != []
+    ans2 = scat.get_fq(atoms2)
+    assert scat.check_state(atoms2) == []
+    # Check that Scatter gave back something
+    assert ans2 is not None
+    assert np.any(ans2)
+
+    assert not np.allclose(ans1, ans2)
+    # make certain we did not give back the same pointer
+    assert ans1 is not ans2
+    # Check that all the values are not zero
+    del atoms, exp, proc, alg, scat, ans1
+    return
+
+tests = [
+    check_add_atom,
+    check_del_atom
+]
+test_data = list(product(
+    tests,
+    test_atoms,
+    test_exp,
+    proc_alg_pairs,
+))
+
+dels = []
+for i, f in enumerate(test_data):
+    if len(f[1]) > 200:
+        dels.append(i)
+dels.reverse()
+for d in dels:
+    del test_data[d]
 
 
-def test_number_of_atoms():
-    atoms = setup_atoms(int(10))
-    atoms2 = setup_atoms(int(11))
-    exp1 = generate_experiment()
-
-    scat = ElasticScatter(exp_dict=exp1)
-    assert scat.check_state(atoms)
-    fq = scat.get_fq(atoms)
-    assert not scat.check_state(atoms)
-    assert fq is not None
-
-    fq2 = scat.get_fq(atoms2)
-    assert not np.allclose(fq, fq2)
-
+def test_meta():
+    for v in test_data:
+            yield check_meta, v
 if __name__ == '__main__':
     import nose
+
     nose.runmodule(argv=[
-        # '-s',
+        '-s',
         '--with-doctest',
         # '--nocapture',
         '-v',
-        # '-x',
+        '-x',
     ],
         # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
         exit=False)

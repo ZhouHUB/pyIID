@@ -50,8 +50,17 @@ def build_sphere_np(file_name, radius):
 def tag_surface_atoms(atoms, tag=1, probe=1.4, cutoff=None):
     """
     Find which are the surface atoms in a nanoparticle.
-    :param atoms:
-    :return:
+
+    Parameters
+    ----------
+    atoms: ase.atoms object
+        The atomic configuration
+    tag: int
+        The number with which to tag the surface atoms
+    probe: float, optional
+        Radius of the probe molecule, default is 1.4 A the radius of water
+    cutoff: float
+        Bond cutoff, defaults to van der Waals radius
     """
     calculate_asa(atoms, probe, tag=tag, cutoff=cutoff)
 
@@ -78,9 +87,22 @@ def add_ligands(ligand, surface, distance, coverage, head, tail):
 def get_angle_list(atoms, cutoff, element=None, tag=None):
     """
     Get all the angles in the NP
-    :param atoms:
-    :param cutoff:
-    :return:
+
+    Parameters
+    ----------
+    atoms: ase.Atoms objecct
+        The atomic configuration
+    cutoff: float
+        Bond length cutoff
+    element: str, optional
+        Limit the list to only this element
+    tag: int
+        Limt the list to only this tag
+
+    Returns
+    -------
+    ndarray:
+        The list of bond angles in degrees
     """
     n_list = list(FullNeighborList(cutoff, atoms))
     angles = []
@@ -97,9 +119,22 @@ def get_angle_list(atoms, cutoff, element=None, tag=None):
 def get_coord_list(atoms, cutoff, element=None, tag=None):
     """
     Get all the angles in the NP
-    :param atoms:
-    :param cutoff:
-    :return:
+
+    Parameters
+    ----------
+    atoms: ase.Atoms objecct
+        The atomic configuration
+    cutoff: float
+        Bond length cutoff
+    element: str, optional
+        Limit the list to only this element
+    tag: int
+        Limt the list to only this tag
+
+    Returns
+    -------
+    ndarray:
+        The list of coordination nubmers
     """
     if isinstance(atoms, list):
         coord_l = []
@@ -135,9 +170,22 @@ def get_coord_list(atoms, cutoff, element=None, tag=None):
 def get_bond_dist_list(atoms, cutoff, element=None, tag=None):
     """
     Get all the angles in the NP
-    :param atoms:
-    :param cutoff:
-    :return:
+
+    Parameters
+    ----------
+    atoms: ase.Atoms objecct
+        The atomic configuration
+    cutoff: float
+        Bond length cutoff
+    element: str, optional
+        Limit the list to only this element
+    tag: int
+        Limt the list to only this tag
+
+    Returns
+    -------
+    ndarray:
+        The list of bond distances
     """
     n_list = list(FullNeighborList(cutoff, atoms))
     bonds = []

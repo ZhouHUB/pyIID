@@ -6,7 +6,7 @@ dq = 5e-5
 
 
 def finite_difference_grad(atoms, exp_dict):
-    s = ElasticScatter(exp_dict)
+    s = ElasticScatter(exp_dict, verbose=True)
     start_fq = s.get_fq(atoms)
     finite_difference_grad_fq = np.zeros((len(atoms), 3, len(start_fq)))
     for i in range(len(atoms)):
