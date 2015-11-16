@@ -153,34 +153,33 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
                           (atol + rtol * np.abs(ans2[fails])).tolist())
             else:
                 print 'large number of failed tests'
-            print '\n', 'without atol rtol = ', '\n'
-            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))
-            print np.max(np.nan_to_num(
-                np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails])))
-            print 'without rtol atol = ', '\n'
-            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]))
-            print np.nan_to_num(np.max(np.abs(ans1[fails] - ans2[fails])))
-            print '\n', 'with current atol rtol = ', '\n'
-            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
-            print np.max(np.nan_to_num(
+            print '\n', 'without atol rtol = ', np.max(np.nan_to_num(
+                np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))), '\n'
+            print np.nan_to_num(
+                np.abs(ans1[fails] - ans2[fails]) / np.abs(ans2[fails]))
+            print 'without rtol atol = ', np.nan_to_num(
+                np.max(np.abs(ans1[fails] - ans2[fails]))), '\n'
+            print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]))
+            print '\n', 'with current atol rtol = ', np.max(np.nan_to_num(
                 (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
-                    ans2[fails])))
-            print 'with current rtol atol = ', '\n'
-            # print np.nan_to_num(np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails]))
-            print np.max(np.nan_to_num(
+                    ans2[fails]))), '\n'
+            print np.nan_to_num(
+                np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
+            print 'with current rtol atol = ', np.max(np.nan_to_num(
                 np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(
-                    ans2[fails])))
+                    ans2[fails]))), '\n'
+            print np.nan_to_num(
+                np.abs(ans1[fails] - ans2[fails]) - rtol * np.abs(ans2[fails]))
         else:
             print np.abs(ans1 - ans2)
             print atol + rtol * np.abs(ans2)
-            print 'without rtol atol ='
-            print rtol * np.abs(ans2)
+            print 'without rtol atol = ', rtol * np.abs(ans2)
             print 'without atol rtol =', np.abs(ans1 - ans2) / np.abs(ans2)
-            print '\n', 'with current atol rtol = ', '\n'
-            print (np.abs(ans1 - ans2) - atol) / np.abs(ans2)
+            print '\n', 'with current atol rtol = ', (np.abs(
+                ans1 - ans2) - atol) / np.abs(ans2), '\n'
             print np.max((np.abs(ans1 - ans2) - atol) / np.abs(ans2))
-            print 'with current rtol atol = ', '\n'
-            print np.abs(ans1 - ans2) - rtol * np.abs(ans2)
+            print 'with current rtol atol = ', np.abs(
+                ans1 - ans2) - rtol * np.abs(ans2), '\n'
             print np.max(np.abs(ans1 - ans2) - rtol * np.abs(ans2))
         return False
     else:
