@@ -27,7 +27,7 @@ def check_nuts(value):
     """
     ideal_atoms, _ = value[0]
     ideal_atoms.set_velocities(np.zeros((len(ideal_atoms), 3)))
-    s = ElasticScatter()
+    s = ElasticScatter(verbose=True)
     if value[1] == 'PDF':
         target_data = s.get_pdf(ideal_atoms)
         exp_func = s.get_pdf
@@ -50,7 +50,7 @@ def check_nuts(value):
     start_pe = ideal_atoms.get_potential_energy()
 
     # traj, _, _, _ = nuts(ideal_atoms, .65, 3, 1., escape_level=4)
-    nuts = NUTSCanonicalEnsemble(ideal_atoms, escape_level=4)
+    nuts = NUTSCanonicalEnsemble(ideal_atoms, escape_level=4, verbose=True)
     traj, metadata = nuts.run(5)
 
     pe_list = []

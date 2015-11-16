@@ -20,7 +20,7 @@ def test_consistency():
 @known_fail_if(not srfit)
 def test_consistency2():
     outs = [[] for i in range(len(test_atoms))]
-    s = ElasticScatter()
+    s = ElasticScatter(verbose=True)
     for i, atoms in enumerate(test_data):
         stru = convert_atoms_to_stru(atoms)
         srfit_calc = DebyePDFCalculator()
