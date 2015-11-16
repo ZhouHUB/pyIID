@@ -137,7 +137,10 @@ def setup_atomic_square():
 
 
 def stats_check(ans1, ans2, rtol=1e-7, atol=0):
-    if np.any(np.abs(ans2 - ans1) >= atol + rtol * np.abs(ans2)):
+    try:
+        assert_allclose(ans1, ans2, rtol=rtol, atol=atol)
+        return True
+    except:
         old_err_settings = np.seterr(divide='ignore')
         print 'bulk statistics:'
         print 'max', np.max(np.abs(ans2 - ans1)),
@@ -194,8 +197,6 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
             print np.max(np.abs(ans1 - ans2) - rtol * np.abs(ans2))
         np.seterr(**old_err_settings)
         return False
-    else:
-        return True
 
 
 # Setup lists of test variables for combinations
