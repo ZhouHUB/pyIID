@@ -20,10 +20,21 @@ def setup_cpu_calc(atoms, sum_type):
 
 def wrap_fq(atoms, qbin=.1, sum_type='fq'):
     """
-    :param atoms:
-    :param qbin:
-    :param sum_type:
-    :return:
+    Generate the reduced structure function
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The size of the scatter vector increment
+    sum_type: {'fq', 'pdf'}
+        Which scatter array should be used for the calculation
+
+    Returns
+    -------
+    fq:1darray
+        The reduced structure function
     """
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)
@@ -49,6 +60,24 @@ def wrap_fq(atoms, qbin=.1, sum_type='fq'):
 
 
 def wrap_fq_grad(atoms, qbin=.1, sum_type='fq'):
+    """
+    Generate the reduced structure function gradient
+
+    Parameters
+    ----------
+    atoms: ase.Atoms
+        The atomic configuration
+    qbin: float
+        The size of the scatter vector increment
+    sum_type: {'fq', 'pdf'}
+        Which scatter array should be used for the calculation
+
+    Returns
+    -------
+
+    dfq_dq:ndarray
+        The reduced structure function gradient
+    """
     # setup variables of interest
     q, adps, n, qmax_bin, scatter_array = setup_cpu_calc(atoms, sum_type)
     k_max = int((n ** 2 - n) / 2.)

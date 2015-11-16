@@ -30,7 +30,7 @@ def symmetric_reshape(in_data):
 
 def antisymmetric_reshape(in_data):
     im, jm = k_to_ij(in_data.shape[0])
-    out_data = np.zeros((im,im) + in_data.shape[1:])
+    out_data = np.zeros((im, im) + in_data.shape[1:])
     for k in xrange(in_data.shape[0]):
         i, j = k_to_ij(k)
         out_data[i, j] = -1 * in_data[k]

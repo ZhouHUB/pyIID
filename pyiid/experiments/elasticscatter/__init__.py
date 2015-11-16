@@ -7,7 +7,6 @@ import math
 from ase.units import s
 import numpy as np
 from numba import cuda
-
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
@@ -20,6 +19,7 @@ __author__ = 'christopher'
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
                'exp']
+
 
 def check_mpi():
     # Test if MPI GPU is viable
@@ -120,7 +120,7 @@ class ElasticScatter(object):
     """
 
     def __init__(self, exp_dict=None, verbose=False):
-        self.atoms = None # keep a copy of the atoms to prevent replication
+        self.atoms = None  # keep a copy of the atoms to prevent replication
         self.fq_result = None
         self.pdf_result = None
         self.fq_grad_result = None
@@ -294,10 +294,10 @@ class ElasticScatter(object):
                          atoms.get_initial_charges(), tol):
                 system_changes.append('charges')
             if 'exp' not in atoms.info.keys() \
-                or atoms.info['exp'] != self.exp \
-                or atoms.info['scatter_atoms'] != len(atoms) \
-                or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
-                or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
+                    or atoms.info['exp'] != self.exp \
+                    or atoms.info['scatter_atoms'] != len(atoms) \
+                    or True in np.all(atoms.arrays['F(Q) scatter'] == 0., 1) \
+                    or True in np.all(atoms.arrays['PDF scatter'] == 0., 1):
                 system_changes.append('exp')
         if self.verbose:
             print 'check_state results:', system_changes

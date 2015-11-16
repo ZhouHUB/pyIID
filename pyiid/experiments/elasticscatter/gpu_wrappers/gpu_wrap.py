@@ -1,7 +1,5 @@
 from threading import Thread
-
 from numbapro.cudalib import cufft
-
 from pyiid.experiments.elasticscatter.atomics.gpu_atomics import *
 from pyiid.experiments import *
 from pyiid.experiments.elasticscatter.kernels.cpu_flat import \
@@ -253,7 +251,7 @@ def grad_pdf(grad_fq, rstep, qstep, rgrid, qmin):
         for gpu, mem in zip(gpus, mems):
             if gpu not in p_dict.keys() or p_dict[gpu].is_alive() is False:
                 atoms_per_thread = int(
-                    math.floor(.8*mem / gpadcfft.shape[-1] / 8 / 2))
+                    math.floor(.8 * mem / gpadcfft.shape[-1] / 8 / 2))
                 if atoms_per_thread > n - n_cov:
                     atoms_per_thread = n - n_cov
                 if n_cov >= n:
