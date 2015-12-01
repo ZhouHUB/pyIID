@@ -4,7 +4,6 @@ and processor information needed to calculate the elastic powder scattering
 from a collection of atoms.
 """
 import math
-from ase.units import s
 import numpy as np
 from numba import cuda
 from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
@@ -46,6 +45,7 @@ def check_cudafft():
     except ImportError:
         tf = False
         print 'no cudafft'
+        cufft = None
     return tf
 
 
