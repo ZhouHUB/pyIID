@@ -9,7 +9,7 @@ from ase.visualize import view
 from pyiid.calc.spring_calc import Spring
 __author__ = 'christopher'
 
-test_nuts_data = tuple(product(test_atom_squares, [Spring(k=10, rt=2.5)]))
+test_nuts_data = tuple(product(test_atom_squares, [Spring(k=10, rt=2.5)], [None, .1]))
 
 
 def test_nuts_dynamics():
@@ -34,9 +34,9 @@ def check_nuts(value):
     n0 = len(ideal_atoms)
     ideal_atoms.set_calculator(calc)
 
-    nuts = GrandCanonicalEnsemble(ideal_atoms, {'Au':100.0}, temperature=1000,
-                                  verbose=True)
-    traj, metadata = nuts.run(10)
+    dyn = GrandCanonicalEnsemble(ideal_atoms, {'Au':100.0}, temperature=1000,
+                                  verbose=True, resolution=value[2])
+    traj, metadata = dyn.run(10)
 
     pe_list = []
     n = []
