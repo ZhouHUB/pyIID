@@ -13,7 +13,7 @@ def leapfrog(atoms, step, center=True):
 
     Parameters
     -----------
-    atoms: ase.Atoms ase.Atoms
+    atoms: ase.Atoms
         The atomic configuration for the system
     step: float
         The step size for the simulation, the new momentum/velocity is step *

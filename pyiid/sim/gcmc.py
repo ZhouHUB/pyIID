@@ -9,6 +9,30 @@ __author__ = 'christopher'
 
 
 def add_atom(atoms, chem_potentials, beta, random_state, resolution=None):
+    """
+    Perform a GCMC atomic addition
+
+    Parameters
+    ----------
+    atoms: ase.Atoms object
+        The atomic configuration
+    chem_potentials: dict
+        A dictionary of {"Chemical Symbol": mu} where mu is a float denoting
+        the chemical potential
+    beta: float
+        The thermodynamic beta
+    random_state: np.random.RandomState object
+        The random state to be used
+    resolution: float or ndarray, optional
+        If used denote the resolution for the voxels
+
+    Returns
+    -------
+    atoms or None:
+        If the new configuration is accepted then the new atomic configuration
+        is returned, else None
+
+    """
     # make the proposed system
     atoms_prime = dc(atoms)
 
@@ -31,9 +55,6 @@ def add_atom(atoms, chem_potentials, beta, random_state, resolution=None):
     delta_energy = atoms_prime.get_potential_energy() - e0
     # get chemical potential
     mu = chem_potentials[new_symbol]
-    # return atoms_prime
-    # print atoms_prime.get_potential_energy(), atoms.get_potential_energy()
-    # print delta_energy, np.exp(min([0, -1. * beta * delta_energy + beta * mu]))
     # calculate acceptance
     if np.random.random() < np.exp(
             min([0, -1. * beta * delta_energy + beta * mu])):
@@ -43,6 +64,28 @@ def add_atom(atoms, chem_potentials, beta, random_state, resolution=None):
 
 
 def del_atom(atoms, chem_potentials, beta, random_state):
+    """
+
+    Parameters
+    ----------
+    atoms: ase.Atoms object
+        The atomic configuration
+    chem_potentials: dict
+        A dictionary of {"Chemical Symbol": mu} where mu is a float denoting
+        the chemical potential
+    beta: float
+        The thermodynamic beta
+    random_state: np.random.RandomState object
+        The random state to be used
+
+    Returns
+    -------
+    atoms or None:
+        If the new configuration is accepted then the new atomic configuration
+        is returned, else None
+
+
+    """
     if len(atoms) <= 1:
         return None
     print len(atoms)
