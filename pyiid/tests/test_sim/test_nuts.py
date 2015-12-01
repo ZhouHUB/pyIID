@@ -49,7 +49,6 @@ def check_nuts(value):
     ideal_atoms.set_calculator(calc)
     start_pe = ideal_atoms.get_potential_energy()
 
-    # traj, _, _, _ = nuts(ideal_atoms, .65, 3, 1., escape_level=4)
     nuts = NUTSCanonicalEnsemble(ideal_atoms, escape_level=4, verbose=True)
     traj, metadata = nuts.run(5)
 
