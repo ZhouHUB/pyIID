@@ -103,7 +103,7 @@ class GrandCanonicalEnsemble(Ensemble):
         else:
             mv = 'add'
             new_atoms = add_atom(self.traj[-1], self.chem_pot, self.beta,
-                                 self.random_state
+                                 self.random_state, resolution=self.resolution
                                  )
         if new_atoms is not None:
             if self.verbose:

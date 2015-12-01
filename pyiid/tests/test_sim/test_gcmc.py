@@ -1,5 +1,4 @@
 import numpy as np
-
 from itertools import product
 from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
@@ -7,9 +6,11 @@ from pyiid.sim.gcmc import GrandCanonicalEnsemble
 from pyiid.tests import *
 from ase.visualize import view
 from pyiid.calc.spring_calc import Spring
+
 __author__ = 'christopher'
 
-test_nuts_data = tuple(product(dc(test_atom_squares), [Spring(k=10, rt=2.5)], [None, .1]))
+test_nuts_data = tuple(
+    product(dc(test_atom_squares), [Spring(k=10, rt=2.5)], [None, .1]))
 
 
 def test_nuts_dynamics():
@@ -34,8 +35,8 @@ def check_nuts(value):
     n0 = len(ideal_atoms)
     ideal_atoms.set_calculator(calc)
 
-    dyn = GrandCanonicalEnsemble(ideal_atoms, {'Au':100.0}, temperature=1000,
-                                  verbose=True, resolution=value[2], seed=seed)
+    dyn = GrandCanonicalEnsemble(ideal_atoms, {'Au': 100.0}, temperature=1000,
+                                 verbose=True, resolution=value[2], seed=seed)
     traj, metadata = dyn.run(10)
 
     pe_list = []
