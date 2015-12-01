@@ -1,6 +1,5 @@
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
-from time import time
 
 __author__ = 'christopher'
 

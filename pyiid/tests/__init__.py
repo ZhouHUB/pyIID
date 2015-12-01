@@ -179,7 +179,8 @@ def stats_check(ans1, ans2, rtol=1e-7, atol=0):
             if ans1[fails].size <= 251:
                 print a
 
-            a = (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(ans2[fails])
+            a = (np.abs(ans1[fails] - ans2[fails]) - atol) / np.abs(
+                ans2[fails])
             print '\n', 'with current atol rtol = ', np.nanmax(a), '\n'
             if ans1[fails].size <= 251:
                 print a

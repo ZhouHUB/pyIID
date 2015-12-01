@@ -4,6 +4,7 @@ from pyiid.calc.calc_1d import Calc1D
 
 __author__ = 'christopher'
 
+
 def check_meta(value):
     value[0](value[1:])
 
@@ -35,6 +36,9 @@ def check_nrg(value):
     elif value[4] == 'PDF':
         exp_func = scat.get_pdf
         exp_grad = scat.get_grad_pdf
+    else:
+        exp_func = None
+        exp_grad = None
     target_data = exp_func(atoms1)
     calc = Calc1D(target_data=target_data,
                   exp_function=exp_func, exp_grad_function=exp_grad,
@@ -75,6 +79,9 @@ def check_forces(value):
     elif value[4] == 'PDF':
         exp_func = scat.get_pdf
         exp_grad = scat.get_grad_pdf
+    else:
+        exp_func = None
+        exp_grad = None
     target_data = exp_func(atoms1)
     calc = Calc1D(target_data=target_data,
                   exp_function=exp_func, exp_grad_function=exp_grad,
@@ -90,9 +97,10 @@ def check_forces(value):
     atoms2.set_calculator(calc)
     ans2 = atoms2.get_forces()
     stats_check(ans2, ans1,
-                    rtol=rtol,
-                    atol=atol
-                    )
+                rtol=rtol,
+                atol=atol
+                )
+
 
 tests = [
     check_nrg,
@@ -103,9 +111,11 @@ test_data = tuple(product(tests,
                           test_double_atoms, test_exp, test_potentials,
                           comparison_pro_alg_pairs, test_experiment_types))
 
+
 def test_meta():
     for v in test_data:
-            yield check_meta, v
+        yield check_meta, v
+
 
 if __name__ == '__main__':
     import nose

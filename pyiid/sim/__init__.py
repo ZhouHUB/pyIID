@@ -2,7 +2,6 @@ from copy import deepcopy as dc
 from ase.optimize.optimize import Optimizer
 import numpy as np
 from numpy.random import RandomState
-from ase.md.velocitydistribution import Stationary, ZeroRotation
 
 __author__ = 'christopher'
 

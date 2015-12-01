@@ -1,6 +1,7 @@
 from ase.calculators.calculator import Calculator
 import numpy as np
 from copy import deepcopy as dc
+
 __author__ = 'christopher'
 
 
@@ -84,7 +85,7 @@ class MultiCalc(Calculator):
 
     def calculate_voxel_energy(self, atoms, resolution):
         c = np.diagonal(atoms.get_cell())
-        voxel_energy = np.zeros(c/resolution)
+        voxel_energy = np.zeros(c / resolution)
         for calc in self.calc_list:
             try:
                 voxel_energy += calc.calculate_voxel_energy(atoms, resolution)

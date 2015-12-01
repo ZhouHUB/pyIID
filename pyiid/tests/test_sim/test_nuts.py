@@ -1,6 +1,3 @@
-import numpy as np
-
-from itertools import product
 from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.sim.nuts_hmc import NUTSCanonicalEnsemble

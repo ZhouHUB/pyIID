@@ -50,7 +50,7 @@ def check_atomwise_nrg(value):
     calc = Spring(**value[1])
     atoms.set_calculator(calc)
     e0 = atoms.get_potential_energy()
-    print e0, e0/2.
+    print e0, e0 / 2.
     voxel_nrg = atoms.calc.calculate_atomwise_energy(atoms)
 
     nrg2 = np.zeros(len(atoms))
@@ -60,6 +60,7 @@ def check_atomwise_nrg(value):
         nrg2[atom.index] += atoms2.get_potential_energy() - e0
     stats_check(voxel_nrg, nrg2)
     assert_allclose(voxel_nrg, nrg2)
+
 
 tests = [
     check_voxel_nrg,

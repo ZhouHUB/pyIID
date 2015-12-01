@@ -38,7 +38,6 @@ class Spring(Calculator):
             self.v_nrg = voxel_att_spring_nrg
             self.atomwise_nrg = atomwise_att_spring_nrg
 
-
     def calculate(self, atoms=None, properties=['energy'],
                   system_changes=['positions', 'numbers', 'cell',
                                   'pbc', 'charges', 'magmoms']):
@@ -94,6 +93,7 @@ class Spring(Calculator):
 
     def calculate_atomwise_energy(self, atoms):
         return self.atomwise_nrg(atoms, self.k, self.rt)
+
 
 def spring_nrg(atoms, k, rt):
     q = atoms.get_positions().astype(np.float32)
@@ -178,7 +178,7 @@ def atomwise_spring_nrg(atoms, k, rt):
     nrg[np.where(r > rt)] = 0.0
     for i in xrange(len(nrg)):
         nrg[i, i] = 0.0
-    return -np.sum(nrg, axis=0)*2
+    return -np.sum(nrg, axis=0) * 2
 
 
 def com_spring_nrg(atoms, k, rt):
@@ -211,6 +211,7 @@ def com_spring_force(atoms, k, rt):
     np.seterr(**old_settings)
 
     return direction * -1.
+
 
 # TODO: Kernelize me Captain
 # TODO: This fails because the addition of an atom moves the center of mass

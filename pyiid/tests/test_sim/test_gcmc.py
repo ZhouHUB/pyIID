@@ -1,10 +1,7 @@
-import numpy as np
-from itertools import product
 from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.sim.gcmc import GrandCanonicalEnsemble
 from pyiid.tests import *
-from ase.visualize import view
 from pyiid.calc.spring_calc import Spring
 
 __author__ = 'christopher'
