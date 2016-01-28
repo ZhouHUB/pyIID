@@ -276,6 +276,7 @@ class ElasticScatter(object):
         if atoms.info['exp'] != self.exp or \
                         atoms.info['scatter_atoms'] != len(atoms):
             return False
+        return True
 
     def get_fq(self, atoms):
         """
