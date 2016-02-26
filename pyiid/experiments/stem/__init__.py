@@ -4,7 +4,7 @@ STEM images from atomic configurations. Note that these simulations are very
 simplistic, they make the following assumptions.
 1. Atoms do not loose/gain/share electrons
 2. Atoms' electron clouds are spherically symmetrical
-3. Electron density is a approximated by the xray scatter factor at Q=0
+3. Total electron density is a approximated by the atomic number
 4. Electron density is radially shaped like a gaussian function
 
 Thus we can compute the electron density for an atomic system by treating
@@ -49,10 +49,12 @@ if __name__ == '__main__':
     from ase import Atoms
     from ase.visualize import view
     from ase.cluster import FaceCenteredCubic
+    import ase.io as aseio
 
     # atoms = Atoms('Pt', [(0, 0, 0)])
-    atoms = Atoms(FaceCenteredCubic('Pt', [[1,0,0],[1,1,0],[1,1,1]], (2, 3, 2)))
+    # atoms = Atoms(FaceCenteredCubic('Pt', [[1,0,0],[1,1,0],[1,1,1]], (2, 3, 2)))
     # atoms = atoms[[atom.index for atom in atoms if atom.position[2]< 1.5]]
+    atoms = aseio.read('/home/christopher/Downloads/AG-NAT-hyd.cif')
     view(atoms)
     atoms.set_cell(atoms.get_cell() * 1.2)
     atoms.center()
