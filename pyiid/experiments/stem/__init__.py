@@ -51,10 +51,7 @@ if __name__ == '__main__':
     from ase.cluster import FaceCenteredCubic
     import ase.io as aseio
 
-    # atoms = Atoms('Pt', [(0, 0, 0)])
-    # atoms = Atoms(FaceCenteredCubic('Pt', [[1,0,0],[1,1,0],[1,1,1]], (2, 3, 2)))
-    # atoms = atoms[[atom.index for atom in atoms if atom.position[2]< 1.5]]
-    atoms = aseio.read('/home/christopher/Downloads/AG-NAT-hyd.cif')
+    atoms = Atoms(FaceCenteredCubic('Pt', [[1,0,0],[1,1,0],[1,1,1]], (2, 3, 2)))
     view(atoms)
     atoms.set_cell(atoms.get_cell() * 1.2)
     atoms.center()
