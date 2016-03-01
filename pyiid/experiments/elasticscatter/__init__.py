@@ -278,7 +278,7 @@ class ElasticScatter(object):
             return False
         return True
 
-    def get_fq(self, atoms):
+    def get_fq(self, atoms, noise=None):
         """
         Calculate the reduced structure factor F(Q)
 
@@ -286,6 +286,13 @@ class ElasticScatter(object):
         ----------
         atoms: ase.Atoms
             The atomic configuration for which to calculate F(Q)
+        noise: {None, float, ndarray}, optional
+            Add noise to the data, if `noise` is a float then assume flat
+            gaussian noise with a standard deviation of noise, if an array
+            then assume that each point has a gaussian distribution of noise
+            with a standard deviation given by noise. Note that this noise is
+            noise in I(Q) which is propagated to F(Q)
+
         Returns
         -------
         1darray:
