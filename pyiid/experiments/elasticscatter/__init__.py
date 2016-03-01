@@ -278,7 +278,7 @@ class ElasticScatter(object):
             return False
         return True
 
-    def get_fq(self, atoms, noise=None):
+    def get_fq(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
         Calculate the reduced structure factor F(Q)
 
@@ -292,6 +292,8 @@ class ElasticScatter(object):
             then assume that each point has a gaussian distribution of noise
             with a standard deviation given by noise. Note that this noise is
             noise in I(Q) which is propagated to F(Q)
+        noise_distribution: distribution function
+            The distribution function to take the scattering pattern
 
         Returns
         -------
@@ -304,9 +306,14 @@ class ElasticScatter(object):
             wrap_atoms(atoms, self.exp)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.exp['qbin'])
+        if noise:
+            fq_noise = noise*np.abs(self.get_scatter_vector())/np.abs(
+                    np.average(atoms.get_array('F(Q) scatter')) ** 2)
+            exp_noise = noise_distribution(fq, fq_noise)
+            fq += exp_noise
         return fq
 
-    def get_pdf(self, atoms):
+    def get_pdf(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
         Calculate the atomic pair distribution factor, PDF, G(r)
 
@@ -325,6 +332,11 @@ class ElasticScatter(object):
             wrap_atoms(atoms, self.exp)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
+        if noise:
+            fq_noise = noise*np.abs(self.get_scatter_vector())/np.abs(
+                    np.average(atoms.get_array('F(Q) scatter')) ** 2)
+            exp_noise = noise_distribution(fq, fq_noise)
+            fq += exp_noise
         r = self.get_r()
         pdf0 = get_pdf_at_qmin(
             fq,
