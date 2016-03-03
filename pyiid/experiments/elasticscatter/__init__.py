@@ -306,9 +306,12 @@ class ElasticScatter(object):
             wrap_atoms(atoms, self.exp)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.exp['qbin'])
-        if noise:
+        if noise is not None:
             fq_noise = noise*np.abs(self.get_scatter_vector())/np.abs(
                     np.average(atoms.get_array('F(Q) scatter')) ** 2)
+            if fq_noise[0] == 0.0:
+                fq_noise[0] += 1e-9 #added because we can't have zero noise
+            print fq.shape, fq_noise.shape
             exp_noise = noise_distribution(fq, fq_noise)
             fq += exp_noise
         return fq
@@ -332,9 +335,11 @@ class ElasticScatter(object):
             wrap_atoms(atoms, self.exp)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
-        if noise:
+        if noise is not None:
             fq_noise = noise*np.abs(self.get_scatter_vector())/np.abs(
                     np.average(atoms.get_array('F(Q) scatter')) ** 2)
+            if fq_noise[0] == 0.0:
+                fq_noise[0] += 1e-9 #added because we can't have zero noise
             exp_noise = noise_distribution(fq, fq_noise)
             fq += exp_noise
         r = self.get_r()
