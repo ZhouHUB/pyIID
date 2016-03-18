@@ -97,7 +97,7 @@ class ElasticScatter(object):
 
         # Get the fastest processor architecture available
         self.set_processor()
-    
+
     def _wrap_atoms(self, atoms):
         """
         Call this function before applying calculator, it will generate static
@@ -115,27 +115,34 @@ class ElasticScatter(object):
         e_set = set(e_num)
         e_list = list(e_set)
 
-        for qbin, name in zip([self.exp['qbin'],
-                               np.pi / (self.exp['rmax'] + 6 * 2 * np.pi / self.exp['qmax'])],
-                              ['F(Q) scatter', 'PDF scatter']):
+        for qbin, name in zip(
+                [self.exp['qbin'],
+                 np.pi / (
+                             self.exp['rmax'] + 6 * 2 * np.pi / self.exp[
+                             'qmax'])],
+                ['F(Q) scatter', 'PDF scatter']
+        ):
             qmax_bin = int(math.ceil(self.exp['qmax'] / qbin))
-            set_scatter_array = np.zeros((len(e_set), qmax_bin), dtype=np.float32)
+            set_scatter_array = np.zeros((len(e_set), qmax_bin),
+                                         dtype=np.float32)
 
-            # Calculate the element wise scatter factor array
+            # Calculate the element-wise scatter factor array
             get_scatter_array(set_scatter_array, e_num, self.exp['qbin'])
             scatter_array = np.zeros((n, qmax_bin), dtype=np.float32)
+
             # Disseminate the element wise scatter factors
             for i in range(len(e_set)):
-                scatter_array[
-                np.where(atoms.numbers == e_list[i])[0], :] = set_scatter_array[i, :]
+                scatter_array[np.where(atoms.numbers == e_list[i])[0], :] = \
+                    set_scatter_array[i, :]
+
             # Set the new scatter factor array
             if name in atoms.arrays.keys():
                 del atoms.arrays[name]
             atoms.set_array(name, scatter_array)
-    
+
         atoms.info['exp'] = self.exp
         atoms.info['scatter_atoms'] = n
-    
+
     def set_processor(self, processor=None, kernel_type='flat'):
         """
         Set the processor to use for calculating the scattering.  If no
@@ -250,15 +257,31 @@ class ElasticScatter(object):
         self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
                                  self.exp['qmax'])
 
-    def check_wrap_atoms_state(self, atoms):
+    def _check_wrap_atoms_state(self, atoms):
+        """
+        Check if we need to recalculate the atomic scatter factors
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration
+
+        Returns
+        -------
+
+        """
+        t_value = True
         if self.wrap_atoms_state is None:
-            return False
-        if 'F(Q) scatter' not in atoms.arrays.keys():
-            return False
-        if atoms.info['exp'] != self.exp or \
+            t_value = False
+        elif 'F(Q) scatter' not in atoms.arrays.keys():
+            t_value = False
+        elif atoms.info['exp'] != self.exp or \
                         atoms.info['scatter_atoms'] != len(atoms):
-            return False
-        return True
+            t_value = False
+        if not t_value:
+            if self.verbose:
+                print 'calculating new scatter factors'
+            self._wrap_atoms(atoms)
+            self.wrap_atoms_state = atoms
 
     def get_fq(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
@@ -282,12 +305,9 @@ class ElasticScatter(object):
         1darray:
             The reduced structure factor
         """
-        if self.check_wrap_atoms_state(atoms) is False:
-            if self.verbose:
-                print 'calculating new scatter factors'
-            self._wrap_atoms(atoms, self.exp)
-            self.wrap_atoms_state = atoms
+        self._check_wrap_atoms_state(atoms)
         fq = self.fq(atoms, self.exp['qbin'])
+        fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         if noise is not None:
             fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
                 np.average(atoms.get_array('F(Q) scatter')) ** 2)
@@ -306,16 +326,13 @@ class ElasticScatter(object):
         ----------
         atoms: ase.Atoms
             The atomic configuration for which to calculate the PDF
+
         Returns
         -------
         1darray:
             The PDF
         """
-        if self.check_wrap_atoms_state(atoms) is False:
-            if self.verbose:
-                print 'calculating new scatter factors'
-            self._wrap_atoms(atoms)
-            self.wrap_atoms_state = atoms
+        self._check_wrap_atoms_state(atoms)
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
         if noise is not None:
             fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
@@ -348,9 +365,8 @@ class ElasticScatter(object):
             The structure factor
         """
         fq = self.get_fq(atoms)
-        scatter_vector = np.arange(0, self.exp['qmax'], self.exp['qbin'])
         old_settings = np.seterr(all='ignore')
-        sq = (fq / scatter_vector) + np.ones(scatter_vector.shape)
+        sq = (fq / self.get_scatter_vector()) + np.ones(self.get_scatter_vector().shape)
         np.seterr(**old_settings)
         sq[np.isinf(sq)] = 0.
         return sq
@@ -413,11 +429,7 @@ class ElasticScatter(object):
         3darray:
             The gradient of the reduced structure factor
         """
-        if self.check_wrap_atoms_state(atoms) is False:
-            if self.verbose:
-                print 'calculating new scatter factors'
-            self._wrap_atoms(atoms, self.exp)
-            self.wrap_atoms_state = atoms
+        self._check_wrap_atoms_state(atoms)
         g = self.grad(atoms, self.exp['qbin'])
         return g
 
@@ -434,11 +446,7 @@ class ElasticScatter(object):
         3darray:
             The gradient of the PDF
         """
-        if self.check_wrap_atoms_state(atoms) is False:
-            if self.verbose:
-                print 'calculating new scatter factors'
-            self._wrap_atoms(atoms, self.exp)
-            self.wrap_atoms_state = atoms
+        self._check_wrap_atoms_state(atoms)
         fq_grad = self.grad(atoms, self.pdf_qbin, 'PDF')
         qmin_bin = int(self.exp['qmin'] / self.pdf_qbin)
         fq_grad[:, :, :qmin_bin] = 0.
