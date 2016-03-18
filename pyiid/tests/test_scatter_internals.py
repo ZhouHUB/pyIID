@@ -1,5 +1,5 @@
 from pyiid.tests import *
-from pyiid.experiments.elasticscatter import ElasticScatter, wrap_atoms
+from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.experiments.elasticscatter.kernels import (antisymmetric_reshape,
                                                       symmetric_reshape)
 from pyiid.experiments.elasticscatter.kernels.cpu_nxn import \
@@ -22,7 +22,8 @@ def check_meta(value):
 
 def start(value):
     atoms, exp = value[:2]
-    wrap_atoms(atoms, exp)
+    scat = ElasticScatter(exp)
+    scat._wrap_atoms(atoms)
     q = atoms.get_positions().astype(np.float32)
     if value[2] == 'fq':
         scatter_array = atoms.get_array('F(Q) scatter')
