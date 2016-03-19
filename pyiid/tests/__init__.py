@@ -13,7 +13,7 @@ import os
 from copy import deepcopy as dc
 import random
 from pyiid.testing.decorators import *
-from pyiid.experiments.elasticscatter import wrap_atoms
+from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.calc.spring_calc import Spring
 
 srfit = False
@@ -119,8 +119,8 @@ def generate_experiment():
     """
     exp_dict = {}
     exp_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep']
-    exp_ranges = [(0, 1.5), (19., 25.), (.8, .12), (0., 2.5), (30., 50.),
-                  (.005, .015)]
+    exp_ranges = [(0, 1.5), (19., 25.), (.1, .8),
+                  (0., 2.5), (30., 50.), (.005, .015)]
     for n, k in enumerate(exp_keys):
         exp_dict[k] = rs.uniform(exp_ranges[n][0], exp_ranges[n][1])
     exp_dict['sampling'] = rs.choice(['full', 'ns'])
