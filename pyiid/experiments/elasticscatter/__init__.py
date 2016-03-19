@@ -280,6 +280,7 @@ class ElasticScatter(object):
                 print 'calculating new scatter factors'
             self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
+        return t_value
 
     def get_fq(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
