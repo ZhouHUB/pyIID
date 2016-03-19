@@ -119,8 +119,8 @@ def generate_experiment():
     """
     exp_dict = {}
     exp_keys = ['qmin', 'qmax', 'qbin', 'rmin', 'rmax', 'rstep']
-    exp_ranges = [(0, 1.5), (19., 25.), (.8, .12), (0., 2.5), (30., 50.),
-                  (.005, .015)]
+    exp_ranges = [(0, 1.5), (19., 25.), (.1, .8),
+                  (0., 2.5), (30., 50.), (.005, .015)]
     for n, k in enumerate(exp_keys):
         exp_dict[k] = rs.uniform(exp_ranges[n][0], exp_ranges[n][1])
     exp_dict['sampling'] = rs.choice(['full', 'ns'])
@@ -236,7 +236,7 @@ if os.getenv('TRAVIS'):
 elif os.getenv('SHORT_TEST'):
     ns = [
         10,
-        100,
+        # 100,
         # 400,
         # 1000
     ]

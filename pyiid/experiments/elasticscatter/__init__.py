@@ -117,12 +117,11 @@ class ElasticScatter(object):
 
         for qbin, name in zip(
                 [self.exp['qbin'],
-                 np.pi / (
-                             self.exp['rmax'] + 6 * 2 * np.pi / self.exp[
+                 np.pi / (self.exp['rmax'] + 6 * 2 * np.pi / self.exp[
                              'qmax'])],
                 ['F(Q) scatter', 'PDF scatter']
         ):
-            qmax_bin = int(math.ceil(self.exp['qmax'] / qbin))
+            qmax_bin = int(math.floor(self.exp['qmax'] / qbin))
             set_scatter_array = np.zeros((len(e_set), qmax_bin),
                                          dtype=np.float32)
 
@@ -466,7 +465,9 @@ class ElasticScatter(object):
         1darray:
             The Q range for this experiment
         """
-        return np.arange(self.exp['qmin'], self.exp['qmax'], self.exp['qbin'])
+        return np.arange(self.exp['qmin'], math.floor(self.exp['qmax'] /
+                                                      self.exp['qbin']) * self.exp['qbin'],
+                         self.exp['qbin'])
 
     def get_r(self):
         """
