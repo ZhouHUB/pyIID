@@ -210,7 +210,7 @@ def check_scatter_pdf_noise(value):
     scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
     # Test a set of different sized ensembles
-    noise = np.ones(scat.get_scatter_vector().shape)
+    noise = np.ones(scat.get_scatter_vector(pdf=True).shape)
     ans = scat.get_pdf(atoms, noise)
 
     # Check that Scatter gave back something
@@ -223,12 +223,12 @@ def check_scatter_pdf_noise(value):
 
 tests = [
     check_scatter_consistancy,
-    # check_scatter_fq,
-    # check_scatter_sq,
-    # check_scatter_iq,
-    # check_scatter_pdf,
-    # check_scatter_grad_fq,
-    # check_scatter_grad_pdf,
+    check_scatter_fq,
+    check_scatter_sq,
+    check_scatter_iq,
+    check_scatter_pdf,
+    check_scatter_grad_fq,
+    check_scatter_grad_pdf,
     check_scatter_fq_noise,
     check_scatter_pdf_noise,
 ]

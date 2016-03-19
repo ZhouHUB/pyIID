@@ -10,8 +10,8 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad, wrap_fq as cpu_wrap_fq
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
-from ase.calculators.calculator import equal
-
+# from scipy.interpolate import griddata # will restore this when conda stops
+#  breaking everything!
 __author__ = 'christopher'
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
@@ -117,8 +117,7 @@ class ElasticScatter(object):
 
         for qbin, name in zip(
                 [self.exp['qbin'],
-                 np.pi / (self.exp['rmax'] + 6 * 2 * np.pi / self.exp[
-                             'qmax'])],
+                 np.pi / (self.exp['rmax'] + 6 * 2 * np.pi / self.exp['qmax'])],
                 ['F(Q) scatter', 'PDF scatter']
         ):
             qmax_bin = int(math.floor(self.exp['qmax'] / qbin))
@@ -334,8 +333,14 @@ class ElasticScatter(object):
         self._check_wrap_atoms_state(atoms)
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
         if noise is not None:
-            fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
-                np.average(atoms.get_array('F(Q) scatter')) ** 2)
+            a = np.abs(self.get_scatter_vector(pdf=True))
+            b = np.abs(np.average(atoms.get_array('PDF scatter') ** 2, axis=0))
+            print a.shape, b.shape, fq.shape, noise.shape
+            if noise.shape != a.shape:
+                print "Conda is breaking scipy, no interpolation for you!"
+                # noise = griddata(np.arange(0, noise.shape), noise, np.arange(
+                #     a.shape))
+            fq_noise = noise * a / b
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
             exp_noise = noise_distribution(fq, fq_noise)
@@ -456,7 +461,7 @@ class ElasticScatter(object):
                                  self.exp['qmin'])
         return pdf_grad
 
-    def get_scatter_vector(self):
+    def get_scatter_vector(self, pdf=False):
         """
         Calculate the scatter vector Q for the current experiment
 
@@ -465,6 +470,9 @@ class ElasticScatter(object):
         1darray:
             The Q range for this experiment
         """
+        if pdf:
+            return np.arange(0., math.floor(self.exp['qmax'] / self.pdf_qbin) *
+                             self.pdf_qbin, self.pdf_qbin)
         return np.arange(self.exp['qmin'], math.floor(self.exp['qmax'] /
                                                       self.exp['qbin']) * self.exp['qbin'],
                          self.exp['qbin'])
