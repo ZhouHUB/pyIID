@@ -436,7 +436,7 @@ class ElasticScatter(object):
         """
         self._check_wrap_atoms_state(atoms)
         g = self.grad(atoms, self.exp['qbin'])
-        return g
+        return g[:, :, int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
 
     def get_grad_pdf(self, atoms):
         """
