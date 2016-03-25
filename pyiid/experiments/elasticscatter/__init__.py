@@ -10,8 +10,8 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad, wrap_fq as cpu_wrap_fq
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
-# from scipy.interpolate import griddata # will restore this when conda stops
-#  breaking everything!
+from scipy.interpolate import griddata
+
 __author__ = 'christopher'
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
@@ -193,7 +193,8 @@ class ElasticScatter(object):
             self.grad = flat_grad
             self.alg = 'flat'
             if check_cudafft():
-                from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap import \
+                from pyiid.experiments.elasticscatter.gpu_wrappers.gpu_wrap \
+                    import \
                     grad_pdf
                 self.grad_pdf = grad_pdf
             else:
@@ -312,7 +313,6 @@ class ElasticScatter(object):
                 np.average(atoms.get_array('F(Q) scatter')) ** 2)
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
-            print fq.shape, fq_noise.shape
             exp_noise = noise_distribution(fq, fq_noise)
             fq += exp_noise
         return fq
@@ -325,6 +325,14 @@ class ElasticScatter(object):
         ----------
         atoms: ase.Atoms
             The atomic configuration for which to calculate the PDF
+        noise: {None, float, ndarray}, optional
+            Add noise to the data, if `noise` is a float then assume flat
+            gaussian noise with a standard deviation of noise, if an array
+            then assume that each point has a gaussian distribution of noise
+            with a standard deviation given by noise. Note that this noise is
+            noise in I(Q) which is propagated to F(Q)
+        noise_distribution: distribution function
+            The distribution function to take the scattering pattern
 
         Returns
         -------
@@ -336,11 +344,10 @@ class ElasticScatter(object):
         if noise is not None:
             a = np.abs(self.get_scatter_vector(pdf=True))
             b = np.abs(np.average(atoms.get_array('PDF scatter') ** 2, axis=0))
-            print a.shape, b.shape, fq.shape, noise.shape
-            if noise.shape != a.shape:
-                print "Conda is breaking scipy, no interpolation for you!"
-                # noise = griddata(np.arange(0, noise.shape), noise, np.arange(
-                #     a.shape))
+            if not isinstance(noise, (float, int)):
+                if noise.shape != a.shape:
+                    noise = griddata(np.arange(0, noise.shape), noise,
+                                     np.arange(a.shape))
             fq_noise = noise * a / b
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
@@ -356,7 +363,7 @@ class ElasticScatter(object):
         )
         return pdf0
 
-    def get_sq(self, atoms):
+    def get_sq(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
         Calculate the structure factor S(Q)
 
@@ -369,14 +376,15 @@ class ElasticScatter(object):
         1darray:
             The structure factor
         """
-        fq = self.get_fq(atoms)
+        fq = self.get_fq(atoms, noise, noise_distribution)
         old_settings = np.seterr(all='ignore')
-        sq = (fq / self.get_scatter_vector()) + np.ones(self.get_scatter_vector().shape)
+        sq = (fq / self.get_scatter_vector()) + np.ones(
+            self.get_scatter_vector().shape)
         np.seterr(**old_settings)
         sq[np.isinf(sq)] = 0.
         return sq
 
-    def get_iq(self, atoms):
+    def get_iq(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
         Calculate the scattering intensity, I(Q)
 
@@ -389,8 +397,9 @@ class ElasticScatter(object):
         1darray:
             The scattering intensity
         """
-        return self.get_sq(atoms) * np.average(
-            atoms.get_array('F(Q) scatter')) ** 2
+        iq = self.get_sq(atoms, noise, noise_distribution) * \
+             np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2
+        return iq
 
     def get_2d_scatter(self, atoms, pixel_array):
         """
@@ -475,7 +484,8 @@ class ElasticScatter(object):
             return np.arange(0., math.floor(self.exp['qmax'] / self.pdf_qbin) *
                              self.pdf_qbin, self.pdf_qbin)
         return np.arange(self.exp['qmin'], math.floor(self.exp['qmax'] /
-                                                      self.exp['qbin']) * self.exp['qbin'],
+                                                      self.exp['qbin']) *
+                         self.exp['qbin'],
                          self.exp['qbin'])
 
     def get_r(self):
