@@ -117,7 +117,7 @@ class ElasticScatter(object):
 
         for qbin, name in zip(
                 [self.exp['qbin'],
-                 np.pi / (self.exp['rmax'] + 6 * 2 * np.pi / self.exp['qmax'])],
+                 self.pdf_qbin],
                 ['F(Q) scatter', 'PDF scatter']
         ):
             qmax_bin = int(math.floor(self.exp['qmax'] / qbin))
@@ -310,7 +310,7 @@ class ElasticScatter(object):
         fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         if noise is not None:
             fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
-                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)
+                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
             exp_noise = noise_distribution(fq, fq_noise)
