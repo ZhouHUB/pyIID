@@ -310,7 +310,7 @@ class ElasticScatter(object):
         fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         if noise is not None:
             fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
-                np.average(atoms.get_array('F(Q) scatter')) ** 2)
+                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
             exp_noise = noise_distribution(fq, fq_noise)
@@ -397,8 +397,9 @@ class ElasticScatter(object):
         1darray:
             The scattering intensity
         """
-        iq = self.get_sq(atoms, noise, noise_distribution) * \
-             np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2
+        sq = self.get_sq(atoms, noise, noise_distribution)
+        f2 = np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2
+        iq = sq * f2[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         return iq
 
     def get_2d_scatter(self, atoms, pixel_array):
