@@ -155,15 +155,14 @@ def check_scatter_consistancy(value):
 
     scat = ElasticScatter(exp_dict=exp, verbose=True)
     scat.set_processor(proc, alg)
-    scat.get_pdf(atoms)
+    ans = scat.get_pdf(atoms)
     ans1 = scat.get_fq(atoms)
     anss = scat.get_scatter_vector()
     print ans1.shape, anss.shape, scat.exp['qmin'], scat.exp['qmax'], \
         scat.exp['qbin']
-    print int(np.ceil(scat.exp['qmax'] / scat.exp['qbin'])) - int(
-        np.ceil(scat.exp['qmin'] / scat.exp['qbin']))
+    print int(np.ceil(scat.exp['qmax'] / scat.exp['qbin'])) - int(np.ceil(scat.exp['qmin'] / scat.exp['qbin']))
     print atoms.get_array('F(Q) scatter').shape
-    print (scat.exp['qmin'] - scat.exp['qmax']) / scat.exp['qbin']
+    print (scat.exp['qmin'] - scat.exp['qmax'])/scat.exp['qbin']
     assert ans1.shape == anss.shape
     ans2 = scat.get_sq(atoms)
     assert ans2.shape == anss.shape
@@ -234,10 +233,10 @@ tests = [
     check_scatter_pdf_noise,
 ]
 test_data = tuple(product(
-    tests,
-    test_atoms,
-    test_exp,
-    proc_alg_pairs,
+        tests,
+        test_atoms,
+        test_exp,
+        proc_alg_pairs,
 ))
 
 
@@ -258,5 +257,5 @@ if __name__ == '__main__':
         '-v',
         '-x',
     ],
-        # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
-        exit=False)
+            # env={"NOSE_PROCESSES": 1, "NOSE_PROCESS_TIMEOUT": 599},
+            exit=False)
