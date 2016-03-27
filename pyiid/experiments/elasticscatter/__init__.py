@@ -142,6 +142,59 @@ class ElasticScatter(object):
         atoms.info['exp'] = self.exp
         atoms.info['scatter_atoms'] = n
 
+    def _check_wrap_atoms_state(self, atoms):
+        """
+        Check if we need to recalculate the atomic scatter factors
+        Parameters
+        ----------
+        atoms: ase.Atoms
+            The atomic configuration
+
+        Returns
+        -------
+
+        """
+        t_value = True
+        if self.wrap_atoms_state is None:
+            t_value = False
+        elif 'F(Q) scatter' not in atoms.arrays.keys():
+            t_value = False
+        elif atoms.info['exp'] != self.exp or atoms.info[
+            'scatter_atoms'] != len(atoms):
+            t_value = False
+        if not t_value:
+            if self.verbose:
+                print 'calculating new scatter factors'
+            self._wrap_atoms(atoms)
+            self.wrap_atoms_state = atoms
+        return t_value
+
+    def update_experiment(self, exp_dict):
+        """
+        Change the scattering experiment parameters.
+
+        Parameters
+        ----------
+        exp_dict: dict or None
+            Dictionary of parameters to be updated, if None use defaults
+        """
+        # Should be read in from the gr file, but if not here are some defaults
+        if exp_dict is None or bool(exp_dict) is False:
+            exp_dict = {}
+        for key, dv in zip(self.exp_dict_keys, self.default_values):
+            if key not in exp_dict.keys():
+                exp_dict[key] = dv
+
+        # If sampling is ns then generate the PDF at
+        # the Nyquist Shannon Sampling Frequency
+        if exp_dict['sampling'] == 'ns':
+            exp_dict['rstep'] = np.pi / exp_dict['qmax']
+
+        self.exp = exp_dict
+        # Technically we should use this for qbin
+        self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
+                                 self.exp['qmax'])
+
     def set_processor(self, processor=None, kernel_type='flat'):
         """
         Set the processor to use for calculating the scattering.  If no
@@ -230,59 +283,6 @@ class ElasticScatter(object):
             self.grad_pdf = cpu_grad_pdf
             self.processor = processor
             return True
-
-    def update_experiment(self, exp_dict):
-        """
-        Change the scattering experiment parameters.
-
-        Parameters
-        ----------
-        exp_dict: dict or None
-            Dictionary of parameters to be updated, if None use defaults
-        """
-        # Should be read in from the gr file, but if not here are some defaults
-        if exp_dict is None or bool(exp_dict) is False:
-            exp_dict = {}
-        for key, dv in zip(self.exp_dict_keys, self.default_values):
-            if key not in exp_dict.keys():
-                exp_dict[key] = dv
-
-        # If sampling is ns then generate the PDF at
-        # the Nyquist Shannon Sampling Frequency
-        if exp_dict['sampling'] == 'ns':
-            exp_dict['rstep'] = np.pi / exp_dict['qmax']
-
-        self.exp = exp_dict
-        # Technically we should use this for qbin
-        self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
-                                 self.exp['qmax'])
-
-    def _check_wrap_atoms_state(self, atoms):
-        """
-        Check if we need to recalculate the atomic scatter factors
-        Parameters
-        ----------
-        atoms: ase.Atoms
-            The atomic configuration
-
-        Returns
-        -------
-
-        """
-        t_value = True
-        if self.wrap_atoms_state is None:
-            t_value = False
-        elif 'F(Q) scatter' not in atoms.arrays.keys():
-            t_value = False
-        elif atoms.info['exp'] != self.exp or atoms.info[
-            'scatter_atoms'] != len(atoms):
-            t_value = False
-        if not t_value:
-            if self.verbose:
-                print 'calculating new scatter factors'
-            self._wrap_atoms(atoms)
-            self.wrap_atoms_state = atoms
-        return t_value
 
     def get_fq(self, atoms, noise=None, noise_distribution=np.random.normal):
         """
