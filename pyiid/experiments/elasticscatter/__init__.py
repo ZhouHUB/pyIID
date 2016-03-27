@@ -11,8 +11,7 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
 
-# from scipy.interpolate import griddata # will restore this when conda stops
-#  breaking everything!
+from scipy.interpolate import griddata
 __author__ = 'christopher'
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
@@ -311,10 +310,9 @@ class ElasticScatter(object):
         fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         if noise is not None:
             fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
-                np.average(atoms.get_array('F(Q) scatter')) ** 2)
+                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
-            print fq.shape, fq_noise.shape
             exp_noise = noise_distribution(fq, fq_noise)
             fq += exp_noise
         return fq
@@ -346,11 +344,9 @@ class ElasticScatter(object):
         if noise is not None:
             a = np.abs(self.get_scatter_vector(pdf=True))
             b = np.abs(np.average(atoms.get_array('PDF scatter') ** 2, axis=0))
-            print a.shape, b.shape, fq.shape, noise.shape
             if noise.shape != a.shape:
-                print "Conda is breaking scipy, no interpolation for you!"
-                # noise = griddata(np.arange(0, noise.shape), noise, np.arange(
-                #     a.shape))
+                noise = griddata(np.arange(0, noise.shape), noise, np.arange(
+                    a.shape))
             fq_noise = noise * a / b
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
@@ -401,7 +397,7 @@ class ElasticScatter(object):
             The scattering intensity
         """
         return self.get_sq(atoms) * np.average(
-            atoms.get_array('F(Q) scatter')) ** 2
+            atoms.get_array('F(Q) scatter'), axis=0)[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):] ** 2
 
     def get_2d_scatter(self, atoms, pixel_array):
         """
