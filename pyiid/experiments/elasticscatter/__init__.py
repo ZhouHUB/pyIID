@@ -29,7 +29,7 @@ def check_gpu():
     Check if GPUs are available on this machine
     """
     try:
-        cuda.gpus.lst
+        tf = cuda.gpus.lst
         tf = True
     except cuda.CudaSupportError:
         tf = False
@@ -273,8 +273,8 @@ class ElasticScatter(object):
             t_value = False
         elif 'F(Q) scatter' not in atoms.arrays.keys():
             t_value = False
-        elif atoms.info['exp'] != self.exp or \
-                        atoms.info['scatter_atoms'] != len(atoms):
+        elif atoms.info['exp'] != self.exp or atoms.info[
+            'scatter_atoms'] != len(atoms):
             t_value = False
         if not t_value:
             if self.verbose:
@@ -476,13 +476,19 @@ class ElasticScatter(object):
         """
         Calculate the scatter vector Q for the current experiment
 
+        Parameters
+        ----------
+        pdf: bool
+            If true return the PDF rendering scatter vector
+
         Returns
         -------
         1darray:
             The Q range for this experiment
         """
         if pdf:
-            return np.arange(0., math.floor(self.exp['qmax'] / self.pdf_qbin) *
+            return np.arange(0.,
+                             math.floor(self.exp['qmax'] / self.pdf_qbin) *
                              self.pdf_qbin, self.pdf_qbin)
         return np.arange(self.exp['qmin'], math.floor(self.exp['qmax'] /
                                                       self.exp['qbin']) *
