@@ -10,8 +10,9 @@ from pyiid.experiments.elasticscatter.cpu_wrappers.nxn_cpu_wrap import \
     wrap_fq_grad as cpu_wrap_fq_grad, wrap_fq as cpu_wrap_fq
 from pyiid.experiments.elasticscatter.kernels.master_kernel import \
     grad_pdf as cpu_grad_pdf, get_pdf_at_qmin, get_scatter_array
-from scipy.interpolate import griddata
 
+# from scipy.interpolate import griddata # will restore this when conda stops
+#  breaking everything!
 __author__ = 'christopher'
 
 all_changes = ['positions', 'numbers', 'cell', 'pbc', 'charges', 'magmoms',
@@ -117,7 +118,7 @@ class ElasticScatter(object):
 
         for qbin, name in zip(
                 [self.exp['qbin'],
-                 self.pdf_qbin],
+                 np.pi / (self.exp['rmax'] + 6 * 2 * np.pi / self.exp['qmax'])],
                 ['F(Q) scatter', 'PDF scatter']
         ):
             qmax_bin = int(math.floor(self.exp['qmax'] / qbin))
@@ -310,9 +311,10 @@ class ElasticScatter(object):
         fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         if noise is not None:
             fq_noise = noise * np.abs(self.get_scatter_vector()) / np.abs(
-                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
+                np.average(atoms.get_array('F(Q) scatter')) ** 2)
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
+            print fq.shape, fq_noise.shape
             exp_noise = noise_distribution(fq, fq_noise)
             fq += exp_noise
         return fq
@@ -344,10 +346,11 @@ class ElasticScatter(object):
         if noise is not None:
             a = np.abs(self.get_scatter_vector(pdf=True))
             b = np.abs(np.average(atoms.get_array('PDF scatter') ** 2, axis=0))
-            if not isinstance(noise, (float, int)):
-                if noise.shape != a.shape:
-                    noise = griddata(np.arange(0, noise.shape), noise,
-                                     np.arange(a.shape))
+            print a.shape, b.shape, fq.shape, noise.shape
+            if noise.shape != a.shape:
+                print "Conda is breaking scipy, no interpolation for you!"
+                # noise = griddata(np.arange(0, noise.shape), noise, np.arange(
+                #     a.shape))
             fq_noise = noise * a / b
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise
@@ -363,7 +366,7 @@ class ElasticScatter(object):
         )
         return pdf0
 
-    def get_sq(self, atoms, noise=None, noise_distribution=np.random.normal):
+    def get_sq(self, atoms):
         """
         Calculate the structure factor S(Q)
 
@@ -376,7 +379,7 @@ class ElasticScatter(object):
         1darray:
             The structure factor
         """
-        fq = self.get_fq(atoms, noise, noise_distribution)
+        fq = self.get_fq(atoms)
         old_settings = np.seterr(all='ignore')
         sq = (fq / self.get_scatter_vector()) + np.ones(
             self.get_scatter_vector().shape)
@@ -384,7 +387,7 @@ class ElasticScatter(object):
         sq[np.isinf(sq)] = 0.
         return sq
 
-    def get_iq(self, atoms, noise=None, noise_distribution=np.random.normal):
+    def get_iq(self, atoms):
         """
         Calculate the scattering intensity, I(Q)
 
@@ -397,10 +400,8 @@ class ElasticScatter(object):
         1darray:
             The scattering intensity
         """
-        sq = self.get_sq(atoms, noise, noise_distribution)
-        f2 = np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2
-        iq = sq * f2[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
-        return iq
+        return self.get_sq(atoms) * np.average(
+            atoms.get_array('F(Q) scatter')) ** 2
 
     def get_2d_scatter(self, atoms, pixel_array):
         """
@@ -490,10 +491,9 @@ class ElasticScatter(object):
             return np.arange(0.,
                              math.floor(self.exp['qmax'] / self.pdf_qbin) *
                              self.pdf_qbin, self.pdf_qbin)
-        return np.arange(self.exp['qmin'], math.floor(self.exp['qmax'] /
-                                                      self.exp['qbin']) *
-                         self.exp['qbin'],
-                         self.exp['qbin'])
+        return np.arange(self.exp['qmin'],
+                         math.floor(self.exp['qmax'] / self.exp['qbin']) *
+                         self.exp['qbin'], self.exp['qbin'])
 
     def get_r(self):
         """
