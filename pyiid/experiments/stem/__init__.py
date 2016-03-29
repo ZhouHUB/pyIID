@@ -2,7 +2,7 @@
 The basic idea of this module is to provide the STEM class, which simulates
 STEM images from atomic configurations. Note that these simulations are very
 simplistic, they make the following assumptions.
-1. Atoms do not loose/gain/share electrons
+1. Atoms do not lose/gain/share electrons
 2. Atoms' electron clouds are spherically symmetrical
 3. Total electron density is a approximated by the atomic number
 4. Electron density is radially shaped like a gaussian function
