@@ -1,5 +1,4 @@
 from __future__ import print_function
-from __future__ import print_function
 from pyiid.calc.calc_1d import Calc1D
 from pyiid.experiments.elasticscatter import ElasticScatter
 from pyiid.sim.nuts_hmc import NUTSCanonicalEnsemble

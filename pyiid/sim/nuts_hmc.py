@@ -1,8 +1,4 @@
 from __future__ import print_function
-from __future__ import print_function
-from __future__ import print_function
-from __future__ import print_function
-from __future__ import print_function
 from copy import deepcopy as dc
 from ase.units import fs
 import numpy as np

@@ -1,5 +1,4 @@
 from __future__ import print_function
-from __future__ import print_function
 from pyiid.tests import *
 import numpy as np
 from pyiid.calc.spring_calc import Spring
