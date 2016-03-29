@@ -13,7 +13,6 @@ import os
 from copy import deepcopy as dc
 import random
 from pyiid.testing.decorators import *
-from pyiid.experiments.elasticscatter import wrap_atoms
 from pyiid.calc.spring_calc import Spring
 
 srfit = False

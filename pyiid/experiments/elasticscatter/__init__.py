@@ -352,7 +352,7 @@ class ElasticScatter(object):
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
                 print 'calculating new scatter factors'
-            wrap_atoms(atoms, self.exp)
+            self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.exp['qbin'])
         fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
@@ -498,7 +498,7 @@ class ElasticScatter(object):
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
                 print 'calculating new scatter factors'
-            wrap_atoms(atoms, self.exp)
+            self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         g = self.grad(atoms, self.exp['qbin'])
         return g[:, :, int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
@@ -519,7 +519,7 @@ class ElasticScatter(object):
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
                 print 'calculating new scatter factors'
-            wrap_atoms(atoms, self.exp)
+            self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         fq_grad = self.grad(atoms, self.pdf_qbin, 'PDF')
         qmin_bin = int(self.exp['qmin'] / self.pdf_qbin)
