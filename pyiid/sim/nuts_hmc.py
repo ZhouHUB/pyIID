@@ -1,3 +1,8 @@
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
+from __future__ import print_function
 from copy import deepcopy as dc
 from ase.units import fs
 import numpy as np
@@ -148,18 +153,18 @@ class NUTSCanonicalEnsemble(Ensemble):
         while (np.exp(-1 * atoms_prime.get_total_energy() +
                           atoms.get_total_energy())) ** a > 2 ** -a:
             step_size *= 2 ** a
-            print 'trying step size', step_size
+            print('trying step size', step_size)
             atoms_prime = leapfrog(atoms, step_size)
             if step_size < 1e-7 or step_size > 1e7:
                 step_size = 1.
                 break
-        print 'optimal step size', step_size
+        print('optimal step size', step_size)
         return step_size
 
     def step(self):
         new_configurations = []
         if self.verbose:
-            print '\ttime step size', self.step_size / fs, 'fs'
+            print('\ttime step size', self.step_size / fs, 'fs')
         # sample r0
         if self.momentum is None:
             MaxwellBoltzmannDistribution(self.traj[-1], self.thermal_nrg,
@@ -207,7 +212,7 @@ class NUTSCanonicalEnsemble(Ensemble):
                     span.dot(pos_atoms.get_velocities().flatten()) >= 0)
             j += 1
             if self.verbose:
-                print '\t \tdepth', j, 'samples', 2 ** j
+                print('\t \tdepth', j, 'samples', 2 ** j)
             self.metadata['samples_total'] += 2 ** j
             # Prevent run away sampling, EXPERIMENTAL
             # If we have generated s**self.escape_level samples,
@@ -215,7 +220,7 @@ class NUTSCanonicalEnsemble(Ensemble):
             # hopefully with a larger step size
             if j >= self.escape_level:
                 if self.verbose:
-                    print '\t \t \tjmax emergency escape at {}'.format(j)
+                    print('\t \t \tjmax emergency escape at {}'.format(j))
                 s = 0
         w = 1. / (self.m + self.t0)
         self.sim_hbar = (1 - w) * self.sim_hbar + w * \

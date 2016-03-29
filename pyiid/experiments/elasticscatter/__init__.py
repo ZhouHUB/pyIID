@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 """
 The main class in this module `ElasticScatter` holds the experimental details,
 and processor information needed to calculate the elastic powder scattering
@@ -42,7 +44,7 @@ def check_cudafft():
         tf = True
     except ImportError:
         tf = False
-        print 'no cudafft'
+        print('no cudafft')
         cufft = None
     return tf
 
@@ -73,10 +75,8 @@ class ElasticScatter(object):
         elif isinstance(seed, int):
             self.seed = seed
         else:
-            raise
+            raise ValueError('Expected an integer!')
         self.rs = np.random.RandomState(self.seed)
-
-
 
         # Currently supported processor architectures, in order of most
         # advanced to least
@@ -172,7 +172,7 @@ class ElasticScatter(object):
             t_value = False
         if not t_value:
             if self.verbose:
-                print 'calculating new scatter factors'
+                print('calculating new scatter factors')
             self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         return t_value
@@ -351,7 +351,7 @@ class ElasticScatter(object):
         """
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
-                print 'calculating new scatter factors'
+                print('calculating new scatter factors')
             self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.exp['qbin'])
@@ -389,7 +389,7 @@ class ElasticScatter(object):
         """
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
-                print 'calculating new scatter factors'
+                print('calculating new scatter factors')
             self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
@@ -414,7 +414,7 @@ class ElasticScatter(object):
         )
         return pdf0
 
-    def get_sq(self, atoms, noise=None, noise_distribution=np.random.normal):
+    def get_sq(self, atoms, iq_std=None, noise_distribution=np.random.normal):
         """
         Calculate the structure factor S(Q)
 
@@ -422,12 +422,20 @@ class ElasticScatter(object):
         ----------
         atoms: ase.Atoms
             The atomic configuration for which to calculate S(Q)
+        iq_std: {None, float, ndarray}, optional
+            Add noise to the data, if `noise` is a float then assume flat
+            gaussian noise with a standard deviation of noise, if an array
+            then assume that each point has a gaussian distribution of noise
+            with a standard deviation given by noise. Note that this noise is
+            noise in I(Q) which is propagated to F(Q)
+        noise_distribution: distribution function
+            The distribution function to take the scattering pattern
         Returns
         -------
         1darray:
             The structure factor
         """
-        fq = self.get_fq(atoms, noise, noise_distribution)
+        fq = self.get_fq(atoms, iq_std, noise_distribution)
         old_settings = np.seterr(all='ignore')
         sq = (fq / self.get_scatter_vector()) + np.ones(
             self.get_scatter_vector().shape)
@@ -435,7 +443,7 @@ class ElasticScatter(object):
         sq[np.isinf(sq)] = 0.
         return sq
 
-    def get_iq(self, atoms, noise=None, noise_distribution=np.random.normal):
+    def get_iq(self, atoms, iq_std=None, noise_distribution=np.random.normal):
         """
         Calculate the scattering intensity, I(Q)
 
@@ -443,12 +451,20 @@ class ElasticScatter(object):
         ----------
         atoms: ase.Atoms
             The atomic configuration for which to calculate I(Q)
+        iq_std: {None, float, ndarray}, optional
+            Add noise to the data, if `noise` is a float then assume flat
+            gaussian noise with a standard deviation of noise, if an array
+            then assume that each point has a gaussian distribution of noise
+            with a standard deviation given by noise. Note that this noise is
+            noise in I(Q) which is propagated to F(Q)
+        noise_distribution: distribution function
+            The distribution function to take the scattering pattern
         Returns
         -------
         1darray:
             The scattering intensity
         """
-        sq = self.get_sq(atoms, noise, noise_distribution)
+        sq = self.get_sq(atoms, iq_std, noise_distribution)
         f2 = np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2
         iq = sq * f2[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         return iq
@@ -497,7 +513,7 @@ class ElasticScatter(object):
         """
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
-                print 'calculating new scatter factors'
+                print('calculating new scatter factors')
             self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         g = self.grad(atoms, self.exp['qbin'])
@@ -518,7 +534,7 @@ class ElasticScatter(object):
         """
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
-                print 'calculating new scatter factors'
+                print('calculating new scatter factors')
             self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         fq_grad = self.grad(atoms, self.pdf_qbin, 'PDF')

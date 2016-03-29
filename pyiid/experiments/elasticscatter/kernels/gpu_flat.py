@@ -4,7 +4,7 @@ from numba import *
 from numba import cuda, f4, i4
 
 from pyiid.experiments.elasticscatter.kernels import cuda_k_to_ij, cuda_ij_to_k
-
+from builtins import range
 __author__ = 'christopher'
 
 # F(sv) kernels ---------------------------------------------------------------
@@ -139,7 +139,7 @@ def get_grad_omega(grad_omega, omega, r, d, qbin):
     rk = r[k]
     a = (sv * math.cos(sv * rk)) - omega[k, qx]
     a /= rk * rk
-    for w in xrange(i4(3)):
+    for w in range(i4(3)):
         grad_omega[k, w, qx] = a * d[k, w]
 
 
@@ -162,7 +162,7 @@ def get_grad_fq(grad, grad_omega, norm):
     if k >= kmax or qx >= qmax_bin:
         return
     a = norm[k, qx]
-    for w in xrange(i4(3)):
+    for w in range(i4(3)):
         grad[k, w, qx] = a * grad_omega[k, w, qx]
 
 
@@ -206,7 +206,7 @@ def fast_fast_flat_sum(new_grad, grad, k_cov):
         alpha = float32(1)
     k -= k_cov
     if 0 <= k < len(grad):
-        for tz in xrange(i4(3)):
+        for tz in range(i4(3)):
             cuda.atomic.add(new_grad, (i, tz, qx), grad[k, tz, qx] * alpha)
 
 
@@ -315,5 +315,5 @@ def get_grad_fq_inplace(grad_omega, norm):
     if k >= kmax or qx >= qmax_bin:
         return
     a = norm[k, qx]
-    for w in xrange(i4(3)):
+    for w in range(i4(3)):
         grad_omega[k, w, qx] *= a

@@ -1,5 +1,5 @@
 import math
-
+from builtins import range
 from ase.data import *
 import numpy as np
 from asap3.analysis.particle import FullNeighborList
@@ -34,7 +34,7 @@ def generate_sphere_points(n):
     points = np.zeros((n, 3))
     inc = math.pi * (3 - math.sqrt(5))
     offset = 2 / float(n)
-    for k in xrange(int(n)):
+    for k in range(int(n)):
         y = k * offset - 1 + (offset / 2)
         r = math.sqrt(1 - y * y)
         phi = k * inc
@@ -77,7 +77,7 @@ def calculate_asa(atoms, probe, cutoff=None, tag=1, n_sphere_point=960):
         radius = probe + vdw_radii[atom_i.number]
 
         n_accessible_point = 0
-        for k in xrange(n_sphere_point):
+        for k in range(n_sphere_point):
             is_accessible = True
             test_point = sphere_points[k, :] / np.linalg.norm(
                 sphere_points[k, :]) * radius + atom_i.position

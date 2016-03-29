@@ -1,8 +1,9 @@
+from __future__ import print_function
 from copy import deepcopy as dc
 from ase.optimize.optimize import Optimizer
 import numpy as np
 from numpy.random import RandomState
-
+from builtins import range
 __author__ = 'christopher'
 
 
@@ -62,12 +63,12 @@ class Ensemble(Optimizer):
     def run(self, steps=100000000, eq_steps=None, eq_tol=None, **kwargs):
         self.metadata['planned iterations'] = steps
         try:
-            for i in xrange(steps):
+            for i in range(steps):
                 if eq_steps is not None:
                     if self.check_eq(eq_steps, eq_tol):
                         break
                 if self.verbose:
-                    print 'iteration number', i
+                    print('iteration number', i)
                 self.step()
         except KeyboardInterrupt:
             print('Interupted, returning data')

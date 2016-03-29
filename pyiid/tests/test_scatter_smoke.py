@@ -1,3 +1,5 @@
+from __future__ import print_function
+from __future__ import print_function
 from pyiid.tests import *
 from pyiid.experiments.elasticscatter import ElasticScatter
 
@@ -157,10 +159,10 @@ def check_scatter_consistancy(value):
     scat.set_processor(proc, alg)
     ans = scat.get_pdf(atoms)
     ans1 = scat.get_fq(atoms)
-    print len(ans1)
-    print scat.get_scatter_vector().shape
+    print(len(ans1))
+    print(scat.get_scatter_vector().shape)
     ans2 = scat.get_sq(atoms)
-    print len(ans2)
+    print(len(ans2))
     ans3 = scat.get_iq(atoms)
 
 tests = [
@@ -186,8 +188,9 @@ def test_meta():
 
 if __name__ == '__main__':
     import nose
-    print 'number of test cases', len(test_data)
-    print 'total number of tests', len(test_data) * len(tests)
+
+    print('number of test cases', len(test_data))
+    print('total number of tests', len(test_data) * len(tests))
     nose.runmodule(argv=[
         # '-s',
         '--with-doctest',

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from multiprocessing import Pool, cpu_count
 import psutil
 from pyiid.experiments.elasticscatter.atomics.cpu_atomics import *
@@ -156,7 +157,7 @@ if __name__ == '__main__':
     # plt.show()
     # assert_allclose(fq, fq2, 3e-4)
     grad_fq = wrap_fq_grad(atoms, atoms.info['exp']['qbin'])
-    print grad_fq
+    print(grad_fq)
     # mgrad_fq = mfqg(atoms, atoms.info['exp']['qbin'])
     # assert_allclose(grad_fq, mgrad_fq)
     # raw_input()
