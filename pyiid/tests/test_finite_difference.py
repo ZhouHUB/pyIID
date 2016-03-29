@@ -33,7 +33,7 @@ if __name__ == '__main__':
     # s.set_processor('CPU', 'nxn')
     a = finite_difference_grad(atoms, exp)
     b = s.get_grad_fq(atoms)
-    print((a[0, 0] / b[0, 0]))
+    print(a[0, 0] / b[0, 0])
     plt.plot(a[0, 0, :], label='fd')
     plt.plot(b[0, 0, :], label='analytical')
     plt.legend(loc='best')

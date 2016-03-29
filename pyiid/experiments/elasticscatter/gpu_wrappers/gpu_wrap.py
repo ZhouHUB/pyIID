@@ -6,7 +6,6 @@ from pyiid.experiments.elasticscatter.kernels.cpu_flat import \
     get_normalization_array
 from builtins import range
 
-
 __author__ = 'christopher'
 
 
@@ -100,7 +99,7 @@ def sub_grad_pdf(gpu, gpadc, gpadcfft, atoms_per_thread, n_cov):
     with gpu:
         batch_operations = atoms_per_thread
         plan = fft.FFTPlan(input_shape, np.complex64, np.complex64,
-                             batch_operations)
+                           batch_operations)
         for i in range(3):
             batch_input = np.ravel(
                 gpadc[n_cov:n_cov + atoms_per_thread, i, :]).astype(

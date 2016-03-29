@@ -291,32 +291,6 @@ class ElasticScatter(object):
             self.processor = processor
             return True
 
-    def update_experiment(self, exp_dict):
-        """
-        Change the scattering experiment parameters.
-
-        Parameters
-        ----------
-        exp_dict: dict or None
-            Dictionary of parameters to be updated, if None use defaults
-        """
-        # Should be read in from the gr file, but if not here are some defaults
-        if exp_dict is None or bool(exp_dict) is False:
-            exp_dict = {}
-        for key, dv in zip(self.exp_dict_keys, self.default_values):
-            if key not in exp_dict.keys():
-                exp_dict[key] = dv
-
-        # If sampling is ns then generate the PDF at
-        # the Nyquist Shannon Sampling Frequency
-        if exp_dict['sampling'] == 'ns':
-            exp_dict['rstep'] = np.pi / exp_dict['qmax']
-
-        self.exp = exp_dict
-        # Technically we should use this for qbin
-        self.pdf_qbin = np.pi / (self.exp['rmax'] + 6 * 2 * np.pi /
-                                 self.exp['qmax'])
-
     def check_wrap_atoms_state(self, atoms):
         if self.wrap_atoms_state is None:
             return False
@@ -358,7 +332,8 @@ class ElasticScatter(object):
         fq = fq[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
         if iq_std is not None:
             fq_std = iq_std * np.abs(self.get_scatter_vector()) / np.abs(
-                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)[int(np.floor(self.exp['qmin'] / self.exp['qbin'])):]
+                np.average(atoms.get_array('F(Q) scatter'), axis=0) ** 2)[int(
+                np.floor(self.exp['qmin'] / self.exp['qbin'])):]
             if fq_std[0] == 0.0:
                 fq_std[0] += 1e-9  # added because we can't have zero noise
             exp_noise = self.rs.normal(0, fq_std)
@@ -397,8 +372,9 @@ class ElasticScatter(object):
             a = np.abs(self.get_scatter_vector(pdf=True))
             b = np.abs(np.average(atoms.get_array('PDF scatter') ** 2, axis=0))
             if hasattr(iq_std, 'shape') and iq_std.shape != a.shape:
-                iq_std = griddata(np.arange(0, iq_std.shape), iq_std, np.arange(
-                    a.shape))
+                iq_std = griddata(np.arange(0, iq_std.shape), iq_std,
+                                  np.arange(
+                                      a.shape))
             fq_noise = iq_std * a / b
             if fq_noise[0] == 0.0:
                 fq_noise[0] += 1e-9  # added because we can't have zero noise

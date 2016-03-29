@@ -1,6 +1,4 @@
 from __future__ import print_function
-from __future__ import print_function
-from __future__ import print_function
 from copy import deepcopy as dc
 from time import time
 import numpy as np
@@ -8,6 +6,7 @@ from ase.atom import Atom
 from ase.units import *
 from pyiid.sim import Ensemble
 from builtins import range
+
 __author__ = 'christopher'
 
 

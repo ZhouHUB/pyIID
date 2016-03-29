@@ -3,7 +3,7 @@ import numpy as np
 from copy import deepcopy as dc
 
 __author__ = 'christopher'
-print('This system is officially depreciated and is here for history ' \
+print('This system is officially depreciated and is here for history '
       'mostly, please use the nuts_hmc module')
 
 
