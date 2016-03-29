@@ -390,7 +390,7 @@ class ElasticScatter(object):
         if self.check_wrap_atoms_state(atoms) is False:
             if self.verbose:
                 print 'calculating new scatter factors'
-            wrap_atoms(atoms, self.exp)
+            self._wrap_atoms(atoms)
             self.wrap_atoms_state = atoms
         fq = self.fq(atoms, self.pdf_qbin, 'PDF')
         if iq_std is not None:
